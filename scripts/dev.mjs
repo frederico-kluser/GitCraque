@@ -5,17 +5,12 @@
  *   backend  node --watch server/bin/gitcraque.mjs --dev   (5271, so API + WS)
  *   frontend vite                                          (5273, proxy de /api e /ws)
  *
- * O backend sobe com `--dev` de proposito: quem serve o front-end e o Vite, com
- * hot reload; e com `--no-open`, porque quem abre o navegador e o Vite. Ctrl+C
- * derruba os dois.
+ * O backend sobe com `--dev` de proposito: quem serve o front-end e o Vite,
+ * com hot reload — e com `--no-open`, porque a url que interessa e a do Vite,
+ * nao a do backend. Ctrl+C derruba os dois.
  *
- *   npm run dev                  # repositorio = process.cwd()
- *   npm run dev -- ~/code/proj   # repositorio explicito
- *
- * O Vite e invocado pelo caminho do seu bin, e nao por `npx`: dentro deste
- * workspace o `.npmrc` referencia ${MOTION_TOKEN}, e qualquer comando `npm`
- * falha com "Failed to replace env in config" quando a variavel nao existe no
- * ambiente. Chamar o bin direto nao passa pelo npm e nao depende do token.
+ *   npm run dev                 # repositorio = cwd
+ *   npm run dev -- ~/code/proj  # repositorio explicito
  */
 import { spawn } from "node:child_process";
 import path from "node:path";
@@ -53,20 +48,14 @@ function encerrar(code = 0) {
   for (const { child } of processos) {
     if (child.exitCode === null) child.kill("SIGTERM");
   }
-  // Escalada: quem ignorar o SIGTERM leva SIGKILL, para o terminal nunca ficar preso.
-  const prazo = setTimeout(() => {
+  // Quem ignorar o SIGTERM leva SIGKILL: `node --watch` as vezes segura o filho.
+  setTimeout(() => {
     for (const { child } of processos) {
       if (child.exitCode === null) child.kill("SIGKILL");
     }
     process.exit(code);
-  }, 2_000);
-  prazo.unref();
-  setTimeout(() => {
-    if (processos.every(({ child }) => child.exitCode !== null)) process.exit(code);
-  }, 300).unref();
+  }, 2_000).unref();
 }
-
-console.log("dev: backend em 5271 (--dev) · vite em 5273 com proxy de /api e /ws\n");
 
 subir(
   "backend",
@@ -82,6 +71,9 @@ subir(
   ROOT,
 );
 
+// Caminho direto para o binario do Vite em vez de `npx`: o `.npmrc` do projeto
+// referencia ${MOTION_TOKEN}, e todo comando npm falha quando a variavel nao
+// esta no ambiente. Chamando o arquivo, o npm nem entra na jogada.
 subir(
   "vite",
   process.execPath,
