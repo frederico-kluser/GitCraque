@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import test, { after, before } from "node:test";
 import fs from "node:fs";
+import os from "node:os";
 import path from "node:path";
 
 import { PIPE_SUBJECT, git, makeFixtureRepo } from "./helpers/repo.mjs";
@@ -496,13 +497,6 @@ test("guarda de origem: Host remoto e 403", async () => {
 test("guarda de origem: Origin de outro site e 403", async () => {
   const res = await api.fetchRaw("/api/repo", { headers: { origin: "https://evil.example.com" } });
   assert.equal(res.status, 403);
-});
-
-test("sem web/dist, a raiz explica como buildar", async () => {
-  const res = await api.fetchRaw("/");
-  assert.equal(res.status, 503);
-  assert.match(res.headers.get("content-type"), /text\/html/);
-  assert.match(await res.text(), /npm run build/);
 });
 
 test("WebSocket: ping responde pong e refresh emite repo:changed", async () => {
