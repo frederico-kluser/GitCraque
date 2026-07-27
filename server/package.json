@@ -10,7 +10,8 @@
   },
   "scripts": {
     "dev": "node --watch bin/gitcraque.mjs --dev",
-    "start": "node bin/gitcraque.mjs"
+    "start": "node bin/gitcraque.mjs",
+    "test": "node --test \"test/*.test.mjs\""
   },
   "dependencies": {
     "ws": "^8.18.0"

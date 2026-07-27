@@ -1,54 +1,93 @@
 #!/usr/bin/env node
 /**
- * Modo de desenvolvimento: sobe o backend em --dev (so API + WebSocket) e o
- * Vite ao lado, com proxy de /api e /ws. Encerra os dois juntos.
+ * `npm run dev` — sobe os dois processos de desenvolvimento juntos:
  *
- *   npm run dev [-- --repo <path>] [--port <n>]
+ *   backend  node --watch server/bin/gitcraque.mjs --dev   (5271, so API + WS)
+ *   frontend vite                                          (5273, proxy de /api e /ws)
+ *
+ * O backend sobe com `--dev` de proposito: quem serve o front-end e o Vite, com
+ * hot reload; e com `--no-open`, porque quem abre o navegador e o Vite. Ctrl+C
+ * derruba os dois.
+ *
+ *   npm run dev                  # repositorio = process.cwd()
+ *   npm run dev -- ~/code/proj   # repositorio explicito
+ *
+ * O Vite e invocado pelo caminho do seu bin, e nao por `npx`: dentro deste
+ * workspace o `.npmrc` referencia ${MOTION_TOKEN}, e qualquer comando `npm`
+ * falha com "Failed to replace env in config" quando a variavel nao existe no
+ * ambiente. Chamar o bin direto nao passa pelo npm e nao depende do token.
  */
 import { spawn } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const passthrough = process.argv.slice(2);
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repo = process.argv.slice(2).find((a) => !a.startsWith("-")) ?? process.cwd();
 
-const children = [];
-let shuttingDown = false;
+const processos = [];
+let encerrando = false;
 
-function run(name, cmd, args, opts = {}) {
-  const child = spawn(cmd, args, { cwd: root, stdio: "inherit", ...opts });
-  children.push({ name, child });
-  child.on("exit", (code, signal) => {
-    if (shuttingDown) return;
-    console.error(`\n[dev] ${name} saiu (code=${code} signal=${signal}) — derrubando o resto.`);
-    shutdown(code ?? 1);
+function subir(nome, comando, args, cwd) {
+  const child = spawn(comando, args, {
+    cwd,
+    stdio: ["ignore", "inherit", "inherit"],
+    env: { ...process.env, FORCE_COLOR: "1" },
+    shell: false,
   });
+  child.on("exit", (code, signal) => {
+    if (encerrando) return;
+    process.stderr.write(`\ndev: ${nome} saiu (${signal ?? code}); derrubando o resto\n`);
+    encerrar(typeof code === "number" ? code : 1);
+  });
+  child.on("error", (err) => {
+    process.stderr.write(`dev: nao consegui subir ${nome}: ${err.message}\n`);
+    encerrar(1);
+  });
+  processos.push({ nome, child });
   return child;
 }
 
-function shutdown(code = 0) {
-  if (shuttingDown) return;
-  shuttingDown = true;
-  for (const { child } of children) {
-    if (!child.killed) child.kill("SIGTERM");
+function encerrar(code = 0) {
+  if (encerrando) return;
+  encerrando = true;
+  for (const { child } of processos) {
+    if (child.exitCode === null) child.kill("SIGTERM");
   }
-  setTimeout(() => {
-    for (const { child } of children) if (!child.killed) child.kill("SIGKILL");
+  // Escalada: quem ignorar o SIGTERM leva SIGKILL, para o terminal nunca ficar preso.
+  const prazo = setTimeout(() => {
+    for (const { child } of processos) {
+      if (child.exitCode === null) child.kill("SIGKILL");
+    }
     process.exit(code);
-  }, 2_000).unref();
+  }, 2_000);
+  prazo.unref();
+  setTimeout(() => {
+    if (processos.every(({ child }) => child.exitCode !== null)) process.exit(code);
+  }, 300).unref();
 }
 
-process.on("SIGINT", () => shutdown(0));
-process.on("SIGTERM", () => shutdown(0));
+console.log("dev: backend em 5271 (--dev) · vite em 5273 com proxy de /api e /ws\n");
 
-console.log("[dev] backend em 5271 (--dev) · vite em 5273 com proxy de /api e /ws\n");
+subir(
+  "backend",
+  process.execPath,
+  [
+    "--watch",
+    path.join(ROOT, "server", "bin", "gitcraque.mjs"),
+    "--dev",
+    "--no-open",
+    "--repo",
+    repo,
+  ],
+  ROOT,
+);
 
-run("server", process.execPath, [
-  "--watch",
-  path.join(root, "server", "bin", "gitcraque.mjs"),
-  "--dev",
-  "--no-open",
-  ...passthrough,
-]);
+subir(
+  "vite",
+  process.execPath,
+  [path.join(ROOT, "node_modules", "vite", "bin", "vite.js")],
+  path.join(ROOT, "web"),
+);
 
-run("vite", "npx", ["vite", "--host", "127.0.0.1"], { cwd: path.join(root, "web") });
+process.on("SIGINT", () => encerrar(0));
+process.on("SIGTERM", () => encerrar(0));
