@@ -18,7 +18,6 @@
     "build": "npm run build --workspace web",
     "start": "node server/bin/gitcraque.mjs",
     "typecheck": "npm run typecheck --workspace web",
-    "lint": "npm run lint --workspace web",
     "test": "npm run test:server && npm run test:graph && npm run test:dnd",
     "test:server": "node --test \"server/test/*.test.mjs\"",
     "test:graph": "node web/src/graph/__tests__/run.mjs",
