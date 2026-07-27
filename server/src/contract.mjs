@@ -111,3 +111,70 @@ export const CHANGE_REASONS = /** @type {const} */ ([
   "rebase-state",
   "manual",
 ]);
+
+/* ------------------------------------------------------------------ *
+ * Acrescimos do backend (aditivos — nada acima foi removido/renomeado)
+ * ------------------------------------------------------------------ */
+
+/** Endereco padrao de escuta. NUNCA 0.0.0.0: o servidor executa git na maquina. */
+export const DEFAULT_HOST = "127.0.0.1";
+
+/** Quantas portas seguintes tentar quando a padrao esta ocupada. */
+export const PORT_FALLBACK_TRIES = 10;
+
+/** Limite do corpo JSON aceito pelo roteador. */
+export const MAX_BODY_BYTES = 4 * 1024 * 1024;
+
+/** Timeout padrao de um comando git e teto de buffer capturado. */
+export const GIT_TIMEOUT_MS = 120_000;
+export const GIT_MAX_BUFFER_BYTES = 64 * 1024 * 1024;
+
+/** Debounce do watcher do git-dir. */
+export const WATCH_DEBOUNCE_MS = 120;
+
+/** Janela extra de supressao do watcher depois que um comando mutante termina. */
+export const WATCH_SUPPRESS_TAIL_MS = 250;
+
+/** Quanto o trampolim espera a UI responder `credentials:provide`. */
+export const ASKPASS_TIMEOUT_MS = 120_000;
+
+/** Nomes das variaveis de ambiente da ponte askpass <-> cofre. */
+export const ENV_ASKPASS_SOCK = "GITCRAQUE_ASKPASS_SOCK";
+export const ENV_ASKPASS_NONCE = "GITCRAQUE_ASKPASS_NONCE";
+
+/** Nomes das variaveis de ambiente do proxy-editor do squash. */
+export const ENV_SQUASH_HASHES = "GITCRAQUE_SQUASH_HASHES";
+export const ENV_SQUASH_MODE = "GITCRAQUE_SQUASH_MODE";
+export const ENV_SQUASH_AUDIT = "GITCRAQUE_SQUASH_AUDIT";
+
+/**
+ * Prioridade dos motivos de `repo:changed` quando o debounce agrupa varios.
+ * Indice menor ganha.
+ */
+export const CHANGE_REASON_PRIORITY = /** @type {const} */ ([
+  "rebase-state",
+  "head",
+  "refs",
+  "index",
+  "config",
+  "worktree",
+  "manual",
+]);
+
+/**
+ * Campos que o backend ACRESCENTA aos payloads de `web/src/types/git.ts`.
+ *
+ * Nada aqui remove ou renomeia campo do contrato: sao extras que o front-end
+ * pode ignorar sem prejuizo. Estao listados para que a proxima pessoa que
+ * mexer nos tipos saiba que eles ja existem no JSON.
+ */
+export const EXTRA_RESPONSE_FIELDS = {
+  /** SquashResult ganha o rastro do plano executado. */
+  "SquashResult.base": "commit-base usado no `git rebase -i`, ou a string --root",
+  "SquashResult.mode": '"squash" ou "fixup"',
+  "SquashResult.commits": "hashes completos ja em ordem topologica (mais antigo primeiro)",
+  /** Worktree ganha o motivo da poda, irmao de `lockReason`. */
+  "Worktree.pruneReason": "motivo que o git deu na flag `prunable`",
+  /** CredentialEntry ja preve `masked`; o backend sempre o preenche. */
+  "CredentialsPayload.entries[].masked": "ultimos 4 caracteres do token, o resto em asterisco",
+};
