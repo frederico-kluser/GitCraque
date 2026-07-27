@@ -24,6 +24,7 @@ import {
   squash,
 } from "../src/git/squash.mjs";
 import { ENV_SQUASH_AUDIT, ENV_SQUASH_HASHES, ENV_SQUASH_MODE } from "../src/contract.mjs";
+import { detectAutostash } from "../src/git/ops.mjs";
 import { git, makeFixtureRepo } from "./helpers/repo.mjs";
 
 /* ------------------------------------------------------------------ *
@@ -361,6 +362,109 @@ test("menos de dois commits e recusado", async () => {
     process.chdir(antes);
     fixture.cleanup();
   }
+});
+
+/* ------------------------------------------------------------------ *
+ * Arvore suja — o estado NORMAL de quem usa um cliente git graficamente
+ * ------------------------------------------------------------------ */
+
+test("squash numa ARVORE SUJA: colapsa os commits E devolve as alteracoes", async () => {
+  const fixture = makeFixtureRepo("gitcraque-sujo-");
+  const antes = process.cwd();
+  try {
+    process.chdir(fixture.root);
+    git(fixture.root, "checkout", "-q", "squash-me");
+
+    // Ninguem limpa a working tree antes de clicar em "squash": um arquivo
+    // rastreado modificado e um arquivo novo sem rastreio.
+    const readme = path.join(fixture.root, "README.md");
+    const sujo = "# fixture\n\nalteracao pendente que NAO pode se perder\n";
+    fs.writeFileSync(readme, sujo);
+    fs.writeFileSync(path.join(fixture.root, "rascunho.txt"), "arquivo novo, sem rastreio\n");
+
+    const sujoAntes = git(fixture.root, "status", "--porcelain");
+    // o helper `git()` faz trim, entao o ^ nao ancora no espaco do porcelain
+    assert.match(sujoAntes, /M README\.md/);
+    assert.match(sujoAntes, /\?\? rascunho\.txt/);
+    const commitsAntes = Number(git(fixture.root, "rev-list", "--count", "HEAD"));
+
+    const resultado = await squash({
+      commits: [fixture.hashes.s1, fixture.hashes.s2, fixture.hashes.s3],
+      message: "feat: tudo junto, com a arvore suja",
+    });
+
+    // 1. o squash aconteceu
+    assert.equal(resultado.ok, true, resultado.error ?? resultado.stderr);
+    assert.equal(resultado.pending, null);
+    assert.equal(
+      Number(git(fixture.root, "rev-list", "--count", "HEAD")),
+      commitsAntes - 2,
+      "os 3 commits tinham de virar 1",
+    );
+    assert.equal(git(fixture.root, "log", "-1", "--format=%s"), "feat: tudo junto, com a arvore suja");
+    assert.deepEqual(
+      resultado.plan.map((l) => l.action),
+      ["pick", "squash", "squash"],
+    );
+
+    // 2. o backend avisa que mexeu no stash
+    assert.equal(resultado.autostashed, true, "a UI precisa saber que houve autostash");
+
+    // 3. e as alteracoes pendentes voltaram INTACTAS
+    assert.equal(fs.readFileSync(readme, "utf8"), sujo, "a modificacao pendente tem de voltar igual");
+    assert.equal(
+      fs.readFileSync(path.join(fixture.root, "rascunho.txt"), "utf8"),
+      "arquivo novo, sem rastreio\n",
+      "o arquivo nao rastreado nao pode sumir",
+    );
+    const sujoDepois = git(fixture.root, "status", "--porcelain");
+    assert.match(sujoDepois, /M README\.md/);
+    assert.match(sujoDepois, /\?\? rascunho\.txt/);
+
+    // 4. nada ficou preso no stash
+    assert.equal(git(fixture.root, "stash", "list"), "", "o autostash tem de ter sido devolvido");
+  } finally {
+    process.chdir(antes);
+    fixture.cleanup();
+  }
+});
+
+test("arvore limpa nao marca autostashed", async () => {
+  const fixture = makeFixtureRepo("gitcraque-limpo-");
+  const antes = process.cwd();
+  try {
+    process.chdir(fixture.root);
+    git(fixture.root, "checkout", "-q", "squash-me");
+    const resultado = await squash({
+      commits: [fixture.hashes.s1, fixture.hashes.s2],
+      message: "chore: arvore limpa",
+    });
+    assert.equal(resultado.ok, true, resultado.error);
+    assert.equal(resultado.autostashed, false, "sem nada pendente, o git nao cria stash");
+  } finally {
+    process.chdir(antes);
+    fixture.cleanup();
+  }
+});
+
+test("detectAutostash le os DOIS streams do git", () => {
+  // "Created autostash" sai no stdout; o resultado do pop sai no stderr.
+  assert.deepEqual(
+    detectAutostash({ stdout: "Created autostash: bf845e2\n", stderr: "Applied autostash.\n" }),
+    { autostashed: true, popConflict: false },
+  );
+  assert.deepEqual(
+    detectAutostash({
+      stdout: "Created autostash: bf845e2\n",
+      stderr: "Applying autostash resulted in conflicts.\nYour changes are safe in the stash.\n",
+    }),
+    { autostashed: true, popConflict: true },
+  );
+  assert.deepEqual(detectAutostash({ stdout: "", stderr: "Successfully rebased.\n" }), {
+    autostashed: false,
+    popConflict: false,
+  });
+  assert.deepEqual(detectAutostash({}), { autostashed: false, popConflict: false });
 });
 
 test("hash abreviado e aceito e resolvido", async () => {

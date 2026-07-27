@@ -25,7 +25,7 @@ import {
   ENV_SQUASH_MODE,
 } from "../contract.mjs";
 import { execGit, readGit, readGitLine, withMutationLock } from "./exec.mjs";
-import { assertRef, withPendingState } from "./ops.mjs";
+import { assertRef, detectAutostash, withAutostashState } from "./ops.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 /** Caminho absoluto do script que o GIT vai executar. */
@@ -218,7 +218,9 @@ export async function squash({ commits, message, fixup, base } = {}) {
 
   try {
     const result = await withMutationLock(async () => {
-      const rebased = await execGit(["rebase", "-i", ...baseArgs], {
+      // `--autostash` NAO e conveniencia: sem ele, um squash so funciona com a
+      // working tree limpa, que nao e o estado de ninguem usando uma GUI.
+      const rebased = await execGit(["rebase", "-i", "--autostash", ...baseArgs], {
         cwd,
         env: {
           GIT_SEQUENCE_EDITOR: sequenceEditorCommand(),
@@ -230,6 +232,11 @@ export async function squash({ commits, message, fixup, base } = {}) {
         },
       });
       if (!rebased.ok) return rebased;
+
+      // O pop do autostash conflitou: o git ainda assim saiu com 0. Amendar a
+      // mensagem agora seria impossivel (ha caminhos unmerged no index) e
+      // esconderia o problema de verdade — o conflito na arvore do usuario.
+      if (detectAutostash(rebased).popConflict) return rebased;
       if (!message) return rebased;
 
       const amended = await execGit(["commit", "--amend", "-m", message], { cwd });
@@ -247,11 +254,11 @@ export async function squash({ commits, message, fixup, base } = {}) {
     const auditData = await readAudit(auditPath);
     const originalTodo = auditData.originalTodo ?? "";
     const rewrittenTodo = auditData.rewrittenTodo ?? "";
-    const withPending = await withPendingState(result);
+    const finalizado = await withAutostashState(result);
 
     /** @type {import("../types.mjs").SquashResult} */
     const payload = {
-      ...withPending,
+      ...finalizado,
       plan: rewrittenTodo ? parseTodo(rewrittenTodo, originalTodo) : [],
       originalTodo,
       rewrittenTodo,

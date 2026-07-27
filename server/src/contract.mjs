@@ -173,8 +173,26 @@ export const EXTRA_RESPONSE_FIELDS = {
   "SquashResult.base": "commit-base usado no `git rebase -i`, ou a string --root",
   "SquashResult.mode": '"squash" ou "fixup"',
   "SquashResult.commits": "hashes completos ja em ordem topologica (mais antigo primeiro)",
+  /**
+   * true quando o git guardou alteracoes pendentes antes de reescrever o
+   * historico e as devolveu depois. Sai em toda resposta de comando que usa
+   * `--autostash` (POST /ops/squash e POST /ops/rebase).
+   */
+  "GitCommandResult.autostashed": "houve `git stash` automatico durante a operacao",
+  "SquashResult.autostashed": "idem, no resultado do squash",
   /** Worktree ganha o motivo da poda, irmao de `lockReason`. */
   "Worktree.pruneReason": "motivo que o git deu na flag `prunable`",
   /** CredentialEntry ja preve `masked`; o backend sempre o preenche. */
   "CredentialsPayload.entries[].masked": "ultimos 4 caracteres do token, o resto em asterisco",
 };
+
+/**
+ * Comandos que reescrevem historico rodam com `--autostash` por padrao.
+ *
+ * Numa GUI a working tree quase nunca esta limpa — arquivo modificado e
+ * arquivo nao rastreado sao o estado normal de quem trabalha. Sem isso, o
+ * `git rebase` recusa com "cannot rebase: You have unstaged changes" e o
+ * usuario e obrigado a limpar a arvore na mao antes de clicar em "squash".
+ * `POST /ops/rebase` aceita `autostash: false` para voltar ao git cru.
+ */
+export const AUTOSTASH_BY_DEFAULT = true;

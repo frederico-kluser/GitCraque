@@ -77,6 +77,61 @@ export function isConflict(result) {
   );
 }
 
+/* ------------------------------------------------------------------ *
+ * Autostash — a arvore suja e o estado NORMAL de quem usa uma GUI
+ * ------------------------------------------------------------------ *
+ * Ninguem limpa a working tree antes de clicar em "squash". Sem
+ * `--autostash`, todo comando que reescreve historico morre com "cannot
+ * rebase: You have unstaged changes" no uso real do produto.
+ *
+ * O detalhe que exige cuidado: o git anuncia o autostash no STDOUT
+ * ("Created autostash: <sha>") e o resultado do pop no STDERR ("Applied
+ * autostash." / "Applying autostash resulted in conflicts."). E, no caso do
+ * pop conflitado, o git SAI COM 0 — deixando marcador de conflito no arquivo
+ * do usuario enquanto diz "Successfully rebased". Reportar isso como sucesso
+ * seria o pior erro possivel deste backend.
+ */
+
+/** Marcas que o git deixa nas duas saidas quando ha autostash. */
+const AUTOSTASH_CREATED = /Created autostash:/i;
+const AUTOSTASH_POP_CONFLICT = /Applying autostash resulted in conflicts/i;
+
+/**
+ * @param {import("../types.mjs").GitCommandResult} result
+ * @returns {{autostashed: boolean, popConflict: boolean}}
+ */
+export function detectAutostash(result) {
+  // Os dois streams juntos: a mensagem de criacao e a do pop vao em canais
+  // diferentes, e olhar so um deles perde metade da informacao.
+  const saida = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+  return {
+    autostashed: AUTOSTASH_CREATED.test(saida),
+    popConflict: AUTOSTASH_POP_CONFLICT.test(saida),
+  };
+}
+
+/**
+ * Finaliza o resultado de um comando que reescreve historico: marca
+ * `autostashed` e transforma o pop conflitado em falha explicita com `pending`.
+ *
+ * @param {import("../types.mjs").GitCommandResult} result
+ */
+export async function withAutostashState(result) {
+  const { autostashed, popConflict } = detectAutostash(result);
+  const enriquecido = await withPendingState({ ...result, autostashed });
+  if (!popConflict) return enriquecido;
+
+  return {
+    ...enriquecido,
+    ok: false,
+    error:
+      "o autostash voltou com conflito: o historico foi reescrito, mas as suas " +
+      'alteracoes pendentes continuam guardadas em "git stash list"',
+    // Sem rebase-merge/ no disco, o pending sai dos arquivos em conflito.
+    pending: enriquecido.pending ?? { kind: "merge", conflicts: [] },
+  };
+}
+
 /**
  * Um passo DENTRO de uma transacao: nao pega o lock (a transacao ja o tem).
  * Pegar o lock aqui dentro daria deadlock — a fila e serial, nao reentrante.
@@ -93,6 +148,12 @@ const tx = (fn) => withMutationLock(fn);
 async function run(args, opts = {}) {
   const result = await tx(() => step(args, opts));
   return withPendingState(result);
+}
+
+/** Igual a `run`, para comandos que reescrevem historico e usam `--autostash`. */
+async function runRewrite(args, opts = {}) {
+  const result = await tx(() => step(args, opts));
+  return withAutostashState(result);
 }
 
 /* ------------------------------------------------------------------ *
@@ -207,12 +268,17 @@ export async function merge({ source, into, noFf, squash, message } = {}) {
 /**
  * POST /api/ops/rebase — replay de `source` em cima de `onto`.
  * `upstream` (opcional) ativa a forma de tres pontos `--onto <onto> <upstream> <source>`.
+ *
+ * `autostash` e opcional no contrato e o DEFAULT aqui e ligado: numa GUI a
+ * working tree quase nunca esta limpa, e sem isso o rebase morre com "cannot
+ * rebase: You have unstaged changes". Quem quiser o comportamento cru do git
+ * ainda pode mandar `autostash: false` explicitamente.
  */
 export async function rebase({ source, onto, autostash, upstream, interactive } = {}) {
   assertRef(source, "source");
   assertRef(onto, "onto");
   const args = ["rebase"];
-  if (autostash) args.push("--autostash");
+  if (autostash !== false) args.push("--autostash");
   if (interactive) args.push("-i");
   if (upstream) {
     assertRef(upstream, "upstream");
@@ -220,7 +286,7 @@ export async function rebase({ source, onto, autostash, upstream, interactive } 
   } else {
     args.push(onto, source);
   }
-  return run(args);
+  return runRewrite(args);
 }
 
 /** POST /api/ops/reset */
