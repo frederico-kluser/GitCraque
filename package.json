@@ -1,0 +1,26 @@
+{
+  "name": "gitcraque",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "GUI avancada para Git — backend Node.js puro orquestrando git via child_process + SPA React com grafo SVG proprio",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "npm run dev --workspace server",
+    "dev:web": "npm run dev --workspace web",
+    "build": "npm run build --workspace web",
+    "start": "node server/bin/gitcraque.mjs",
+    "typecheck": "npm run typecheck --workspace web",
+    "lint": "npm run lint --workspace web"
+  },
+  "bin": {
+    "gitcraque": "server/bin/gitcraque.mjs"
+  }
+}
