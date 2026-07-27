@@ -124,6 +124,14 @@ desalinha.
 
 O resultado devolve `plan`, `originalTodo` e `rewrittenTodo` para auditoria.
 
+**`--autostash` e obrigatorio aqui.** Numa GUI a arvore de trabalho quase nunca
+esta limpa: arquivo modificado e arquivo nao rastreado sao o estado normal de
+quem trabalha. Sem autostash, o `git rebase` recusa com *"cannot rebase: You
+have unstaged changes"* e o usuario e obrigado a limpar a arvore na mao antes de
+clicar em "squash" — o que nenhum cliente grafico decente exige. O mesmo vale
+para o rebase de ramo. Quando o `stash pop` do fim conflita, isso **nao** e
+silencioso: a resposta volta com `ok: false` e `pending` preenchido.
+
 ### Trampolim de askpass
 
 `askpass.mjs` roda como processo **filho do git**, nao do servidor. Ele nao tem
