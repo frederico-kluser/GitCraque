@@ -60,9 +60,39 @@ export interface GraphEdge {
   /** linha/lane do pai (base do desenho, maior row) */
   toRow: number;
   toLane: number;
+  /**
+   * ACRESCENTADO pela frente do grafo (aditivo — nada foi removido nem renomeado).
+   *
+   * Lane pela qual a aresta TRANSITA entre os dois extremos. E a lane que ficou
+   * reservada durante todo o intervalo [fromRow, toRow], portanto comprovadamente
+   * sem nenhum commit em cima. A geometria curva de `fromLane` para ela logo
+   * abaixo do filho, corre reta no meio, e curva dela para `toLane` logo acima do
+   * pai — e por isso nenhuma aresta cruza o <circle> de um commit alheio.
+   *
+   * Igual a `fromLane` nas arestas de primeiro pai; e a lane nova alocada a
+   * direita nas arestas de merge.
+   */
+  throughLane: number;
   kind: EdgeKind;
   /** cor herdada da lane que "possui" a aresta */
   color: number;
+}
+
+/**
+ * ACRESCENTADO pela frente do grafo (aditivo).
+ *
+ * Indice `row → GraphEdge[]`: as arestas que ATRAVESSAM cada linha
+ * (`fromRow <= row <= toRow`). Sem ele a virtualizacao teria de varrer todas as
+ * arestas do repositorio para desenhar uma unica faixa visivel.
+ *
+ * A implementacao e por blocos de linhas, entao o custo de montagem nao explode
+ * quando uma aresta atravessa milhares de linhas.
+ */
+export interface GraphRowIndex {
+  /** arestas que atravessam esta linha, em ordem estavel. */
+  forRow(row: number): GraphEdge[];
+  /** arestas que atravessam qualquer linha da faixa [startRow, endRow]. */
+  forRange(startRow: number, endRow: number): GraphEdge[];
 }
 
 export interface GraphLayout {
@@ -74,6 +104,8 @@ export interface GraphLayout {
   laneCount: number;
   /** ms gastos no calculo, exibido no rodape de diagnostico */
   elapsedMs: number;
+  /** ACRESCENTADO pela frente do grafo: indice de arestas por linha. */
+  rowEdges: GraphRowIndex;
 }
 
 export interface GraphMetrics {

@@ -1,0 +1,128 @@
+/**
+ * PROVA DA VIRTUALIZACAO — conta nos de DOM de verdade.
+ *
+ * Renderiza a `GraphView` REAL com `react-dom/server` (que executa o mesmo
+ * caminho de render do navegador, so que sem layout) e conta as tags emitidas.
+ * O que se prova: o numero de nos NAO depende do tamanho do repositorio — 200 ou
+ * 20 000 commits produzem a mesma janela.
+ *
+ * Precisa de bundling (JSX + alias `@/`), entao roda pelo `run.mjs`, nao pelo
+ * `node --test` direto. Por isso o nome nao termina em `.test.ts`.
+ */
+import assert from "node:assert/strict";
+import test from "node:test";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { GraphView } from "../GraphView.tsx";
+import { computeGraphLayout } from "../layout.ts";
+import { syntheticRepo } from "./fixtures.ts";
+import type { RawCommit } from "@/types/git";
+
+const countTags = (html: string, tag: string) =>
+  html.split(`<${tag}`).length - 1;
+
+/** Todo elemento aberto no markup — a contagem de nos do DOM. */
+const countElements = (html: string) => (html.match(/<[a-zA-Z][^>]*>/g) ?? []).length;
+
+function render(commits: RawCommit[]): string {
+  return renderToStaticMarkup(
+    createElement(GraphView, {
+      commits,
+      refs: null,
+      selected: commits.length > 0 ? [commits[0].hash] : [],
+      primary: commits.length > 0 ? commits[0].hash : null,
+      onSelect: () => {},
+    }),
+  );
+}
+
+test("o DOM montado nao cresce com o repositorio", () => {
+  const sizes = [200, 2000, 20000];
+  const measured = sizes.map((size) => {
+    const commits = syntheticRepo(size);
+    const html = render(commits);
+    return {
+      size,
+      elements: countElements(html),
+      rows: countTags(html, 'div role="row"'),
+      svgs: countTags(html, "svg"),
+      paths: countTags(html, "path"),
+      circles: countTags(html, "circle"),
+    };
+  });
+
+  console.log("\n      commits | nos de DOM | linhas | <svg> | <path> | <circle>");
+  for (const m of measured) {
+    console.log(
+      `      ${String(m.size).padStart(7)} | ${String(m.elements).padStart(10)} |` +
+        ` ${String(m.rows).padStart(6)} | ${String(m.svgs).padStart(5)} |` +
+        ` ${String(m.paths).padStart(6)} | ${String(m.circles).padStart(7)}`,
+    );
+  }
+
+  const big = measured[measured.length - 1];
+  const small = measured[0];
+
+  assert.ok(big.rows < 60, `montou ${big.rows} linhas para 20 000 commits`);
+  assert.ok(big.elements < 1200, `montou ${big.elements} nos de DOM`);
+  assert.equal(
+    big.rows,
+    small.rows,
+    "a janela montada e a mesma para 200 e para 20 000 commits",
+  );
+  assert.ok(
+    Math.abs(big.elements - small.elements) / small.elements < 0.15,
+    `contagem de nos variou demais: ${small.elements} -> ${big.elements}`,
+  );
+
+  /* o contrafactual: um <svg> unico gigante precisaria de um no por aresta e um
+     por commit — tres ordens de grandeza a mais. */
+  const layout = computeGraphLayout(syntheticRepo(20000));
+  const monolito = layout.edges.length + layout.nodes.length;
+  console.log(
+    `\n      um <svg> unico precisaria de ${monolito} nos` +
+      ` (${(monolito / big.elements).toFixed(0)}x o que a virtualizacao monta)`,
+  );
+  assert.ok(monolito > big.elements * 30);
+});
+
+test("cada linha montada desenha so as arestas que a cruzam", () => {
+  const commits = syntheticRepo(20000);
+  const layout = computeGraphLayout(commits);
+  const html = render(commits);
+
+  const rows = countTags(html, 'div role="row"') - 1; // -1: o cabecalho
+  const paths = countTags(html, "path");
+
+  let expected = 0;
+  for (let row = 0; row < rows; row++) expected += layout.rowEdges.forRow(row).length;
+
+  assert.equal(paths, expected, "um <path> por aresta que cruza a janela");
+  assert.ok(
+    paths < layout.edges.length / 100,
+    `${paths} paths para ${layout.edges.length} arestas no repositorio`,
+  );
+  console.log(
+    `\n      ${paths} <path> montados para ${layout.edges.length} arestas do repositorio` +
+      ` (${((paths / layout.edges.length) * 100).toFixed(2)}%)`,
+  );
+});
+
+test("estado vazio e de carregamento montam poucos nos", () => {
+  const empty = render([]);
+  assert.ok(countElements(empty) < 40, `estado vazio com ${countElements(empty)} nos`);
+  assert.match(empty, /Nenhum commit para desenhar/);
+
+  const loading = renderToStaticMarkup(
+    createElement(GraphView, {
+      commits: [],
+      refs: null,
+      selected: [],
+      primary: null,
+      loading: true,
+      onSelect: () => {},
+    }),
+  );
+  assert.match(loading, /aria-busy/);
+  assert.ok(countElements(loading) < 220, `carregamento com ${countElements(loading)} nos`);
+});
