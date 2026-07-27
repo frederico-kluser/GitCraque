@@ -8,6 +8,17 @@ import "@/styles/theme.css";
 const root = document.getElementById("root");
 if (!root) throw new Error("#root nao encontrado");
 
+/**
+ * `?mock=1` liga o backend falso de desenvolvimento (`lib/__mock__`), que
+ * intercepta fetch e WebSocket para a casca poder ser inspecionada sem o
+ * servidor. Desligado por padrao: o import so acontece com a flag na url, entao
+ * em producao o modulo nem entra no bundle principal.
+ */
+if (new URLSearchParams(location.search).has("mock")) {
+  const { installMock } = await import("@/lib/__mock__/install");
+  installMock();
+}
+
 createRoot(root).render(
   <StrictMode>
     {/* Montado UMA vez na raiz: sem ele toda secao Motion UI cai nos defaults. */}
