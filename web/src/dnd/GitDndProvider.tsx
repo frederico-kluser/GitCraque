@@ -1,9 +1,370 @@
 /**
- * STUB — o DndContext do @dnd-kit com sensores, overlay e onDragEnd.
+ * O contexto de drag-and-drop do GitCraque — @dnd-kit/core, nada de eventos de
+ * drag do HTML5.
+ *
+ * Tres responsabilidades, e so estas:
+ *
+ *  1. Sensores. `PointerSensor` com `distance: 6` para que um clique simples num
+ *     commit continue sendo selecao (o grafo depende disso) e `KeyboardSensor`
+ *     para arrastar sem mouse.
+ *  2. Feedback de validade em tempo real. A cada `onDragOver` a intencao e
+ *     resolvida contra o alvo sob o cursor e publicada por contexto; os alvos
+ *     leem com `useDropFeedback(id)` e se pintam de aceita/recusa.
+ *  3. `onDragEnd` NAO EXECUTA NADA: resolve a intencao e entrega em
+ *     `props.onIntent`. Quem executa e o dialogo, depois da confirmacao.
+ *
+ * Colisao: `pointerWithin` com fallback para `rectIntersection`. `closestCenter`
+ * e ruim aqui porque os alvos (chips de ramo) sao pequenos e vizinhos — o
+ * "centro mais proximo" acerta o chip errado o tempo todo.
  */
-import { DndContext } from "@dnd-kit/core";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MeasuringStrategy,
+  PointerSensor,
+  pointerWithin,
+  rectIntersection,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import type {
+  Announcements,
+  CollisionDetection,
+  DragEndEvent,
+  DragOverEvent,
+  DragStartEvent,
+  ScreenReaderInstructions,
+} from "@dnd-kit/core";
+import { motion } from "motion/react";
+import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import type { ReactNode } from "react";
+import {
+  useMotionUITheme,
+  useMotionUITransition,
+} from "@/components/motion-ui/ui-theme";
+import { cn, short, truncate } from "@/lib/utils";
+import { getState, toast } from "@/state/store";
+import type {
+  DragEntityType,
+  DragIntent,
+  DragPayload,
+  DropPayload,
+  DropZoneType,
+} from "@/types/git";
 import type { GitDndProviderProps } from "@/types/modules";
+import { encodeId } from "./bindings";
+import { resolveDragIntent } from "./intents";
 
-export function GitDndProvider({ children }: GitDndProviderProps) {
-  return <DndContext>{children}</DndContext>;
+/* ------------------------------------------------------------------ */
+/* Contexto de feedback                                                */
+/* ------------------------------------------------------------------ */
+
+/** Como um alvo deve se pintar. Serve direto como `data-drop={state}`. */
+export type DropFeedbackState = "idle" | "dragging" | "accepts" | "rejects";
+
+export interface DropFeedback {
+  /** ha um arrasto em curso no app, em qualquer alvo */
+  dragging: boolean;
+  /** o ponteiro (ou o cursor do teclado) esta sobre ESTE alvo */
+  isOver: boolean;
+  /** o motor aceita a combinacao arrastado -> este alvo */
+  accepts: boolean;
+  /** o motor recusa a combinacao arrastado -> este alvo */
+  rejects: boolean;
+  /** motivo legivel da recusa, quando `rejects` */
+  reason?: string;
+  /** a intencao resolvida enquanto o ponteiro esta sobre este alvo */
+  intent: DragIntent | null;
+  /** o que esta sendo arrastado agora, em qualquer alvo */
+  source: DragPayload | null;
+  /** resumo dos quatro campos acima, pronto para atributo/classe */
+  state: DropFeedbackState;
 }
+
+interface FeedbackValue {
+  source: DragPayload | null;
+  overId: string | null;
+  intent: DragIntent | null;
+}
+
+const EMPTY: FeedbackValue = { source: null, overId: null, intent: null };
+
+const FeedbackContext = createContext<FeedbackValue>(EMPTY);
+
+/**
+ * O que este alvo deve mostrar durante o arrasto.
+ *
+ * @param target id do @dnd-kit (`${type}:${key}`, o mesmo que `encodeId`
+ *   devolve) ou o proprio `DropPayload` que voce passou para
+ *   `useDroppableTarget`.
+ */
+export function useDropFeedback(target: string | DropPayload): DropFeedback {
+  const ctx = useContext(FeedbackContext);
+  const id = typeof target === "string" ? target : encodeId(target.type, target.key);
+
+  return useMemo(() => {
+    const dragging = ctx.source !== null;
+    const isOver = dragging && ctx.overId === id;
+    const accepts = isOver && ctx.intent?.allowed === true;
+    const rejects = isOver && ctx.intent?.allowed === false;
+    return {
+      dragging,
+      isOver,
+      accepts,
+      rejects,
+      reason: rejects ? ctx.intent?.reason : undefined,
+      intent: isOver ? ctx.intent : null,
+      source: ctx.source,
+      state: accepts ? "accepts" : rejects ? "rejects" : dragging ? "dragging" : "idle",
+    };
+  }, [ctx, id]);
+}
+
+/** O payload sendo arrastado agora, ou null. Util para esmaecer o resto da UI. */
+export function useActiveDrag(): DragPayload | null {
+  return useContext(FeedbackContext).source;
+}
+
+/* ------------------------------------------------------------------ */
+/* Leitura defensiva do `data` do @dnd-kit                             */
+/* ------------------------------------------------------------------ */
+
+function asDragPayload(data: unknown): DragPayload | null {
+  if (!data || typeof data !== "object") return null;
+  const p = data as Partial<DragPayload>;
+  if (typeof p.type !== "string" || typeof p.key !== "string") return null;
+  return typeof p.label === "string" ? (p as DragPayload) : null;
+}
+
+function asDropPayload(data: unknown): DropPayload | null {
+  if (!data || typeof data !== "object") return null;
+  const p = data as Partial<DropPayload>;
+  if (typeof p.type !== "string" || typeof p.key !== "string") return null;
+  return typeof p.label === "string" ? (p as DropPayload) : null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Texto dos anuncios (leitor de tela) — portugues                     */
+/* ------------------------------------------------------------------ */
+
+const ENTITY_ARTICLE: Record<DragEntityType, string> = {
+  commit: "o commit",
+  branch: "o ramo",
+  remoteBranch: "o ramo remoto",
+  tag: "a tag",
+  stash: "o stash",
+};
+
+const ZONE_ARTICLE: Record<DropZoneType, string> = {
+  branch: "o ramo",
+  remoteBranch: "o ramo remoto",
+  commit: "o commit",
+  tag: "a tag",
+  trash: "a lixeira",
+};
+
+const describeDrag = (p: DragPayload) =>
+  `${ENTITY_ARTICLE[p.type] ?? "o item"} ${p.label}`;
+
+const describeDrop = (p: DropPayload) =>
+  `${ZONE_ARTICLE[p.type] ?? "o alvo"} ${p.label}`;
+
+const screenReaderInstructions: ScreenReaderInstructions = {
+  draggable:
+    "Para arrastar com o teclado, pressione espaco ou Enter com o item focado. " +
+    "Use as setas para percorrer os alvos; a cada alvo o motor anuncia se a operacao e aceita. " +
+    "Pressione espaco ou Enter de novo para soltar, ou Escape para cancelar. " +
+    "Soltar nao executa nada: um dialogo pede a confirmacao.",
+};
+
+/* ------------------------------------------------------------------ */
+/* Colisao                                                             */
+/* ------------------------------------------------------------------ */
+
+/** `pointerWithin` primeiro (preciso em alvos pequenos e vizinhos); quando o
+ *  ponteiro nao esta dentro de nenhum — arrasto por teclado, por exemplo —
+ *  cai para a intersecao de retangulos. */
+const collisionDetection: CollisionDetection = (args) => {
+  const withinPointer = pointerWithin(args);
+  return withinPointer.length > 0 ? withinPointer : rectIntersection(args);
+};
+
+/* ------------------------------------------------------------------ */
+/* O provider                                                          */
+/* ------------------------------------------------------------------ */
+
+export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
+  const [feedback, setFeedback] = useState<FeedbackValue>(EMPTY);
+
+  const sensors = useSensors(
+    // 6px de folga: um clique simples num commit continua sendo selecao.
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  /** Le o estado do repositorio na hora do evento — nunca uma closure velha. */
+  const resolve = useCallback((source: DragPayload, target: DropPayload) => {
+    const s = getState();
+    return resolveDragIntent(source, target, {
+      refs: s.refs,
+      headBranch: s.repo?.head.branch ?? s.refs?.head.branch ?? null,
+    });
+  }, []);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    setFeedback({ source: asDragPayload(event.active.data.current), overId: null, intent: null });
+  }, []);
+
+  const handleDragOver = useCallback(
+    (event: DragOverEvent) => {
+      const source = asDragPayload(event.active.data.current);
+      if (!source) return;
+      const target = event.over ? asDropPayload(event.over.data.current) : null;
+      if (!target || !event.over) {
+        setFeedback((f) => (f.overId === null ? f : { ...f, overId: null, intent: null }));
+        return;
+      }
+      setFeedback({ source, overId: String(event.over.id), intent: resolve(source, target) });
+    },
+    [resolve],
+  );
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      setFeedback(EMPTY);
+      const source = asDragPayload(event.active.data.current);
+      const target = event.over ? asDropPayload(event.over.data.current) : null;
+      if (!source || !target) return;
+
+      const intent = resolve(source, target);
+      if (!intent.allowed) {
+        // Recusa nao abre dialogo: so explica por que nao da.
+        toast("warning", intent.title, intent.reason);
+        return;
+      }
+      // Fim da linha do motor. A execucao e do dialogo, apos confirmacao.
+      onIntent(intent);
+    },
+    [onIntent, resolve],
+  );
+
+  const handleDragCancel = useCallback(() => setFeedback(EMPTY), []);
+
+  const announcements: Announcements = useMemo(
+    () => ({
+      onDragStart({ active }) {
+        const source = asDragPayload(active.data.current);
+        return source ? `Arrastando ${describeDrag(source)}.` : undefined;
+      },
+      onDragOver({ active, over }) {
+        const source = asDragPayload(active.data.current);
+        if (!source) return undefined;
+        const target = over ? asDropPayload(over.data.current) : null;
+        if (!target) return `${describeDrag(source)} fora de qualquer alvo.`;
+        const intent = resolve(source, target);
+        return intent.allowed
+          ? `Sobre ${describeDrop(target)}. Aceita: ${intent.title}.`
+          : `Sobre ${describeDrop(target)}. Recusado: ${intent.reason ?? intent.description}`;
+      },
+      onDragEnd({ active, over }) {
+        const source = asDragPayload(active.data.current);
+        if (!source) return undefined;
+        const target = over ? asDropPayload(over.data.current) : null;
+        if (!target) return `${describeDrag(source)} solto fora de um alvo. Nada foi feito.`;
+        const intent = resolve(source, target);
+        return intent.allowed
+          ? `${describeDrag(source)} solto sobre ${describeDrop(target)}. Confirme a operacao no dialogo.`
+          : `Operacao recusada: ${intent.reason ?? intent.description}`;
+      },
+      onDragCancel({ active }) {
+        const source = asDragPayload(active.data.current);
+        return source ? `Arrasto de ${describeDrag(source)} cancelado.` : "Arrasto cancelado.";
+      },
+    }),
+    [resolve],
+  );
+
+  const overlayTone: DropFeedbackState = feedback.overId
+    ? feedback.intent?.allowed
+      ? "accepts"
+      : "rejects"
+    : "dragging";
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={collisionDetection}
+      // A View Tree e virtualizada e rola durante o arrasto: medir so uma vez
+      // deixaria os retangulos dos alvos desatualizados.
+      measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
+      accessibility={{ announcements, screenReaderInstructions }}
+      onDragStart={handleDragStart}
+      onDragOver={handleDragOver}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
+      <FeedbackContext.Provider value={feedback}>
+        {children}
+        <DragOverlay dropAnimation={null}>
+          {feedback.source ? <DragChip payload={feedback.source} tone={overlayTone} /> : null}
+        </DragOverlay>
+      </FeedbackContext.Provider>
+    </DndContext>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* O que aparece sob o cursor                                          */
+/* ------------------------------------------------------------------ */
+
+const TONE_CLASS: Record<DropFeedbackState, string> = {
+  idle: "border-border bg-card text-card-foreground",
+  dragging: "border-border bg-card text-card-foreground",
+  accepts: "border-success bg-card text-card-foreground ring-1 ring-success",
+  rejects: "border-destructive bg-card text-destructive ring-1 ring-destructive",
+};
+
+function DragChip({ payload, tone }: { payload: DragPayload; tone: DropFeedbackState }) {
+  const snap = useMotionUITransition("snap");
+  const { motionMode } = useMotionUITheme();
+  const full = motionMode === "full";
+  const still = motionMode === "off";
+
+  const isCommit = payload.type === "commit";
+
+  return (
+    <motion.div
+      role="presentation"
+      initial={still ? false : full ? { opacity: 0, scale: 0.92 } : { opacity: 0 }}
+      animate={full ? { opacity: 1, scale: 1 } : { opacity: 1 }}
+      transition={{ ...snap }}
+      className={cn(
+        "pointer-events-none flex max-w-sm items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs shadow-lg",
+        TONE_CLASS[tone],
+      )}
+    >
+      <span className="text-muted-foreground">{ENTITY_ICON[payload.type]}</span>
+      {isCommit ? (
+        <>
+          <code className="font-mono text-[0.7rem] text-foreground">{short(payload.key)}</code>
+          {payload.detail ? (
+            <span className="truncate text-muted-foreground">{truncate(payload.detail, 48)}</span>
+          ) : null}
+        </>
+      ) : (
+        <span className="truncate font-medium">{payload.label}</span>
+      )}
+      {tone === "rejects" ? <span aria-hidden="true">nao</span> : null}
+    </motion.div>
+  );
+}
+
+/** Glifos de texto: o chip do overlay e efemero e nao justifica um icone SVG. */
+const ENTITY_ICON: Record<DragEntityType, ReactNode> = {
+  commit: "●",
+  branch: "⎇",
+  remoteBranch: "☁",
+  tag: "⚑",
+  stash: "≣",
+};
