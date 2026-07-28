@@ -36,6 +36,17 @@ command console with noise it never asked for.
 the non-locking `step()` (`server/src/git/ops.mjs:137-146`). Calling
 `execGit({mutating:true})` from inside a transaction deadlocks the queue.
 
+**The lock also silences the watcher, so it is the wrong tool for a long-held
+gate.** `withMutationLock` calls `watcher.beginSuppression()` for its whole
+duration (`server/src/git/exec.mjs:71-77`) — correct for a single command, since
+the caller reloads when the REST reply lands. But holding it across a
+long-running operation (an external process mutating the repo, a batch) freezes
+the UI for the entire window in which most changes happen: no `repo:changed`
+gets out. When you need to bar UI-originated writes without blinding the view,
+gate separately and leave the lock alone — `server/src/ai/session.mjs` does this,
+and `server/test/ai-routes.test.mjs` pins both halves (mutation refused with
+409, reads still answering).
+
 **Errors carry an i18n key, never a phrase.** Throw
 `new HttpError(413, "error.bodyTooLarge", "error.bodyLimit", { bytes })`
 (`server/src/router.mjs:95-103`). Translation happens only at the edge in
