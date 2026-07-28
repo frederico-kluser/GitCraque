@@ -89,6 +89,16 @@ export const ROUTES = [
   ["POST", "/repos/open"],
   ["POST", "/repos/init"],
 
+  // Projetos favoritos: escolha explicita e permanente, ao contrario dos
+  // recentes, que sao historico automatico e rotativo.
+  ["GET", "/repos/favorites"],
+  ["POST", "/repos/favorites/add"],
+  ["POST", "/repos/favorites/remove"],
+  ["POST", "/repos/favorites/reorder"],
+
+  // Conteudo de um arquivo, para o visualizador (markdown renderizado e cru).
+  ["GET", "/file"],
+
   ["POST", "/raw"],
 ];
 

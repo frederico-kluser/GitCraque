@@ -132,6 +132,16 @@ export interface GraphViewProps {
   onSelect: (hash: string, mode: "replace" | "toggle" | "range") => void;
   /** menu de contexto do botao direito sobre um commit */
   onContextMenu?: (hash: string, position: { x: number; y: number }) => void;
+  /**
+   * ACRESCENTADO (aditivo): pedido de "role ate este commit e marque a linha".
+   *
+   * Vem de clicar numa branch ou tag no rail. O `nonce` muda a cada pedido, e e
+   * ELE que o grafo observa — clicar duas vezes na mesma branch tem de rolar de
+   * novo, e so o hash nao mudaria nada na segunda vez. Depois de atender,
+   * chame `onRevealed` para o store limpar o pedido.
+   */
+  reveal?: { hash: string; nonce: number; origin: "ref" | "command" | "detail" } | null;
+  onRevealed?: () => void;
   /** metricas opcionais; o modulo tem defaults sensatos */
   metrics?: Partial<GraphMetrics>;
   /** exibido quando `commits` esta vazio por carregamento */

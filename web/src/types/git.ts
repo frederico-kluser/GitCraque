@@ -593,7 +593,63 @@ export interface RecentReposPayload {
 }
 
 /* ------------------------------------------------------------------ *
- * 12. Console de comandos (o log cru que a UI exibe)
+ * 12. Conteudo de arquivo (visualizador: diff, markdown, cru)
+ * ------------------------------------------------------------------ */
+
+/**
+ * GET /api/file — o conteudo de UM arquivo, num commit ou na working tree.
+ *
+ * Sai de `git show <hash>:<path>` (ou da leitura do disco quando `hash` e
+ * omitido). Serve o visualizador do rodape: markdown renderizado, codigo cru e
+ * o lado "depois" do diff.
+ */
+export interface FileContentPayload {
+  path: string;
+  /** commit de origem; null quando veio da working tree */
+  hash: string | null;
+  /** texto do arquivo. Vazio quando `binary` ou `truncated` por tamanho. */
+  content: string;
+  /** bytes do blob */
+  size: number;
+  /** heuristica de binario (NUL nos primeiros KB) — nao renderize */
+  binary: boolean;
+  /** passou do teto de bytes; `content` traz so o inicio */
+  truncated: boolean;
+  /** extensao normalizada ("md", "ts", "json"), para escolher o realce */
+  language: string;
+  /** true quando a extensao e de markdown — a UI oferece "Formatado" */
+  markdown: boolean;
+}
+
+/* ------------------------------------------------------------------ *
+ * 13. Projetos favoritos
+ * ------------------------------------------------------------------ */
+
+/**
+ * Um repositorio fixado pelo usuario. Diferente de "recente": recente e
+ * historico automatico e rotativo; favorito e escolha explicita e permanente.
+ */
+export interface FavoriteRepo {
+  path: string;
+  /** apelido opcional; vazio usa o basename */
+  label: string;
+  name: string;
+  branch: string | null;
+  /** ordem manual na lista */
+  order: number;
+  addedAt: number;
+  /** recalculado a cada leitura: a pasta pode ter sumido */
+  exists: boolean;
+}
+
+/** GET /api/repos/favorites */
+export interface FavoritesPayload {
+  entries: FavoriteRepo[];
+  file: string;
+}
+
+/* ------------------------------------------------------------------ *
+ * 14. Console de comandos (buffer interno de auditoria)
  * ------------------------------------------------------------------ */
 
 export interface ConsoleLine {

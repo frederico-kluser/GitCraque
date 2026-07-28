@@ -58,6 +58,22 @@ export function registerRepoPickerRoutes(router, deps = {}) {
     return getRepoPayload();
   });
 
+  /* --- favoritos e conteudo de arquivo: STUBS ---
+   * O contrato ja declara estas rotas para o front-end poder ser escrito contra
+   * elas. Enquanto a implementacao nao chega, devolvem 501 em vez de derrubar o
+   * boot (`assertContract` exige handler para toda rota do contrato).
+   * SUBSTITUA — nao acrescente rota nova ao lado. */
+  const naoImplementado = (nome) => () => {
+    const error = new Error(`${nome} ainda nao implementado`);
+    error.status = 501;
+    throw error;
+  };
+  router.add("GET", "/repos/favorites", naoImplementado("favoritos"));
+  router.add("POST", "/repos/favorites/add", naoImplementado("favoritos"));
+  router.add("POST", "/repos/favorites/remove", naoImplementado("favoritos"));
+  router.add("POST", "/repos/favorites/reorder", naoImplementado("favoritos"));
+  router.add("GET", "/file", naoImplementado("conteudo de arquivo"));
+
   router.add("POST", "/repos/init", async (ctx) => {
     const body = bodyOf(ctx);
     const { result, opened } = await initRepository(body.path, {

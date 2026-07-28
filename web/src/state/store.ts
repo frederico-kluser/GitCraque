@@ -54,6 +54,29 @@ export interface Selection {
   ref: string | null;
 }
 
+/**
+ * Pedido de "leve a View Tree ate este commit e marque a linha".
+ *
+ * O `nonce` existe porque clicar DUAS vezes na mesma branch tem de rolar de
+ * novo: so o hash mudaria nada na segunda vez. O grafo observa o nonce, nao o
+ * hash.
+ */
+export interface RevealRequest {
+  hash: string;
+  nonce: number;
+  /** de onde veio o pedido, para o grafo escolher a enfase */
+  origin: "ref" | "command" | "detail";
+}
+
+/** Arquivo aberto no visualizador (diff, markdown renderizado ou cru). */
+export interface OpenFile {
+  path: string;
+  /** commit de onde o conteudo sai; null = working tree */
+  hash: string | null;
+  /** true quando o arquivo veio do painel de alteracoes, nao de um commit */
+  fromWorkingTree: boolean;
+}
+
 export interface AppState {
   repo: RepoPayload | null;
   log: LogPayload | null;
@@ -81,6 +104,11 @@ export interface AppState {
   console: ConsoleLine[];
   toasts: AppToast[];
 
+  /** pedido de rolar a View Tree ate um commit e marcar a linha */
+  reveal: RevealRequest | null;
+  /** arquivo aberto no visualizador do rodape (diff / markdown / cru) */
+  openFile: OpenFile | null;
+
   /** intencao vinda do motor de DND, aguardando confirmacao no dialogo */
   pendingIntent: DragIntent | null;
   /** pedido vivo do trampolim de askpass */
@@ -103,6 +131,8 @@ const INITIAL: AppState = {
   selection: { commits: [], primary: null, ref: null },
   console: [],
   toasts: [],
+  reveal: null,
+  openFile: null,
   pendingIntent: null,
   credentialPrompt: null,
   limit: 2000,
@@ -301,8 +331,62 @@ export function selectCommit(hash: string, mode: SelectMode = "replace") {
 export const clearSelection = () =>
   set((s) => ({ selection: { ...s.selection, commits: [], primary: null } }));
 
-export const selectRef = (ref: string | null) =>
+/**
+ * Seleciona uma referencia no rail E leva a View Tree ate ela.
+ *
+ * Clicar numa branch ou tag sem sair do lugar nao serve para nada: o que a
+ * pessoa quer e ver ONDE aquilo esta. Resolve o alvo pelas refs carregadas e
+ * emite o pedido de reveal; o grafo rola e marca a linha.
+ */
+export function selectRef(ref: string | null) {
   set((s) => ({ selection: { ...s.selection, ref } }));
+  if (!ref) return;
+  const target = resolveRefTarget(ref);
+  if (target) revealCommit(target, "ref");
+}
+
+/** fullName ou nome curto -> hash apontado, olhando branches, remotas e tags. */
+export function resolveRefTarget(ref: string): string | null {
+  const refs = state.refs;
+  if (!refs) return null;
+  const bate = (a: string, b: string) => a === b;
+  for (const b of refs.branches) if (bate(b.fullName, ref) || bate(b.name, ref)) return b.target;
+  for (const r of refs.remoteBranches) if (bate(r.fullName, ref) || bate(r.name, ref)) return r.target;
+  for (const t of refs.tags) if (bate(t.fullName, ref) || bate(t.name, ref)) return t.target;
+  return null;
+}
+
+let revealSeq = 0;
+
+/**
+ * Pede a View Tree para rolar ate `hash` e marcar a linha.
+ *
+ * Tambem foca o commit, para o painel de detalhe acompanhar. O `nonce` garante
+ * que clicar de novo na MESMA branch role de novo.
+ */
+export function revealCommit(hash: string, origin: RevealRequest["origin"] = "command") {
+  set((s) => ({
+    reveal: { hash, nonce: ++revealSeq, origin },
+    selection: { ...s.selection, commits: [hash], primary: hash },
+  }));
+}
+
+/** O grafo chama depois de atender o pedido, para nao rolar de novo a toa. */
+export const clearReveal = () => set({ reveal: null });
+
+/* ------------------------------------------------------------------ */
+/* Visualizador de arquivo (diff, markdown renderizado, cru)           */
+/* ------------------------------------------------------------------ */
+
+/** Abre um arquivo no visualizador do rodape. */
+export function openFile(path: string, hash: string | null, fromWorkingTree = false) {
+  set({ openFile: { path, hash, fromWorkingTree } });
+}
+
+export const closeFile = () => set({ openFile: null });
+
+/** `README.md` -> true. O visualizador oferece "Formatado" so nesses. */
+export const isMarkdownPath = (path: string) => /\.(md|markdown|mdown|mkd)$/i.test(path);
 
 /* ------------------------------------------------------------------ */
 /* Intencoes de drag-and-drop e dialogos                               */
@@ -467,7 +551,14 @@ export function bootstrap() {
     });
     toast("info", "Worktree ativa", e.worktree?.label ?? e.cwd);
     // descarta a View Tree inteira antes de recarregar
-    set({ log: null, refs: null, status: null, selection: { commits: [], primary: null, ref: null } });
+    set({
+      log: null,
+      refs: null,
+      status: null,
+      selection: { commits: [], primary: null, ref: null },
+      reveal: null,
+      openFile: null,
+    });
     void refreshAll();
   });
 

@@ -8,6 +8,8 @@ import type {
   CommitDetail,
   CredentialsPayload,
   DiffPayload,
+  FavoritesPayload,
+  FileContentPayload,
   FsListPayload,
   FsRootsPayload,
   GitCommandResult,
@@ -192,6 +194,21 @@ export const api = {
   openRepo: (path: string) => post<RepoPayload>("/repos/open", { path }),
   initRepo: (body: { path: string; bare?: boolean; initialBranch?: string }) =>
     post<RepoPayload>("/repos/init", body),
+
+  /* ---- projetos favoritos (escolha explicita, nao historico) ---- */
+  favorites: () => get<FavoritesPayload>("/repos/favorites"),
+  addFavorite: (body: { path: string; label?: string }) =>
+    post<FavoritesPayload>("/repos/favorites/add", body),
+  removeFavorite: (path: string) => post<FavoritesPayload>("/repos/favorites/remove", { path }),
+  reorderFavorites: (paths: string[]) =>
+    post<FavoritesPayload>("/repos/favorites/reorder", { paths }),
+
+  /* ---- conteudo de arquivo para o visualizador ----
+   * `hash` ausente = working tree. Usado pelo markdown renderizado e pela
+   * exibicao crua; o diff continua vindo de `api.diff`.
+   */
+  file: (opts: { path: string; hash?: string }) =>
+    get<FileContentPayload>(`/file${qs({ path: opts.path, hash: opts.hash })}`),
 
   /* ---- escotilha: qualquer comando git cru ---- */
   raw: (body: { args: string[] }) => post<GitCommandResult>("/raw", body),
