@@ -117,6 +117,7 @@ export function GraphView({
   primary,
   onSelect,
   onContextMenu,
+  onRefActivate,
   reveal,
   onRevealed,
   metrics: metricsProp,
@@ -317,6 +318,7 @@ export function GraphView({
       marked: mark,
       onSelect: handleSelect,
       onContextMenu,
+      onRefActivate,
       onFocusGrid: focusGrid,
     }),
     [
@@ -329,6 +331,7 @@ export function GraphView({
       mark,
       handleSelect,
       onContextMenu,
+      onRefActivate,
       focusGrid,
     ],
   );

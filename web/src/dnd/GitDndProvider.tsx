@@ -54,6 +54,7 @@ import type {
 } from "@/types/git";
 import type { GitDndProviderProps } from "@/types/modules";
 import { encodeId } from "./bindings";
+import type { DndScope } from "./bindings";
 import { resolveDragIntent } from "./intents";
 
 /* ------------------------------------------------------------------ */
@@ -95,13 +96,15 @@ const FeedbackContext = createContext<FeedbackValue>(EMPTY);
 /**
  * O que este alvo deve mostrar durante o arrasto.
  *
- * @param target id do @dnd-kit (`${type}:${key}`, o mesmo que `encodeId`
+ * @param scope onde o alvo vive ("graph" ou "rail"); tem de ser o MESMO que
+ *   foi passado ao `useDroppableTarget`, senao o feedback nunca casa.
+ * @param target id do @dnd-kit (`<escopo>::<tipo>:<chave>`, o mesmo que `encodeId`
  *   devolve) ou o proprio `DropPayload` que voce passou para
  *   `useDroppableTarget`.
  */
-export function useDropFeedback(target: string | DropPayload): DropFeedback {
+export function useDropFeedback(target: string | DropPayload, scope: DndScope = "app"): DropFeedback {
   const ctx = useContext(FeedbackContext);
-  const id = typeof target === "string" ? target : encodeId(target.type, target.key);
+  const id = typeof target === "string" ? target : encodeId(target.type, target.key, scope);
 
   return useMemo(() => {
     const dragging = ctx.source !== null;

@@ -1,5 +1,5 @@
 /**
- * Rodape do shell: duas abas ocupando a largura inteira.
+ * Gaveta de trabalho do sidebar direito: duas abas.
  *
  *   Alteracoes   → o `StatusPanel` (staging + commit)
  *   Visualizador → o modulo `@/viewer` com o arquivo aberto no store
@@ -15,6 +15,7 @@
  * trocar de aba — por isso o rascunho do commit vive no shell store.
  */
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import {
   SmoothTabs,
   SmoothTabsList,
@@ -31,7 +32,12 @@ import { StatusPanel } from "./StatusPanel";
 
 type DockTab = "changes" | "viewer";
 
-export function BottomDock({ className }: PanelProps) {
+export interface WorkDockProps extends PanelProps {
+  /** Minimizar/maximizar da gaveta, montados na mesma barra das abas. */
+  controls?: ReactNode;
+}
+
+export function WorkDock({ className, controls }: WorkDockProps) {
   const openFile = useAppState((s) => s.openFile);
   const changeCount = useAppState((s) => s.status?.entries.length ?? 0);
   const [tab, setTab] = useState<DockTab>("changes");
@@ -49,8 +55,11 @@ export function BottomDock({ className }: PanelProps) {
       onValueChange={(next) => setTab(next as DockTab)}
       className={cn("grid grid-rows-[auto_minmax(0,1fr)]", className)}
     >
-      <div className="flex items-center gap-2 border-b border-border bg-surface-rail px-3 py-1.5">
-        <SmoothTabsList ariaLabel="Painel inferior" className="shrink-0 gap-0.5 p-0.5">
+      {/* Duas linhas em vez de uma: numa coluna estreita, abas + caminho do
+          arquivo + controles nao cabem lado a lado sem truncar tudo. */}
+      <div className="border-b border-border bg-surface-rail">
+      <div className="flex items-center gap-2 px-3 py-1.5">
+        <SmoothTabsList ariaLabel="Painel de trabalho" className="shrink-0 gap-0.5 p-0.5">
           <SmoothTabsTab value="changes" className="flex-none px-3 py-1 text-xs">
             <span className="flex items-center gap-1.5">
               Alteracoes
@@ -64,22 +73,26 @@ export function BottomDock({ className }: PanelProps) {
           </SmoothTabsTab>
         </SmoothTabsList>
 
-        {/* De onde o conteudo aberto saiu — commit ou arvore de trabalho. */}
-        {openFile && (
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span
-              className="min-w-0 truncate font-mono text-[11px] text-muted-foreground"
-              title={openFile.path}
-            >
-              {openFile.path}
-            </span>
-            {openFile.fromWorkingTree ? (
-              <Chip tone="warning">arvore de trabalho</Chip>
-            ) : (
-              openFile.hash && <Chip tone="primary">{short(openFile.hash)}</Chip>
-            )}
+        <span className="flex-1" />
+        {controls}
+      </div>
+
+      {/* De onde o conteudo aberto saiu — commit ou arvore de trabalho. */}
+      {openFile && (
+        <div className="flex min-w-0 items-center gap-1.5 px-3 pb-1.5">
+          <span
+            className="min-w-0 flex-1 truncate font-mono text-[11px] text-muted-foreground"
+            title={openFile.path}
+          >
+            {openFile.path}
           </span>
-        )}
+          {openFile.fromWorkingTree ? (
+            <Chip tone="warning">arvore de trabalho</Chip>
+          ) : (
+            openFile.hash && <Chip tone="primary">{short(openFile.hash)}</Chip>
+          )}
+        </div>
+      )}
       </div>
 
       <SmoothTabsPanels className="min-h-0">

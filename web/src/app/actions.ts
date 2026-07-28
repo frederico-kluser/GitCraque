@@ -25,7 +25,7 @@ import {
 import { openDialog } from "@/dialogs";
 import { askConfirm } from "@/hooks";
 import type { ConfirmField } from "@/hooks";
-import type { PendingOperationKind, Remote, Worktree } from "@/types/git";
+import type { CommitRef, PendingOperationKind, Remote, Worktree } from "@/types/git";
 import { short } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -158,6 +158,56 @@ export function openCreateBranch(startPoint?: string) {
 
 export const doCheckout = (ref: string) =>
   runOperation("Checkout", () => api.checkout({ ref }), { refresh: "head", successMessage: `Em ${ref}` });
+
+/**
+ * Duplo clique num chip de referencia da View Tree: troca para aquela branch.
+ *
+ * Tres casos, e os tres importam:
+ *
+ *  · branch local           checkout direto;
+ *  · branch presa em OUTRA worktree  o git recusaria — a saida certa nao e
+ *    forcar, e trocar de worktree, que e `process.chdir()` e nao mexe na arvore
+ *    de ninguem. Aqui so avisamos, porque trocar sozinho seria surpresa;
+ *  · branch remota          nao da para "entrar" num remoto: cria a branch
+ *    local rastreando-a, que e o que a pessoa quis dizer.
+ */
+export function doActivateRef(refEntry: CommitRef) {
+  const { refs } = getState();
+
+  if (refEntry.kind === "localBranch") {
+    const branch = refs?.branches.find((b) => b.name === refEntry.name);
+    if (branch?.isHead) {
+      toast("info", `Voce ja esta em ${refEntry.name}`);
+      return;
+    }
+    if (branch?.checkedOutIn) {
+      toast(
+        "warning",
+        `${refEntry.name} esta em uso`,
+        `A branch esta checada na worktree ${branch.checkedOutIn}. Clique nela em Worktrees para ir ate la — trocar de worktree nao faz checkout.`,
+      );
+      return;
+    }
+    void doCheckout(refEntry.name);
+    return;
+  }
+
+  if (refEntry.kind === "remoteBranch") {
+    const local = refEntry.name.includes("/")
+      ? refEntry.name.slice(refEntry.name.indexOf("/") + 1)
+      : refEntry.name;
+    const jaExiste = refs?.branches.some((b) => b.name === local);
+    if (jaExiste) {
+      void doCheckout(local);
+      return;
+    }
+    void runOperation(
+      "Checkout",
+      () => api.checkout({ ref: refEntry.name, createBranch: local }),
+      { refresh: "refs", successMessage: `Em ${local}, rastreando ${refEntry.name}` },
+    );
+  }
+}
 
 export function openRenameBranch(from: string) {
   askConfirm({

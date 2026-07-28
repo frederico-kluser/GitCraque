@@ -1,22 +1,26 @@
 /**
- * Codificacao dos ids do @dnd-kit e hooks de ligacao.
- * `id` = `${type}:${key}` — estavel entre renders, requisito de estabilidade
- * espacial do @dnd-kit (ids que mudam derrubam a medicao de colisao).
+ * Hooks de ligacao com o @dnd-kit.
+ *
+ * A codificacao dos ids — e a razao de ela ter escopo — mora em `ids.ts`, que
+ * nao importa nada em tempo de execucao e por isso e coberto por teste.
  */
 import { useDraggable, useDroppable } from "@dnd-kit/core";
 import type { DragPayload, DropPayload } from "@/types/git";
+import { encodeId } from "./ids.ts";
+import type { DndScope } from "./ids.ts";
 
-export const encodeId = (type: string, key: string) => `${type}:${key}`;
+export { encodeId, decodeId, SCOPE_SEP } from "./ids.ts";
+export type { DndScope } from "./ids.ts";
 
-export function decodeId(id: string): { type: string; key: string } {
-  const i = id.indexOf(":");
-  return i < 0 ? { type: id, key: "" } : { type: id.slice(0, i), key: id.slice(i + 1) };
+/**
+ * @param scope onde este no vive. Passe SEMPRE — o default existe so para nao
+ *   quebrar chamadas antigas, e dois nos da mesma entidade em escopos iguais
+ *   se sobrescrevem no registro do @dnd-kit.
+ */
+export function useDraggableEntity(payload: DragPayload, scope: DndScope = "app") {
+  return useDraggable({ id: encodeId(payload.type, payload.key, scope), data: payload });
 }
 
-export function useDraggableEntity(payload: DragPayload) {
-  return useDraggable({ id: encodeId(payload.type, payload.key), data: payload });
-}
-
-export function useDroppableTarget(payload: DropPayload) {
-  return useDroppable({ id: encodeId(payload.type, payload.key), data: payload });
+export function useDroppableTarget(payload: DropPayload, scope: DndScope = "app") {
+  return useDroppable({ id: encodeId(payload.type, payload.key, scope), data: payload });
 }

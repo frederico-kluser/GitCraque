@@ -30,7 +30,11 @@ export {
   togglePalette,
   setRailWidth,
   setDetailWidth,
-  setBottomHeight,
+  setSideSplit,
+  setSideLayout,
+  minimizeSide,
+  toggleMaximizeSide,
+  restoreSide,
   setCommitDraft,
   askConfirm,
   closeConfirm,
@@ -41,6 +45,13 @@ export {
   selectCommitDraft,
   RAIL_RANGE,
   DETAIL_RANGE,
-  BOTTOM_RANGE,
+  SIDE_RANGE,
 } from "./useShellStore";
-export type { ShellState, ThemeMode, CommitDraft, ConfirmAction, ConfirmField } from "./useShellStore";
+export type {
+  ShellState,
+  ThemeMode,
+  SideLayout,
+  CommitDraft,
+  ConfirmAction,
+  ConfirmField,
+} from "./useShellStore";

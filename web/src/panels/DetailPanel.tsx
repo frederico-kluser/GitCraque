@@ -11,6 +11,7 @@
  * (`useCommitDetail`), e o vazio e coberto por `Skeleton` do Motion UI.
  */
 import { useMemo } from "react";
+import type { ReactNode } from "react";
 import { GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
@@ -265,7 +266,28 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
 
 /* ------------------------------------------------------------------ */
 
-export function DetailPanel({ className }: PanelProps) {
+export interface DetailPanelProps extends PanelProps {
+  /**
+   * Controles da gaveta (minimizar/maximizar) montados na barra de titulo.
+   * Vem do `SidePanel`, que e quem conhece o estado do sidebar.
+   */
+  headerExtra?: ReactNode;
+}
+
+/** Barra de titulo da gaveta. So aparece quando ha controles para hospedar. */
+function DrawerBar({ extra }: { extra?: ReactNode }) {
+  if (!extra) return null;
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-surface-rail px-3 py-1.5">
+      <span className="min-w-0 flex-1 truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+        Detalhe
+      </span>
+      {extra}
+    </div>
+  );
+}
+
+export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
   const primary = useAppState((s) => s.selection.primary);
   const selected = useAppState((s) => s.selection.commits);
   const detail = useCommitDetail(primary);
@@ -273,6 +295,7 @@ export function DetailPanel({ className }: PanelProps) {
   if (selected.length > 1) {
     return (
       <section className={cn("flex flex-col", className)} aria-label="Resumo da selecao">
+        <DrawerBar extra={headerExtra} />
         <SelectionSummary selected={selected} />
       </section>
     );
@@ -281,6 +304,7 @@ export function DetailPanel({ className }: PanelProps) {
   if (!primary) {
     return (
       <section className={cn("flex flex-col", className)} aria-label="Detalhe do commit">
+        <DrawerBar extra={headerExtra} />
         <StaggerReveal className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
           <StaggerRevealItem>
             <GitCommitHorizontal className="size-6 text-muted-foreground" />
@@ -298,6 +322,7 @@ export function DetailPanel({ className }: PanelProps) {
 
   return (
     <section className={cn("flex flex-col", className)} aria-label="Detalhe do commit">
+      <DrawerBar extra={headerExtra} />
       {detail.loading && <DetailSkeleton />}
       {detail.error && (
         <EmptyState title="Nao foi possivel ler o commit" description={detail.error} />

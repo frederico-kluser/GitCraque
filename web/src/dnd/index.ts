@@ -33,4 +33,5 @@ export type { DropFeedback, DropFeedbackState } from "./GitDndProvider";
 export { resolveDragIntent, INTENT_ENDPOINTS } from "./intents";
 export type { DragIntentContext } from "./intents";
 export { useDraggableEntity, useDroppableTarget, encodeId, decodeId } from "./bindings";
+export type { DndScope } from "./bindings";
 export type { GitDndProviderProps, ResolveDragIntent } from "@/types/modules";

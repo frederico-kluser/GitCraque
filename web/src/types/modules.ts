@@ -13,6 +13,7 @@
  */
 import type { ReactNode } from "react";
 import type {
+  CommitRef,
   DragIntent,
   DragPayload,
   DropPayload,
@@ -132,6 +133,14 @@ export interface GraphViewProps {
   onSelect: (hash: string, mode: "replace" | "toggle" | "range") => void;
   /** menu de contexto do botao direito sobre um commit */
   onContextMenu?: (hash: string, position: { x: number; y: number }) => void;
+  /**
+   * ACRESCENTADO (aditivo): duplo clique num chip de referencia do grafo.
+   *
+   * O grafo nao decide o que "ativar uma branch" significa — ele nao pode
+   * importar as acoes do shell sem inverter a dependencia entre os modulos.
+   * Ele so avisa qual ref foi ativada; quem faz o checkout e o shell.
+   */
+  onRefActivate?: (refEntry: CommitRef) => void;
   /**
    * ACRESCENTADO (aditivo): pedido de "role ate este commit e marque a linha".
    *

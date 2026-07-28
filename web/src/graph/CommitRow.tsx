@@ -42,7 +42,7 @@ export const CommitRow = memo(function CommitRow({
     key: commit.hash,
     label: commit.subject,
     detail: commit.subject,
-  });
+  }, "graph");
 
   const isSelected = selected.has(commit.hash);
   const isPrimary = primary === commit.hash;
@@ -190,7 +190,7 @@ export const CommitRow = memo(function CommitRow({
 
       {/* ---- descricao: refs + assunto --------------------------------- */}
       <div role="gridcell" className="flex min-w-0 items-center gap-1.5 pr-3 pl-2">
-        <RefChips refs={commit.refs} />
+        <RefChips refs={commit.refs} onActivate={data.onRefActivate} />
         <span className={cn("truncate", isPrimary && "font-medium")}>{commit.subject}</span>
       </div>
 

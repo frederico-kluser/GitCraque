@@ -116,6 +116,12 @@ export class GitCraqueSocket {
 }
 
 function defaultUrl() {
+  // `socket` e construido no carregamento do modulo. Sem esta guarda, QUALQUER
+  // import que alcance este arquivo fora do navegador estoura com
+  // "location is not defined" — foi o que derrubou os testes de DOM do grafo
+  // quando o chip de ref passou a importar o motor de DND, que puxa o store,
+  // que puxa este arquivo. Construir a url nao pode depender de haver janela.
+  if (typeof location === "undefined") return "ws://127.0.0.1:5271/ws";
   const proto = location.protocol === "https:" ? "wss:" : "ws:";
   return `${proto}//${location.host}/ws`;
 }

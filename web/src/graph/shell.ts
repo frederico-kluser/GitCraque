@@ -7,6 +7,7 @@
  * entra por variavel CSS (`--graph-col`) declarada no container.
  */
 import type { CSSProperties } from "react";
+import type { CommitRef } from "@/types/git";
 import type { GraphLayout, GraphMetrics } from "@/types/modules";
 import type { RevealTarget } from "./reveal.ts";
 
@@ -58,4 +59,6 @@ export interface GraphRowData {
   onSelect: (hash: string, mode: "replace" | "toggle" | "range") => void;
   onContextMenu?: (hash: string, position: { x: number; y: number }) => void;
   onFocusGrid: () => void;
+  /** Duplo clique num chip de branch. Quem decide o que isso faz e o shell. */
+  onRefActivate?: (refEntry: CommitRef) => void;
 }

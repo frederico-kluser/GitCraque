@@ -1,10 +1,10 @@
 /**
  * Shell do GitCraque — o unico lugar que monta os quatro modulos juntos.
  *
- * Layout: toolbar no topo, rail a esquerda, View Tree ao centro, detalhe a
- * direita, o rodape de duas abas (alteracoes e visualizador) embaixo, rodape de
- * diagnostico. Tudo em grid; o unico posicionamento absoluto do arquivo e o
- * alvo de arrasto das divisorias.
+ * Layout: toolbar no topo, rail a esquerda, View Tree ao centro e, a direita, o
+ * sidebar de duas gavetas (detalhe do commit em cima; alteracoes e visualizador
+ * embaixo). Rodape de diagnostico fecha a tela. Tudo em grid; o unico
+ * posicionamento absoluto do arquivo e o alvo de arrasto das divisorias.
  *
  * As larguras das colunas sao arrastaveis e persistidas (ver `Splitter.tsx`,
  * que explica por que ele e escrito a mao).
@@ -14,7 +14,7 @@ import { FolderX, GitCommitHorizontal, PlugZap } from "lucide-react";
 import { GraphView } from "@/graph";
 import { GitDndProvider } from "@/dnd";
 import { DialogHost, RepoPicker } from "@/dialogs";
-import { BottomDock, DetailPanel, RailPanels, Toolbar } from "@/panels";
+import { RailPanels, SidePanel, Toolbar } from "@/panels";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import {
   bootstrap,
@@ -26,11 +26,9 @@ import {
   useAppState,
 } from "@/state/store";
 import {
-  BOTTOM_RANGE,
   DETAIL_RANGE,
   RAIL_RANGE,
   requestCommit,
-  setBottomHeight,
   setCommitDraft,
   setDetailWidth,
   setRailWidth,
@@ -38,7 +36,7 @@ import {
   useHotkeys,
   useShellState,
 } from "@/hooks";
-import { doRefresh } from "./actions";
+import { doActivateRef, doRefresh } from "./actions";
 import { ConfirmHost } from "./ConfirmHost";
 import { Splitter } from "./Splitter";
 import { StatusFooter } from "./StatusFooter";
@@ -114,7 +112,6 @@ export function App() {
 
   const railWidth = useShellState((s) => s.railWidth);
   const detailWidth = useShellState((s) => s.detailWidth);
-  const bottomHeight = useShellState((s) => s.bottomHeight);
 
   useHotkeys({
     onRefresh: () => void doRefresh(),
@@ -191,9 +188,12 @@ export function App() {
 
   return (
     <GitDndProvider onIntent={setPendingIntent}>
+      {/* O rodape saiu: alteracoes e visualizador foram para o sidebar direito,
+          junto com o detalhe do commit. Sobram tres linhas: toolbar, corpo e
+          rodape de diagnostico. */}
       <div
         className="grid h-full bg-background text-foreground"
-        style={{ gridTemplateRows: `auto minmax(0,1fr) auto ${bottomHeight}px auto` }}
+        style={{ gridTemplateRows: "auto minmax(0,1fr) auto" }}
       >
         <Toolbar className="border-b border-border bg-surface-rail" />
 
@@ -223,6 +223,8 @@ export function App() {
                 primary={primary}
                 reveal={reveal}
                 onRevealed={clearReveal}
+                /* duplo clique num chip de branch da View Tree troca para ela */
+                onRefActivate={doActivateRef}
                 loading={loadingLog}
                 onSelect={selectCommit}
                 className="h-full"
@@ -239,20 +241,8 @@ export function App() {
             label="Largura do painel de detalhe"
             onChange={setDetailWidth}
           />
-          <DetailPanel className="min-h-0 border-l border-border bg-card" />
+          <SidePanel className="min-h-0 border-l border-border bg-card" />
         </div>
-
-        <Splitter
-          axis="y"
-          sign={-1}
-          value={bottomHeight}
-          min={BOTTOM_RANGE.min}
-          max={BOTTOM_RANGE.max}
-          label="Altura do painel inferior"
-          onChange={setBottomHeight}
-        />
-
-        <BottomDock className="min-h-0 border-t border-border" />
 
         <StatusFooter className="border-t border-border bg-surface-rail" />
       </div>

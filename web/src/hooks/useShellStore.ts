@@ -66,11 +66,28 @@ export interface ShellState {
   /** larguras em px das colunas laterais do grid principal */
   railWidth: number;
   detailWidth: number;
-  /** altura em px da faixa inferior (alteracoes + visualizador) */
-  bottomHeight: number;
+  /**
+   * Altura em px da gaveta de CIMA do sidebar direito (o detalhe do commit).
+   * A de baixo — alteracoes e visualizador — fica com o resto.
+   */
+  sideSplit: number;
+  /**
+   * Qual das duas gavetas do sidebar direito esta aberta.
+   *
+   *   "split"  as duas, divididas por `sideSplit`
+   *   "detail" so o detalhe; a de baixo recolhida ao cabecalho
+   *   "work"   so alteracoes/visualizador; a de cima recolhida ao cabecalho
+   *
+   * Minimizar uma e maximizar a outra sao o MESMO movimento — por isso um
+   * estado so, em vez de dois booleanos que poderiam se contradizer (as duas
+   * recolhidas nao mostraria nada).
+   */
+  sideLayout: SideLayout;
   commitDraft: CommitDraft;
   confirm: ConfirmAction | null;
 }
+
+export type SideLayout = "split" | "detail" | "work";
 
 const STORAGE_KEY = "gitcraque.shell";
 
@@ -80,14 +97,20 @@ const DEFAULTS: ShellState = {
   theme: "dark",
   paletteOpen: false,
   railWidth: 264,
-  detailWidth: 380,
-  bottomHeight: 300,
+  // O sidebar direito passou a abrigar TAMBEM o visualizador de arquivo, entao
+  // ele nasce bem mais largo do que quando so tinha os metadados do commit.
+  detailWidth: 560,
+  sideSplit: 340,
+  sideLayout: "split",
   commitDraft: EMPTY_DRAFT,
   confirm: null,
 };
 
 /** So o que faz sentido sobreviver ao reload. */
-type Persisted = Pick<ShellState, "theme" | "railWidth" | "detailWidth" | "bottomHeight">;
+type Persisted = Pick<
+  ShellState,
+  "theme" | "railWidth" | "detailWidth" | "sideSplit" | "sideLayout"
+>;
 
 function readPersisted(): Partial<Persisted> {
   if (typeof localStorage === "undefined") return {};
@@ -105,7 +128,8 @@ function writePersisted(s: ShellState) {
     theme: s.theme,
     railWidth: s.railWidth,
     detailWidth: s.detailWidth,
-    bottomHeight: s.bottomHeight,
+    sideSplit: s.sideSplit,
+    sideLayout: s.sideLayout,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slice));
@@ -185,15 +209,37 @@ export const togglePalette = () => set((s) => ({ paletteOpen: !s.paletteOpen }))
 
 /** Limites para as colunas nao sumirem nem engolirem o grafo. */
 export const RAIL_RANGE = { min: 200, max: 460 } as const;
-export const DETAIL_RANGE = { min: 280, max: 640 } as const;
-export const BOTTOM_RANGE = { min: 120, max: 720 } as const;
+/** O sidebar direito abriga o visualizador de diff: precisa caber um patch. */
+export const DETAIL_RANGE = { min: 320, max: 980 } as const;
+/** Altura da gaveta de cima. O minimo deixa ver o cabecalho do commit. */
+export const SIDE_RANGE = { min: 140, max: 900 } as const;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 export const setRailWidth = (px: number) => set({ railWidth: clamp(px, RAIL_RANGE.min, RAIL_RANGE.max) });
 export const setDetailWidth = (px: number) => set({ detailWidth: clamp(px, DETAIL_RANGE.min, DETAIL_RANGE.max) });
-export const setBottomHeight = (px: number) =>
-  set({ bottomHeight: clamp(px, BOTTOM_RANGE.min, Math.min(BOTTOM_RANGE.max, window.innerHeight - 220)) });
+
+/**
+ * Altura da gaveta de cima. O teto acompanha a janela para a de baixo nunca
+ * ficar sem espaco de respiro (~160 px de cabecalho + conteudo minimo).
+ */
+export const setSideSplit = (px: number) => {
+  const teto =
+    typeof window === "undefined" ? SIDE_RANGE.max : Math.max(SIDE_RANGE.min, window.innerHeight - 300);
+  set({ sideSplit: clamp(px, SIDE_RANGE.min, Math.min(SIDE_RANGE.max, teto)) });
+};
+
+export const setSideLayout = (sideLayout: SideLayout) => set({ sideLayout });
+
+/** Recolhe uma gaveta — o que e o mesmo que maximizar a outra. */
+export const minimizeSide = (qual: "detail" | "work") =>
+  set({ sideLayout: qual === "detail" ? "work" : "detail" });
+
+/** Maximiza uma gaveta; clicar de novo volta para a divisao. */
+export const toggleMaximizeSide = (qual: "detail" | "work") =>
+  set((s) => ({ sideLayout: s.sideLayout === qual ? "split" : qual }));
+
+export const restoreSide = () => set({ sideLayout: "split" });
 
 export const setCommitDraft = (patch: Partial<CommitDraft>) =>
   set((s) => ({ commitDraft: { ...s.commitDraft, ...patch } }));

@@ -293,15 +293,22 @@ function BranchRow({ branch, selected }: { branch: Branch; selected: boolean }) 
     key: branch.name,
     label: branch.name,
     detail: branch.target,
-  });
-  const droppable = useDroppableTarget({ type: "branch", key: branch.name, label: branch.name });
+  }, "rail");
+  const droppable = useDroppableTarget({ type: "branch", key: branch.name, label: branch.name }, "rail");
 
+  /**
+   * As dependencias sao as FUNCOES, nunca os objetos que as contem: o retorno
+   * de `useDraggable`/`useDroppable` e um objeto novo a cada render, entao
+   * `[draggable, droppable]` recriava este callback sempre. Ref callback novo
+   * faz o React desanexar e reanexar o no — e o @dnd-kit perdia o alvo no exato
+   * instante em que mede os retangulos, deixando `over` sempre nulo.
+   */
   const setRefs = useCallback(
     (node: HTMLElement | null) => {
       draggable.setNodeRef(node);
       droppable.setNodeRef(node);
     },
-    [draggable, droppable],
+    [draggable.setNodeRef, droppable.setNodeRef],
   );
 
   const locked = Boolean(branch.checkedOutIn) && !branch.isHead;
