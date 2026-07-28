@@ -37,10 +37,15 @@ function edge(partial: Partial<GraphEdge>): GraphEdge {
   };
 }
 
+/* Os numeros crus abaixo sao TRIPWIRE, nao duplicacao: a assercao simbolica
+   acima de cada um prova a formula, e a literal denuncia uma mudanca silenciosa
+   nas metricas de `paint.ts`. Mexeu no desenho de proposito? Atualize a literal
+   e siga. Ela quebrando sozinha e sinal. */
+
 test("mesma lane nos dois extremos: reta vertical", () => {
   const d = buildEdgePath(edge({ fromRow: 2, toRow: 9 }), M);
   assert.equal(d, `M ${laneX(0, M)} ${rowY(2, M)} L ${laneX(0, M)} ${rowY(9, M)}`);
-  assert.equal(d, "M 14 70 L 14 266");
+  assert.equal(d, "M 18 90 L 18 342");
   assert.ok(!d.includes("C"), "sem curva");
 });
 
@@ -50,8 +55,12 @@ test("lanes diferentes a uma linha: uma cubica com controles verticais", () => {
     M,
   );
   /* M x1 y1 C x1 (y1+k) x2 (y2-k) x2 y2 — a formula da arquitetura */
-  assert.equal(d, `M 14 14 C 14 ${14 + K} 30 ${42 - K} 30 42`);
-  assert.equal(d, "M 14 14 C 14 35 30 21 30 42");
+  assert.equal(
+    d,
+    `M ${laneX(0, M)} ${rowY(0, M)} C ${laneX(0, M)} ${rowY(0, M) + K}` +
+      ` ${laneX(1, M)} ${rowY(1, M) - K} ${laneX(1, M)} ${rowY(1, M)}`,
+  );
+  assert.equal(d, "M 18 18 C 18 40.32 38 31.68 38 54");
 });
 
 test("aresta longa: reta no meio, curva de UMA linha junto do extremo que muda", () => {
@@ -121,7 +130,7 @@ test("recorte em originRow: o Y sai relativo ao topo da faixa", () => {
   /* mesma faixa, mas com origem absoluta */
   assert.equal(
     clipEdgePath(straight, M, 10, 10, 0),
-    `M 14 ${10 * M.rowHeight} L 14 ${11 * M.rowHeight}`,
+    `M ${laneX(0, M)} ${10 * M.rowHeight} L ${laneX(0, M)} ${11 * M.rowHeight}`,
   );
 });
 

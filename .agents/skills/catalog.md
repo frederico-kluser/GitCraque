@@ -13,6 +13,7 @@ below, and deletes the plan file when the work is done.
 |---|---|---|
 | [`orchestrating-git-backend`](orchestrating-git-backend/SKILL.md) | `server/**` — REST routes, WebSocket events, running or parsing git, `contract.mjs`, worktrees, credentials, the askpass/sequence-editor trampolines. **Also owns the front-end half of a new route**: the typed client in `web/src/lib/api.ts` and the payload type in `web/src/types/git.ts` | `npm run test:server` |
 | [`laying-out-commit-graph`](laying-out-commit-graph/SKILL.md) | `web/src/graph/**` — lanes, edges, Bezier paths, commit rows, react-window virtualization, reveal/scroll-to-commit, the graph's custom test runner | `npm run test:graph` |
+| [`painting-graph-column`](painting-graph-column/SKILL.md) | how the graph **looks**: `web/src/graph/paint.ts` — dot size and shape, curve roundness, hover growth, row height, subject font, chip and highlight shapes. *Where* things go is the skill above; *what they look like* is this one | `npm run test:graph` |
 | [`resolving-drag-intents`](resolving-drag-intents/SKILL.md) | `web/src/dnd/**`, `web/src/dialogs/**` — the intent matrix, drag ids, drop targets, executors, and the **drag-initiated** confirmation dialogs | `npm run test:dnd` |
 | [`composing-shell-interface`](composing-shell-interface/SKILL.md) | `web/src/app/**`, `web/src/panels/**`, `web/src/hooks/**` — toolbar, rail, panels, dock, footer, context menus, hotkeys, theming, any new React component **outside `graph/` and `dnd/`** (directory always wins), and the **`askConfirm`/`ConfirmHost`** gate that makes a toolbar or menu action hold-to-confirm | `npm run typecheck` + `check-project-rules.mjs` |
 | [`translating-interface-text`](translating-interface-text/SKILL.md) | any user-facing string, front-end or backend: labels, toasts, dialog copy, menu entries, plurals, error messages | `npm run typecheck` |
@@ -29,6 +30,10 @@ below, and deletes the plan file when the work is done.
 
 - **Domain first.** On ambiguity prefer the most specific skill; a task in
   `server/**` is a backend task even when it is "about the graph".
+- **Inside the graph, split by question.** "Which lane / which edge / does it
+  scroll" → `laying-out-commit-graph`. "How big / how round / what colour / does
+  it react to the pointer" → `painting-graph-column`. A task that moves a number
+  in `paint.ts` needs only the second; a task that changes both loads both.
 - **`translating-interface-text` is a dependency, not an alternative.** Any task
   adding user-facing text loads it *in addition to* its domain skill.
 - **`verifying-changes` always runs last**, and its commands run one at a time.

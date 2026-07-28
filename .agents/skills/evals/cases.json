@@ -74,9 +74,27 @@
     },
     {
       "skill": "laying-out-commit-graph",
-      "claim": "layout.ts carries no runtime imports",
+      "claim": "layout.ts imports no VALUE through the @/ alias -- bare Node cannot resolve it. A relative import with an explicit .ts extension is legal and is used (./paint.ts)",
       "file": "web/src/graph/layout.ts",
+      "absent": "^import (?!type)[^\n]*\"@/"
+    },
+    {
+      "skill": "painting-graph-column",
+      "claim": "paint.ts stays free of value imports through the @/ alias -- the sample-svg generator loads it under bare Node",
+      "file": "web/src/graph/paint.ts",
       "absent": "^import (?!type)"
+    },
+    {
+      "skill": "painting-graph-column",
+      "claim": "the node shapes are still described in one place, as data",
+      "file": "web/src/graph/paint.ts",
+      "contains": "commitNodeShapes"
+    },
+    {
+      "skill": "painting-graph-column",
+      "claim": "CommitRow holds no radius of its own -- it reads the shapes from paint.ts",
+      "file": "web/src/graph/CommitRow.tsx",
+      "contains": "commitNodeShapes"
     },
     {
       "skill": "laying-out-commit-graph",

@@ -13,6 +13,8 @@ import { fileURLToPath } from "node:url";
 import { dirname, resolve } from "node:path";
 import { buildEdgePath, laneX, rowY } from "../bezier.ts";
 import { computeGraphLayout, DEFAULT_METRICS } from "../layout.ts";
+import { commitNodeShapes, EDGE } from "../paint.ts";
+import type { PaintTone } from "../paint.ts";
 import { DARK, hex, LIGHT, mix } from "./palette.ts";
 import type { CommitRef, RawCommit } from "@/types/git";
 import type { GraphMetrics } from "@/types/modules";
@@ -97,8 +99,27 @@ function buildCommits(): RawCommit[] {
 /* Renderizacao                                                        */
 /* ------------------------------------------------------------------ */
 
-const METRICS: GraphMetrics = { ...DEFAULT_METRICS, rowHeight: 30, laneWidth: 18 };
+/**
+ * As metricas REAIS do app, sem retoque. O exemplo so vale como prova visual se
+ * for o mesmo desenho que a tela mostra — qualquer ajuste aqui faria este
+ * arquivo mentir sobre `paint.ts`.
+ */
+const METRICS: GraphMetrics = DEFAULT_METRICS;
 const HEADER = 30;
+
+/**
+ * O apelido de cor de `paint.ts` no vocabulario deste arquivo. A UI resolve
+ * `surface` como `--surface-graph`; aqui o token do documento chama-se
+ * `--surface`, e e a unica diferenca entre os dois desenhos.
+ */
+const tone = (value: PaintTone, lane: string): string =>
+  value === "lane"
+    ? lane
+    : value === "surface"
+      ? "var(--surface)"
+      : value === "primary"
+        ? "var(--primary)"
+        : "none";
 const TEXT_GAP = 14;
 const SUBJECT_W = 330;
 const AUTHOR_W = 120;
@@ -156,7 +177,7 @@ function render(): string {
       `@media (prefers-color-scheme: dark){svg{${vars(DARK)}}}` +
       `.bg{fill:var(--bg)}.surface{fill:var(--surface)}` +
       `.hd{fill:var(--muted);font-size:10px;letter-spacing:.08em}` +
-      `.sub{fill:var(--fg);font-size:12px}` +
+      `.sub{fill:var(--fg);font-size:13.5px}` +
       `.meta{fill:var(--muted);font-size:11px}` +
       `.hash{fill:var(--muted);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}` +
       `.rule{stroke:var(--border);stroke-width:1}` +
@@ -189,45 +210,50 @@ function render(): string {
   for (const edge of layout.edges) {
     parts.push(
       `<path d="${buildEdgePath(edge, METRICS)}" fill="none" stroke="var(--lane-${edge.color})" ` +
-        `stroke-width="${METRICS.strokeWidth}" stroke-linecap="round" opacity="0.9"/>`,
+        `stroke-width="${METRICS.strokeWidth}" stroke-linecap="${EDGE.linecap}" ` +
+        `stroke-linejoin="${EDGE.linejoin}" opacity="${EDGE.opacity}"/>`,
     );
   }
 
   for (const node of layout.nodes) {
     const cx = laneX(node.lane, METRICS);
     const cy = rowY(node.row, METRICS);
-    const stroke = `var(--lane-${node.color})`;
+    const lane = `var(--lane-${node.color})`;
 
-    if (node.commit.refs.some((r) => r.kind === "head")) {
+    /* As MESMAS formas que a UI monta, vindas de `paint.ts`. E o que faz este
+       arquivo ser prova do desenho, e nao uma segunda versao dele. */
+    for (const shape of commitNodeShapes({
+      isMerge: node.isMerge,
+      isRoot: node.isRoot,
+      isHead: node.commit.refs.some((r) => r.kind === "head"),
+    })) {
       parts.push(
-        `<circle cx="${cx}" cy="${cy}" r="${METRICS.nodeRadius + 3}" fill="none" ` +
-          `stroke="var(--primary)" stroke-width="1.25"/>`,
+        `<circle cx="${cx}" cy="${cy}" r="${shape.r}" fill="${tone(shape.fill, lane)}" ` +
+          `stroke="${tone(shape.stroke, lane)}" stroke-width="${shape.strokeWidth}" ` +
+          `opacity="${shape.opacity}"/>`,
       );
-    }
-    parts.push(
-      `<circle cx="${cx}" cy="${cy}" r="${node.isMerge ? METRICS.nodeRadius + 1.5 : METRICS.nodeRadius}" ` +
-        `fill="${node.isMerge ? stroke : "var(--surface)"}" stroke="${stroke}" ` +
-        `stroke-width="${METRICS.strokeWidth}"/>`,
-    );
-    if (node.isRoot && !node.isMerge) {
-      parts.push(`<circle cx="${cx}" cy="${cy}" r="${METRICS.nodeRadius - 2}" fill="${stroke}"/>`);
     }
 
     /* faixa de texto: chips de ref, assunto, autor, data e hash curto */
     let x = textX;
     for (const ref of node.commit.refs) {
       const tone = CHIP_TONE[ref.kind] ?? CHIP_TONE.localBranch;
-      const w = 9 + ref.name.length * 5.6;
+      /* `rx` = metade da altura: o chip e uma pilula, como na UI. */
+      const w = 13 + ref.name.length * 5.6;
       parts.push(
-        `<rect class="${tone.fill}" x="${x}" y="${cy - 7}" width="${w.toFixed(1)}" height="14" rx="4"/>` +
-          `<text class="${tone.text}" x="${(x + 4.5).toFixed(1)}" y="${cy + 3.5}">${esc(ref.name)}</text>`,
+        `<rect class="${tone.fill}" x="${x}" y="${cy - 8}" width="${w.toFixed(1)}" height="16" rx="8"/>` +
+          `<text class="${tone.text}" x="${(x + 6.5).toFixed(1)}" y="${cy + 3.5}">${esc(ref.name)}</text>`,
       );
       x += w + 5;
     }
+    /* Largura media de um caractere em `.sub` (13.5px). Este arquivo nao mede
+       texto de verdade — corta pela estimativa. Subiu o corpo da fonte? suba
+       este numero junto, ou o assunto invade a coluna Autor. */
+    const CH = 7.1;
     const room = Math.max(0, textX + SUBJECT_W - x - 8);
     const subject =
-      node.commit.subject.length > room / 6.4
-        ? `${node.commit.subject.slice(0, Math.max(0, Math.floor(room / 6.4) - 1))}…`
+      node.commit.subject.length > room / CH
+        ? `${node.commit.subject.slice(0, Math.max(0, Math.floor(room / CH) - 1))}…`
         : node.commit.subject;
     parts.push(`<text class="sub" x="${x.toFixed(1)}" y="${cy + 4}">${esc(subject)}</text>`);
     parts.push(

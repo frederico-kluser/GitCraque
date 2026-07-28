@@ -6,7 +6,7 @@
  * de verdade (avaliando a cubica ponto a ponto) e cada amostra e conferida
  * contra o circulo da linha em que ela cai.
  */
-import { edgeSegments } from "../bezier.ts";
+import { CONTROL_RATIO, edgeSegments } from "../bezier.ts";
 import type { GraphEdge, GraphLayout, GraphMetrics } from "@/types/modules";
 
 export interface Point {
@@ -40,7 +40,11 @@ export function sampleEdge(
   m: GraphMetrics,
   perRow = 8,
 ): Point[] {
-  const k = m.rowHeight * 0.75;
+  /* o MESMO k que `bezier.ts` usa para desenhar. Cravar 0.75 aqui fazia a
+     amostragem divergir do traco real assim que a curvatura fosse ajustada em
+     `paint.ts`, e o teste de colisao passaria a conferir uma curva que ninguem
+     desenha. */
+  const k = m.rowHeight * CONTROL_RATIO;
   const points: Point[] = [];
   for (const s of edgeSegments(edge, m)) {
     if (s.kind === "line") {

@@ -26,12 +26,18 @@
  *
  *     M x1 y1  C x1 (y1 + k)   x2 (y2 - k)   x2 y2      com k ~ rowHeight * 0.75
  *
- * Sem import de runtime: roda tal e qual sob `node --test`.
+ * Sem import de `@/` em runtime: roda tal e qual sob `node --test`. O unico
+ * import de valor e relativo e com `.ts` explicito.
  */
+import { CONTROL_RATIO } from "./paint.ts";
 import type { GraphEdge, GraphMetrics } from "@/types/modules";
 
-/** Fator dos pontos de controle, em fracao de uma linha. */
-export const CONTROL_RATIO = 0.75;
+/**
+ * Fator dos pontos de controle, em fracao de uma linha. O valor mora em
+ * `paint.ts` junto do resto do desenho; aqui ele so e repassado, porque
+ * `bezier.test.ts` e `__tests__/geometry.ts` o importam por este caminho.
+ */
+export { CONTROL_RATIO };
 
 /** Centro horizontal de uma lane, em px. */
 export const laneX = (lane: number, m: GraphMetrics): number =>

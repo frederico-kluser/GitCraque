@@ -69,14 +69,23 @@ function ColumnHeader() {
   );
 }
 
-/** Carregamento — o `Skeleton` do Motion UI, sem shimmer proprio. */
-function LoadingRows({ rows = 16 }: { rows?: number }) {
+/**
+ * Carregamento — o `Skeleton` do Motion UI, sem shimmer proprio.
+ *
+ * A altura e a bola vem das METRICAS, nao de classe cravada: sem isso, mexer em
+ * `paint.ts` faria o esqueleto pular de tamanho no instante em que a arvore
+ * chega.
+ */
+function LoadingRows({ metrics, rows = 16 }: { metrics: GraphMetrics; rows?: number }) {
   return (
     <div aria-busy className="h-full overflow-hidden">
       {Array.from({ length: rows }, (_, i) => (
-        <div key={i} className={cn(ROW_GRID, "h-7")}>
+        <div key={i} className={ROW_GRID} style={{ height: metrics.rowHeight }}>
           <div className="pl-[var(--graph-pad)]">
-            <Skeleton className="size-2.5 rounded-full" />
+            <Skeleton
+              className="rounded-full"
+              style={{ width: metrics.nodeRadius * 2, height: metrics.nodeRadius * 2 }}
+            />
           </div>
           <div className="pl-2">
             {/* larguras deterministicas: nada de Math.random em render */}
@@ -388,7 +397,7 @@ export function GraphView({
           perder o no quando o estado troca de esqueleto para arvore. */}
       <div ref={bodyRef} className="min-h-0 flex-1">
         {showSkeleton ? (
-          <LoadingRows />
+          <LoadingRows metrics={metrics} />
         ) : isEmpty ? (
           <EmptyState />
         ) : (

@@ -6,6 +6,7 @@
  * alinhamento. A largura da coluna do grafo depende do numero de lanes, entao
  * entra por variavel CSS (`--graph-col`) declarada no container.
  */
+import { NODE } from "./paint.ts";
 import type { CSSProperties } from "react";
 import type { CommitRef } from "@/types/git";
 import type { GraphLayout, GraphMetrics } from "@/types/modules";
@@ -38,11 +39,18 @@ export const graphColumnWidth = (laneCount: number, m: GraphMetrics): number =>
     m.paddingLeft * 2 + Math.max(0, laneCount - 1) * m.laneWidth,
   );
 
-/** Variaveis CSS que o cabecalho e as linhas leem por heranca. */
+/**
+ * Variaveis CSS que o cabecalho e as linhas leem por heranca.
+ *
+ * `--graph-node-hover` e declarada UMA vez aqui, no container, e nao por linha:
+ * o quanto a bola cresce e a mesma coisa para as 20 000 linhas, e o valor mora
+ * em `paint.ts` junto do resto do desenho.
+ */
 export function graphVars(width: number, m: GraphMetrics): CSSProperties {
   return {
     "--graph-col": `${width}px`,
     "--graph-pad": `${m.paddingLeft}px`,
+    "--graph-node-hover": String(NODE.hoverScale),
   } as CSSProperties;
 }
 

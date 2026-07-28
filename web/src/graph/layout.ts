@@ -16,9 +16,12 @@
  * primeira lane livre, que percorre o vetor de LANES ATIVAS (limitado pelo
  * numero de ramos simultaneos do repositorio), nunca a lista de commits.
  *
- * Este arquivo nao tem NENHUM import de runtime — so tipos. Isso e proposital:
- * ele roda tal e qual sob `node --test`, sem bundler no meio.
+ * Este arquivo nao tem NENHUM import de `@/` em runtime — so tipos. Isso e
+ * proposital: ele roda tal e qual sob `node --test`, sem bundler no meio. O
+ * unico import de valor e relativo e com `.ts` explicito, que e a forma que o
+ * Node resolve sozinho.
  */
+import { METRICS } from "./paint.ts";
 import type { RawCommit } from "@/types/git";
 import type {
   EdgeKind,
@@ -29,13 +32,11 @@ import type {
   PositionedCommit,
 } from "@/types/modules";
 
-export const DEFAULT_METRICS: GraphMetrics = {
-  rowHeight: 28,
-  laneWidth: 16,
-  nodeRadius: 4.5,
-  paddingLeft: 14,
-  strokeWidth: 2,
-};
+/**
+ * As medidas do desenho moram em `paint.ts` — a mesa de knobs da coluna do
+ * grafo. Aqui elas so ganham o nome pelo qual o resto do app as conhece.
+ */
+export const DEFAULT_METRICS: GraphMetrics = METRICS;
 
 /**
  * Quantidade de matizes da rampa de lanes. Espelha `LANE_COUNT` de

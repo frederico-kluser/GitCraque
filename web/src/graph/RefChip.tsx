@@ -27,7 +27,16 @@ import type { LucideIcon } from "lucide-react";
 import { useDraggableEntity, useDropFeedback, useDroppableTarget } from "@/dnd";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { TEXT } from "./paint.ts";
 import type { CommitRef, DragPayload, DropPayload, RefKind } from "@/types/git";
+
+/**
+ * A moldura do chip. Formato de pilula para acompanhar o resto do desenho da
+ * coluna — a bola do commit, o realce da linha e o chip sao as tres formas que a
+ * pessoa ve juntas, e canto vivo no meio de duas curvas salta aos olhos.
+ * O corpo do texto vem de `paint.ts`, como todo tipo desta coluna.
+ */
+const CHIP_SHAPE = cn("rounded-full border px-2 py-0.5", TEXT.chip);
 
 /** Quantos chips cabem antes de virar "+N". */
 const MAX_CHIPS = 4;
@@ -180,7 +189,8 @@ export function RefChip({ refEntry, onActivate, onContextMenu }: RefChipProps) {
           : (refEntry.fullName ?? refEntry.name)
       }
       className={cn(
-        "inline-flex max-w-[14rem] shrink-0 items-center gap-1 rounded-md border px-1.5 py-px text-[11px] leading-4",
+        "inline-flex max-w-[14rem] shrink-0 items-center gap-1",
+        CHIP_SHAPE,
         TONE[refEntry.kind],
         refEntry.isHead && refEntry.kind !== "head" && "ring-1 ring-primary/40",
         podeArrastar && "cursor-grab",
@@ -224,7 +234,7 @@ export function RefChips({
       ))}
       {hidden > 0 && (
         <span
-          className="shrink-0 rounded-md border border-border px-1.5 py-px text-[11px] leading-4 text-muted-foreground"
+          className={cn("shrink-0 border-border text-muted-foreground", CHIP_SHAPE)}
           title={sorted
             .slice(MAX_CHIPS)
             .map((entry) => entry.name)

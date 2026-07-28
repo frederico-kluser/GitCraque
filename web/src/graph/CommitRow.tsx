@@ -8,6 +8,11 @@
  *
  * A faixa de texto ao lado e um grid — colunas de metadados fixas, assunto
  * elastico — compartilhado com o cabecalho, entao nunca desalinha.
+ *
+ * O QUE E DESENHO E O QUE E COMPORTAMENTO. Nenhum numero de aparencia mora
+ * aqui: raio, curvatura, escala do hover, arredondamento e corpo do texto saem
+ * todos de `paint.ts`. Este arquivo so decide QUANDO cada forma existe; a forma
+ * em si vem de la. Para mudar o visual, va em `paint.ts`.
  */
 import { memo } from "react";
 import type { MouseEvent } from "react";
@@ -20,9 +25,45 @@ import { formatGitRelativeDate, t } from "@/i18n";
 import { cn, laneVar, short } from "@/lib/utils";
 import { toast } from "@/state/store";
 import { clipEdgePath, laneX } from "./bezier.ts";
+import { commitNodeShapes, EDGE, NODE, SURFACE, TEXT } from "./paint.ts";
+import type { PaintTone } from "./paint.ts";
 import { RefChips } from "./RefChip.tsx";
 import { ROW_GRID, rowDomId } from "./shell.ts";
 import type { GraphRowData } from "./shell.ts";
+
+/**
+ * Resolve o apelido de cor de `paint.ts` no token do tema. Existe para que o
+ * desenho possa ser descrito sem saber a cor da lane, que so esta linha conhece.
+ */
+const tone = (value: PaintTone, laneColor: string): string =>
+  value === "lane"
+    ? laneColor
+    : value === "surface"
+      ? "var(--surface-graph)"
+      : value === "primary"
+        ? "var(--primary)"
+        : "none";
+
+/**
+ * O grupo do no cresce sob o ponteiro — em CSS puro, de proposito.
+ *
+ * Com `useState` o hover re-renderizaria a linha a cada entrada e saida do
+ * ponteiro, no meio de uma lista virtualizada que existe justamente para nao
+ * re-renderizar. `:hover` resolve sem estado, sem re-render e sem um no de DOM a
+ * mais — e o orcamento de nos por linha e apertado
+ * (`__tests__/virtualization.domtest.ts`).
+ *
+ * `pointer-events-auto` reabre o teste de ponteiro que o <svg> desliga: so o no
+ * responde ao ponteiro, as arestas nao. O alvo do hover e a uniao das formas
+ * PINTADAS do grupo — inclusive o halo da selecao, que fica invisivel mas
+ * continua sendo alvo, e por isso da a folga de alguns px que faz acertar a bola
+ * ser confortavel.
+ */
+const NODE_GROUP_CLASS = cn(
+  "pointer-events-auto [scale:1] hover:[scale:var(--graph-node-hover)]",
+  "transition-[scale] duration-[var(--motion-ui-transition-snap-duration)]",
+  "ease-[var(--motion-ui-transition-snap)] motion-reduce:transition-none",
+);
 
 export const CommitRow = memo(function CommitRow({
   index: row,
@@ -102,24 +143,42 @@ export const CommitRow = memo(function CommitRow({
       style={style}
       className={cn(
         ROW_GRID,
-        "cursor-default select-none text-sm text-foreground",
-        "hover:bg-accent/40 data-[dragging]:opacity-40",
+        "group cursor-default select-none text-foreground",
+        "data-[dragging]:opacity-40",
       )}
       onMouseDown={data.onFocusGrid}
       onClick={handleClick}
       onContextMenu={handleContextMenu}
     >
+      {/* As tres camadas de realce sao a MESMA pilula (`SURFACE.pill`): mesmo
+          recuo, mesmo raio. Fossem caixas diferentes, hover e selecao juntos
+          apareceriam desencontrados por um px. */}
+
+      {/* Hover: so CSS, pelo `group` da linha. Nao ha estado nem re-render — a
+          lista e virtualizada e um `useState` de hover custaria um render por
+          movimento do ponteiro. */}
+      <span
+        aria-hidden
+        className={cn(
+          "pointer-events-none absolute opacity-0 group-hover:opacity-100",
+          "transition-opacity duration-[var(--motion-ui-transition-snap-duration)]",
+          "ease-[var(--motion-ui-transition-snap)] motion-reduce:transition-none",
+          SURFACE.pill,
+          SURFACE.hover,
+        )}
+      />
+
       {/* Realce da selecao: camada propria animada so em opacidade (regra de
           movimento do projeto), com o token "snap". */}
       <motion.span
         aria-hidden
-        className="pointer-events-none absolute inset-0 bg-primary/12"
+        className={cn("pointer-events-none absolute", SURFACE.pill, SURFACE.selected)}
         initial={false}
         animate={{ opacity: isSelected ? 1 : 0 }}
         transition={snap}
       />
       {isPrimary && (
-        <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-primary" />
+        <span aria-hidden className={cn("pointer-events-none absolute", SURFACE.primaryBar)} />
       )}
 
       {/* Realce do REVEAL — temporario, apaga-se sozinho. Precisa se distinguir
@@ -136,7 +195,7 @@ export const CommitRow = memo(function CommitRow({
           <motion.span
             key={marked.nonce}
             aria-hidden
-            className="pointer-events-none absolute inset-0 bg-primary/20 ring-2 ring-primary ring-inset"
+            className={cn("pointer-events-none absolute", SURFACE.pill, SURFACE.marked)}
             initial={reduced ? false : { opacity: 0, scaleY: 0.82 }}
             animate={{ opacity: 1, scaleY: 1 }}
             exit={reduced ? undefined : { opacity: 0 }}
@@ -164,44 +223,52 @@ export const CommitRow = memo(function CommitRow({
               fill="none"
               stroke={laneVar(edge.color)}
               strokeWidth={metrics.strokeWidth}
-              strokeLinecap="round"
-              opacity={0.9}
+              strokeLinecap={EDGE.linecap}
+              strokeLinejoin={EDGE.linejoin}
+              opacity={EDGE.opacity}
             />
           );
         })}
 
-        {/* halo da selecao — escala e opacidade, nunca o raio */}
-        <motion.circle
-          cx={cx}
-          cy={cy}
-          r={metrics.nodeRadius + 4.5}
-          fill={laneColor}
-          initial={false}
-          animate={{ opacity: isSelected ? 0.22 : 0, scale: isSelected ? 1 : 0.6 }}
-          transition={snap}
-          style={{ transformBox: "fill-box", transformOrigin: "center" }}
-        />
-        {isHead && (
-          <circle
-            cx={cx}
-            cy={cy}
-            r={metrics.nodeRadius + 3}
-            fill="none"
-            stroke="var(--primary)"
-            strokeWidth={1.25}
-          />
-        )}
-        <circle
-          cx={cx}
-          cy={cy}
-          r={node.isMerge ? metrics.nodeRadius + 1.5 : metrics.nodeRadius}
-          fill={node.isMerge ? laneColor : "var(--surface-graph)"}
-          stroke={laneColor}
-          strokeWidth={metrics.strokeWidth}
-        />
-        {node.isRoot && !node.isMerge && (
-          <circle cx={cx} cy={cy} r={metrics.nodeRadius - 2} fill={laneColor} />
-        )}
+        {/* O no inteiro num grupo TRANSLADADO ate o centro: assim as formas sao
+            todas concentricas em (0,0) e a escala do hover nao precisa saber
+            onde a lane esta. */}
+        <g transform={`translate(${cx} ${cy})`}>
+          <g className={NODE_GROUP_CLASS} style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+            {/* Halo da selecao — escala e opacidade, nunca o raio. Fica DENTRO
+                do grupo que cresce, entao a bola nunca escapa do proprio halo.
+                Invisivel em repouso, mas ainda assim alvo do ponteiro: e ele que
+                da folga ao hover. */}
+            <motion.circle
+              r={metrics.nodeRadius + NODE.haloDelta}
+              fill={laneColor}
+              initial={false}
+              animate={{
+                opacity: isSelected ? NODE.haloOpacity : 0,
+                scale: isSelected ? 1 : NODE.haloRestScale,
+              }}
+              transition={snap}
+              style={{ transformBox: "fill-box", transformOrigin: "center" }}
+            />
+            {/* As formas do no vem prontas de `paint.ts` — aqui so viram
+                elementos. Acrescentar um anel, mudar um raio ou trocar o miolo
+                da raiz e mexer LA, nao aqui. */}
+            {commitNodeShapes({
+              isMerge: node.isMerge,
+              isRoot: node.isRoot,
+              isHead,
+            }).map((shape) => (
+              <circle
+                key={shape.key}
+                r={shape.r}
+                fill={tone(shape.fill, laneColor)}
+                stroke={tone(shape.stroke, laneColor)}
+                strokeWidth={shape.strokeWidth}
+                opacity={shape.opacity}
+              />
+            ))}
+          </g>
+        </g>
       </svg>
 
       {/* ---- descricao: refs + assunto --------------------------------- */}
@@ -211,18 +278,24 @@ export const CommitRow = memo(function CommitRow({
           onActivate={data.onRefActivate}
           onContextMenu={data.onRefContextMenu}
         />
-        <span className={cn("truncate", isPrimary && "font-medium")}>{commit.subject}</span>
+        <span className={cn("truncate", TEXT.subject, isPrimary && TEXT.subjectPrimary)}>
+          {commit.subject}
+        </span>
       </div>
 
       {/* ---- metadados: colunas de largura fixa ------------------------ */}
       <div
         role="gridcell"
-        className="truncate pr-3 text-xs text-muted-foreground"
+        className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}
         title={`${commit.authorName} <${commit.authorEmail}>`}
       >
         {commit.authorName}
       </div>
-      <div role="gridcell" className="truncate pr-3 text-xs text-muted-foreground" title={commit.relativeDate}>
+      <div
+        role="gridcell"
+        className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}
+        title={commit.relativeDate}
+      >
         {/* O `%ar` do git chega sempre em ingles (LC_ALL=C): a exibicao muda de
             idioma, o payload nao — `useCommitActivity` depende do original. */}
         {formatGitRelativeDate(commit.relativeDate)}
@@ -236,7 +309,8 @@ export const CommitRow = memo(function CommitRow({
           title={t("graph.copyHash")}
           aria-label={t("graph.copyHash.aria", { hash: commit.hash })}
           className={cn(
-            "-mx-1 block max-w-full truncate rounded px-1 font-mono text-xs text-muted-foreground",
+            "-mx-1 block max-w-full truncate rounded-md px-1 font-mono text-muted-foreground",
+            TEXT.meta,
             "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",
             "ease-[var(--motion-ui-transition-snap)] hover:bg-accent hover:text-foreground",
             "outline-none focus-visible:ring-1 focus-visible:ring-ring",
