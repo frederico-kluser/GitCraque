@@ -18,10 +18,11 @@
     "build": "npm run build --workspace web",
     "start": "node server/bin/gitcraque.mjs",
     "typecheck": "npm run typecheck --workspace web",
-    "test": "npm run test:server && npm run test:graph && npm run test:dnd",
+    "test": "npm run test:server && npm run test:graph && npm run test:dnd && npm run test:viewer",
     "test:server": "node --test \"server/test/*.test.mjs\"",
     "test:graph": "node web/src/graph/__tests__/run.mjs",
     "test:dnd": "node --test \"web/src/dnd/__tests__/*.test.mjs\"",
+    "test:viewer": "node --test \"web/src/viewer/__tests__/*.test.mjs\"",
     "test:e2e": "node scripts/verify-e2e.mjs"
   },
   "bin": {
