@@ -17,6 +17,7 @@ import { SwipeAction, SwipeActions, SwipeActionsList } from "@/components/motion
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import { openFile, useAppState } from "@/state/store";
 import {
+  contextMenuFor,
   registerCommitHandler,
   selectCommitDraft,
   setCommitDraft,
@@ -25,6 +26,7 @@ import {
   type DiffStats,
 } from "@/hooks";
 import { doCommit, doDiscard, doStage, doUnstage } from "@/app/actions";
+import { changeFileMenu } from "@/app/menus";
 import { cn, plural } from "@/lib/utils";
 import type { ChangeStatus, StatusEntry } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
@@ -162,6 +164,9 @@ function FileRow({
         title={`Ver ${entry.path} no visualizador`}
         onPointerDown={rememberPress}
         onClick={onRowClick}
+        /* O swipe e um atalho de gesto; o botao direito e o atalho de quem usa
+           mouse. Os dois oferecem as mesmas acoes da linha. */
+        onContextMenu={contextMenuFor(entry.path, () => changeFileMenu(entry))}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
           if ((event.target as HTMLElement).closest("button")) return;

@@ -9,6 +9,7 @@
  */
 import { Fragment, type ComponentType, type ReactNode } from "react";
 import { Menu } from "@base-ui/react/menu";
+import type { MenuItemSpec } from "@/hooks";
 import {
   AlertTriangle,
   FileDiff,
@@ -137,15 +138,56 @@ export function Chip({
 /* Menu de acoes (Base UI)                                             */
 /* ------------------------------------------------------------------ */
 
-export interface ActionMenuItem {
-  label: string;
-  onSelect: () => void;
-  icon?: ComponentType<{ className?: string }>;
-  /** pinta a linha com o tom destrutivo — a confirmacao vem depois, no dialogo */
-  destructive?: boolean;
-  disabled?: boolean;
-  /** insere um separador ANTES desta linha */
-  separatorBefore?: boolean;
+/**
+ * O item e o MESMO do menu de contexto (`MenuItemSpec`, em `@/hooks`): a lista
+ * que alimenta o "⋯" de uma linha alimenta tambem o botao direito sobre ela,
+ * sem nenhuma traducao no meio.
+ */
+export type ActionMenuItem = MenuItemSpec;
+
+/** Classe unica das linhas de menu — usada pelo "⋯" e pelo menu de contexto. */
+export const MENU_ITEM_CLASS = cn(
+  "flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none select-none",
+  "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+  "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
+);
+
+/** Casca do popup: a mesma moldura nos dois menus. */
+export const MENU_POPUP_CLASS =
+  "min-w-52 max-w-[22rem] overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-xl";
+
+/**
+ * As linhas de um menu, em fragmento.
+ *
+ * Fragmento, e nao `<div>`: o Base UI registra os itens pela lista composta e um
+ * wrapper quebra o clique e a navegacao por teclado. Separador na PRIMEIRA linha
+ * e ignorado — ele sobra quando o item anterior foi filtrado por contexto.
+ */
+export function MenuItems({ items }: { items: ActionMenuItem[] }) {
+  return (
+    <>
+      {items.map((item, i) => (
+        <Fragment key={`${i}-${item.label}`}>
+          {item.separatorBefore && i > 0 && <Menu.Separator className="my-1 h-px bg-border" />}
+          <Menu.Item
+            disabled={item.disabled}
+            onClick={item.onSelect}
+            className={cn(
+              MENU_ITEM_CLASS,
+              item.destructive &&
+                "text-destructive data-[highlighted]:bg-destructive/12 data-[highlighted]:text-destructive",
+            )}
+          >
+            {item.icon && <item.icon className="size-3.5 shrink-0" />}
+            <span className="min-w-0 flex-1 truncate">{item.label}</span>
+            {item.hint && (
+              <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{item.hint}</span>
+            )}
+          </Menu.Item>
+        </Fragment>
+      ))}
+    </>
+  );
 }
 
 export function ActionMenu({
@@ -172,6 +214,11 @@ export function ActionMenu({
      *
      * O `span` envolve gatilho E portal, e `display: contents` o mantem fora do
      * layout. Os handlers do Base UI ficam ABAIXO deste no, entao rodam antes.
+     *
+     * `contextmenu` entra na lista pelo mesmo motivo: sem ele, um clique com o
+     * botao direito DENTRO do popup borbulharia ate a linha e abriria o menu de
+     * contexto por cima do menu ja aberto. Aqui so se barra a propagacao — quem
+     * impede o menu do navegador e o `ContextMenuHost`, no documento.
      */
     <span
       className="contents"
@@ -179,6 +226,7 @@ export function ActionMenu({
       onPointerUp={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => e.stopPropagation()}
+      onContextMenu={(e) => e.stopPropagation()}
     >
       <Menu.Root>
         <Menu.Trigger
@@ -195,28 +243,8 @@ export function ActionMenu({
         </Menu.Trigger>
         <Menu.Portal>
           <Menu.Positioner sideOffset={6} align="end" className="z-50 outline-none">
-            <Menu.Popup className="min-w-48 overflow-hidden rounded-md border border-border bg-popover p-1 text-popover-foreground shadow-xl">
-              {/* Fragmento, nao <div>: o Base UI registra os itens pela lista
-                  composta e um wrapper quebra o clique e a navegacao por teclado. */}
-              {items.map((item) => (
-                <Fragment key={item.label}>
-                  {item.separatorBefore && <Menu.Separator className="my-1 h-px bg-border" />}
-                  <Menu.Item
-                    disabled={item.disabled}
-                    onClick={item.onSelect}
-                    className={cn(
-                      "flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none select-none",
-                      "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
-                      "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
-                      item.destructive &&
-                        "text-destructive data-[highlighted]:bg-destructive/12 data-[highlighted]:text-destructive",
-                    )}
-                  >
-                    {item.icon && <item.icon className="size-3.5 shrink-0" />}
-                    {item.label}
-                  </Menu.Item>
-                </Fragment>
-              ))}
+            <Menu.Popup className={MENU_POPUP_CLASS}>
+              <MenuItems items={items} />
             </Menu.Popup>
           </Menu.Positioner>
         </Menu.Portal>

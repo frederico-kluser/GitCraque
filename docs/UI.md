@@ -37,6 +37,19 @@ recurso, nao o primeiro reflexo.
 | `confetti` | push bem-sucedido |
 | `terminal-session` | estetica do console de comandos crus |
 
+## O que o catalogo nao tem (e por isso e proprio)
+
+O Motion UI e feito de MECANICAS de revelacao e gesto — nao ha nele menu
+ancorado. Onde o app precisa de menu, a semantica vem do `Menu` do Base UI
+(`@base-ui/react`, ja instalado): o `ActionMenu` das linhas, os seletores da
+toolbar e o **menu de contexto** (`app/ContextMenuHost.tsx`). Os tres desenham
+com a MESMA moldura e a mesma linha, exportadas de `panels/parts.tsx`
+(`MENU_POPUP_CLASS`, `MenuItems`) — menu com duas aparencias e menu quebrado.
+
+Regra de produto que acompanha isso: **o menu do navegador nao aparece em lugar
+nenhum**, exceto em campo de texto. Alvo sem acao util nao mostra caixa vazia e
+tambem nao devolve o menu nativo — ver `docs/ARCHITECTURE.md`.
+
 Instalar mais, se realmente faltar:
 `cd web && npx shadcn@4.16.0 add --yes @motion/<nome>` (o `.npmrc` e o
 `components.json` ja estao configurados; o token vem do ambiente).

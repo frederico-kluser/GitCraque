@@ -26,7 +26,7 @@ import { openDialog } from "@/dialogs";
 import { askConfirm } from "@/hooks";
 import type { ConfirmField } from "@/hooks";
 import type { CommitRef, PendingOperationKind, Remote, Worktree } from "@/types/git";
-import { short } from "@/lib/utils";
+import { short, truncate } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
 /* helpers                                                             */
@@ -49,6 +49,55 @@ const defaultRemote = () => {
 
 const currentBranch = () => getState().repo?.head.branch ?? getState().status?.branch ?? null;
 
+/** O commit do log carregado, quando ele esta la — para rotular menus e dialogos. */
+const commitOf = (hash: string) => getState().log?.commits.find((c) => c.hash === hash) ?? null;
+
+/* ------------------------------------------------------------------ */
+/* Area de transferencia                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Copia e avisa. O `CopyButton` do catalogo resolve isso dentro de um botao com
+ * estado proprio; um item de menu some no clique, entao o retorno visual aqui e
+ * o toast — sem ele a pessoa nao sabe se copiou.
+ */
+export async function doCopy(text: string, label: string) {
+  if (await writeClipboard(text)) toast("success", label, truncate(text, 72));
+  else
+    toast(
+      "error",
+      `Nao foi possivel copiar: ${label.toLowerCase()}`,
+      "O navegador recusou o acesso a area de transferencia.",
+    );
+}
+
+async function writeClipboard(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    /* segue para o plano B */
+  }
+  // Plano B para contexto nao seguro — o app servido pelo IP da maquina, e nao
+  // por localhost, nao ganha `navigator.clipboard`.
+  try {
+    const area = document.createElement("textarea");
+    area.value = text;
+    area.setAttribute("readonly", "");
+    area.style.position = "fixed";
+    area.style.opacity = "0";
+    document.body.append(area);
+    area.select();
+    const ok = document.execCommand("copy");
+    area.remove();
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Rede — fetch / pull / push                                          */
 /* ------------------------------------------------------------------ */
@@ -57,6 +106,13 @@ export const doFetch = () =>
   runOperation("Fetch", () => api.fetch({ all: true, prune: true }), {
     refresh: "refs",
     successMessage: "Fetch concluido",
+  });
+
+/** Fetch de UM remoto — o menu do remoto no rail. */
+export const doFetchRemote = (remote: string) =>
+  runOperation(`Fetch ${remote}`, () => api.fetch({ remote, prune: true }), {
+    refresh: "refs",
+    successMessage: `Fetch de ${remote} concluido`,
   });
 
 export const doPull = (rebase = false) =>
@@ -209,6 +265,70 @@ export function doActivateRef(refEntry: CommitRef) {
   }
 }
 
+/**
+ * Merge de uma ref na branch ATUAL — `git merge <origem>` sem trocar de branch.
+ *
+ * Irma da opcao "merge" do arrasto, mas com a direcao fixa e explicita: no
+ * arrasto quem recebe e o alvo do drop, aqui e sempre a branch em que voce esta.
+ * Um menu de contexto nao tem alvo — tem so o item clicado, e a unica leitura
+ * sem ambiguidade e "traga isto para ca".
+ */
+export function openMergeInto(source: string) {
+  const alvo = currentBranch();
+  if (!alvo) {
+    toast(
+      "warning",
+      "HEAD detached",
+      "Nao ha branch atual para receber o merge. Faca checkout de uma branch antes.",
+    );
+    return;
+  }
+  askConfirm({
+    title: `Merge de ${source} em ${alvo}`,
+    description: `Traz os commits de ${source} para ${alvo}. NENHUM historico e reescrito; se houver divergencia, nasce um commit de merge.`,
+    preview: ["git", "merge", "--no-edit", source],
+    confirmLabel: "Merge",
+    fields: [
+      { kind: "toggle", name: "noFf", label: "--no-ff", value: false, hint: "commit de merge mesmo quando daria fast-forward" },
+      { kind: "toggle", name: "squash", label: "--squash", value: false, hint: "junta tudo no index sem commitar nem gravar o merge" },
+    ],
+    run: (values) =>
+      runOperation(
+        "Merge",
+        () => api.merge({ source, noFf: flag(values, "noFf"), squash: flag(values, "squash") }),
+        { refresh: "all", successMessage: `${source} mesclado em ${alvo}` },
+      ),
+  });
+}
+
+/**
+ * Rebase da branch ATUAL em cima de outra — o caso comum de "atualiza minha
+ * branch com a main". Destrutivo: reescreve a branch atual, nao a outra.
+ */
+export function openRebaseOnto(onto: string) {
+  const alvo = currentBranch();
+  if (!alvo) {
+    toast(
+      "warning",
+      "HEAD detached",
+      "Rebase precisa de uma branch atual para reescrever. Faca checkout de uma branch antes.",
+    );
+    return;
+  }
+  askConfirm({
+    title: `Rebase de ${alvo} sobre ${onto}`,
+    description: `REESCREVE ${alvo}: os commits que ela tem e ${onto} nao tem sao reaplicados um a um em cima de ${onto}. ${onto} nao muda. Se ${alvo} ja foi publicada, o proximo push vai exigir --force-with-lease.`,
+    preview: ["git", "rebase", "--autostash", onto, alvo],
+    destructive: true,
+    confirmLabel: "Rebase",
+    run: () =>
+      runOperation("Rebase", () => api.rebase({ source: alvo, onto }), {
+        refresh: "all",
+        successMessage: `${alvo} rebaseada sobre ${onto}`,
+      }),
+  });
+}
+
 export function openRenameBranch(from: string) {
   askConfirm({
     title: `Renomear ${from}`,
@@ -256,6 +376,127 @@ export function openDeleteBranchRemote(remote: string, name: string) {
         refresh: "refs",
         successMessage: `${remote}/${name} apagada`,
       }),
+  });
+}
+
+/* ------------------------------------------------------------------ */
+/* Commits — checkout, cherry-pick, revert, reset                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Checkout de um COMMIT, nao de uma branch: o HEAD fica detached.
+ *
+ * Isso precisa estar escrito na cara. Um cliente grafico que leva a pessoa para
+ * detached HEAD sem avisar produz o classico "commitei e perdi tudo" — os
+ * commits ficam sem nenhuma ref apontando para eles.
+ */
+export function openCheckoutCommit(hash: string) {
+  const subject = commitOf(hash)?.subject;
+  askConfirm({
+    title: `Checkout de ${short(hash)}`,
+    description: `Leva a arvore de trabalho ate ${subject ? `"${truncate(subject, 60)}"` : short(hash)} com o HEAD DETACHED: nenhuma branch acompanha o que voce commitar daqui. Para voltar, faca checkout de uma branch; para ficar, crie uma branch neste ponto.`,
+    preview: ["git", "checkout", short(hash)],
+    confirmLabel: "Checkout",
+    run: () =>
+      runOperation("Checkout", () => api.checkout({ ref: hash }), {
+        refresh: "head",
+        successMessage: `Detached em ${short(hash)}`,
+      }),
+  });
+}
+
+/**
+ * Cherry-pick na branch atual. Sem `onto`: o backend aplica sobre o HEAD.
+ *
+ * A ordem enviada nao importa — o backend reordena topologicamente antes de
+ * chamar o git, porque cherry-pick fora de ordem gera conflito a toa.
+ */
+export function openCherryPick(commits: string[]) {
+  if (commits.length === 0) return;
+  const alvo = currentBranch();
+  const um = commits.length === 1;
+  const subject = um ? commitOf(commits[0])?.subject : null;
+
+  askConfirm({
+    title: um ? `Cherry-pick de ${short(commits[0])}` : `Cherry-pick de ${commits.length} commits`,
+    description: `Aplica ${um ? (subject ? `"${truncate(subject, 48)}"` : short(commits[0])) : `os ${commits.length} commits selecionados`} sobre ${alvo ?? "o HEAD atual"}. Cria commits NOVOS, com hashes novos; nada e reescrito. O backend reordena do mais antigo para o mais novo antes de aplicar.`,
+    preview: ["git", "cherry-pick", ...commits.slice(0, 4).map((h) => short(h)), commits.length > 4 ? "…" : ""].filter(Boolean),
+    confirmLabel: "Cherry-pick",
+    fields: [
+      {
+        kind: "toggle",
+        name: "noCommit",
+        label: "-n (--no-commit)",
+        value: false,
+        hint: "aplica no index e para, sem criar commit",
+      },
+    ],
+    run: (values) =>
+      runOperation(
+        "Cherry-pick",
+        () => api.cherryPick({ commits, noCommit: flag(values, "noCommit") }),
+        { refresh: "all", successMessage: "Cherry-pick concluido" },
+      ),
+  });
+}
+
+/** Revert: cria um commit que DESFAZ outro. Nao reescreve nada. */
+export function openRevert(hash: string) {
+  const subject = commitOf(hash)?.subject;
+  askConfirm({
+    title: `Reverter ${short(hash)}`,
+    description: `Cria um commit NOVO que desfaz ${subject ? `"${truncate(subject, 48)}"` : short(hash)}. O commit original continua no historico — nada e reescrito.`,
+    preview: ["git", "revert", "--no-edit", short(hash)],
+    confirmLabel: "Reverter",
+    fields: [
+      {
+        kind: "toggle",
+        name: "noCommit",
+        label: "-n (--no-commit)",
+        value: false,
+        hint: "desfaz no index e para, sem criar commit",
+      },
+    ],
+    run: (values) =>
+      runOperation("Revert", () => api.revert({ hash, noCommit: flag(values, "noCommit") }), {
+        refresh: "all",
+        successMessage: `${short(hash)} revertido`,
+      }),
+  });
+}
+
+/**
+ * Reset da branch atual ate um commit. O modo e a escolha inteira, e por isso
+ * ele e um campo do dialogo em vez de tres itens de menu quase iguais.
+ */
+export function openResetTo(hash: string) {
+  const alvo = currentBranch();
+  askConfirm({
+    title: `Reset de ${alvo ?? "HEAD"} para ${short(hash)}`,
+    description: `Move ${alvo ?? "o HEAD"} para ${short(hash)}. Os commits que ficarem para tras deixam de ser alcancaveis por esta branch. Com --hard, as alteracoes da arvore de trabalho tambem vao embora e nao ha desfazer.`,
+    preview: ["git", "reset", "--mixed", short(hash)],
+    destructive: true,
+    confirmLabel: "Reset",
+    fields: [
+      {
+        kind: "select",
+        name: "mode",
+        label: "Modo",
+        value: "mixed",
+        options: [
+          { value: "soft", label: "--soft — move a branch; index e arvore intactos" },
+          { value: "mixed", label: "--mixed — move a branch e limpa o index; arvore intacta" },
+          { value: "hard", label: "--hard — move tudo e DESCARTA a arvore de trabalho" },
+        ],
+      },
+    ],
+    run: (values) => {
+      const mode = (text(values, "mode") || "mixed") as "soft" | "mixed" | "hard";
+      return runOperation("Reset", () => api.reset({ ref: hash, mode }), {
+        refresh: "all",
+        successMessage: `Reset --${mode} para ${short(hash)}`,
+      });
+    },
   });
 }
 
@@ -506,6 +747,26 @@ export const doDiscard = (paths: string[]) =>
     refresh: "worktree",
     successMessage: "Alteracoes descartadas",
   });
+
+/**
+ * Descartar a partir do MENU, onde nao existe o hold da linha.
+ *
+ * O dialogo destrutivo traz o `HoldToConfirmButton` de volta — descartar apaga
+ * trabalho que o git nao guarda em lugar nenhum, e essa e a unica acao do painel
+ * de alteracoes sem rede de seguranca.
+ */
+export function openDiscard(paths: string[]) {
+  if (paths.length === 0) return;
+  const um = paths.length === 1;
+  askConfirm({
+    title: um ? `Descartar ${paths[0]}` : `Descartar ${paths.length} arquivos`,
+    description: `Devolve ${um ? "o arquivo" : "os arquivos"} ao estado do ultimo commit. O que nao estava commitado se perde, e o git nao guarda copia disso.`,
+    preview: ["git", "restore", "--", ...paths.slice(0, 3), paths.length > 3 ? "…" : ""].filter(Boolean),
+    destructive: true,
+    confirmLabel: "Descartar",
+    run: () => doDiscard(paths),
+  });
+}
 
 export const doCommit = (body: { message: string; amend?: boolean; signoff?: boolean }) =>
   runOperation("Commit", () => api.doCommit(body), { refresh: "all", successMessage: "Commit criado" });

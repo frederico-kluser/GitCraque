@@ -26,6 +26,8 @@ import {
 } from "@/components/motion-ui/smooth-tabs";
 import { FileViewer } from "@/viewer";
 import { closeFile, useAppState } from "@/state/store";
+import { openContextMenu } from "@/hooks";
+import { viewerMenu } from "@/app/menus";
 import { cn, short } from "@/lib/utils";
 import type { PanelProps } from "@/types/modules";
 import { Chip, EmptyState } from "./parts";
@@ -112,7 +114,26 @@ export function WorkDock({ className, controls }: WorkDockProps) {
 
         <SmoothTabsPanel value="viewer" className="min-h-0 overflow-hidden bg-surface-inset">
           {openFile ? (
-            <FileViewer file={openFile} onClose={closeFile} className="h-full min-h-0 overflow-auto" />
+            <FileViewer
+              file={openFile}
+              onClose={closeFile}
+              /* O visualizador so reporta o clique; quem sabe o que se pode
+                 fazer com um arquivo e o shell. */
+              onMenu={(event) =>
+                openContextMenu({
+                  label: openFile.path,
+                  x: event.x,
+                  y: event.y,
+                  items: viewerMenu({
+                    ...event,
+                    path: openFile.path,
+                    hash: openFile.hash,
+                    onClose: closeFile,
+                  }),
+                })
+              }
+              className="h-full min-h-0 overflow-auto"
+            />
           ) : (
             <EmptyState
               className="h-full justify-center"

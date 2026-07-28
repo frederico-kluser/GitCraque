@@ -72,7 +72,7 @@ export const COMMAND_GROUPS = [
 ] as const;
 
 /** Abre a url de um remoto no navegador, convertendo scp-like em https. */
-function browseUrl(raw: string): string | null {
+export function browseUrl(raw: string): string | null {
   if (/^https?:\/\//.test(raw)) return raw.replace(/\.git$/, "");
   const scp = /^(?:([^@]+)@)?([^:/]+):(.+)$/.exec(raw);
   if (scp) return `https://${scp[2]}/${scp[3].replace(/\.git$/, "")}`;

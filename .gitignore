@@ -1,4 +1,6 @@
-node_modules/
+# sem a barra: numa worktree o node_modules costuma ser um SYMLINK para o do
+# repositorio principal, e `node_modules/` (com barra) so casa com diretorio.
+node_modules
 dist/
 .vite/
 *.log

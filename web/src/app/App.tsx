@@ -28,6 +28,7 @@ import {
 import {
   DETAIL_RANGE,
   RAIL_RANGE,
+  openContextMenu,
   requestCommit,
   setCommitDraft,
   setDetailWidth,
@@ -36,11 +37,28 @@ import {
   useHotkeys,
   useShellState,
 } from "@/hooks";
+import type { CommitRef } from "@/types/git";
 import { doActivateRef, doRefresh } from "./actions";
+import { commitMenu, refMenu } from "./menus";
 import { ConfirmHost } from "./ConfirmHost";
+import { ContextMenuHost } from "./ContextMenuHost";
 import { Splitter } from "./Splitter";
 import { StatusFooter } from "./StatusFooter";
 import { Toasts } from "./Toasts";
+
+/* ------------------------------------------------------------------ */
+/* Menus da View Tree                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * O grafo nao sabe o que se pode fazer com um commit — ele so avisa onde foi o
+ * clique. Quem traduz isso em acoes e o shell, aqui.
+ */
+const onCommitContextMenu = (hash: string, at: { x: number; y: number }) =>
+  openContextMenu({ label: `Commit ${hash.slice(0, 7)}`, ...at, items: commitMenu(hash) });
+
+const onRefContextMenu = (refEntry: CommitRef, at: { x: number; y: number }) =>
+  openContextMenu({ label: refEntry.name, ...at, items: refMenu(refEntry) });
 
 /* ------------------------------------------------------------------ */
 /* Estados de contorno                                                 */
@@ -181,6 +199,7 @@ export function App() {
             <RepoPicker variant="page" className="w-full max-w-none" />
           </div>
         </main>
+        <ContextMenuHost />
         <Toasts />
       </>
     );
@@ -225,6 +244,9 @@ export function App() {
                 onRevealed={clearReveal}
                 /* duplo clique num chip de branch da View Tree troca para ela */
                 onRefActivate={doActivateRef}
+                /* botao direito: no chip, o menu da ref; na linha, o do commit */
+                onRefContextMenu={onRefContextMenu}
+                onContextMenu={onCommitContextMenu}
                 loading={loadingLog}
                 onSelect={selectCommit}
                 className="h-full"
@@ -250,6 +272,9 @@ export function App() {
       {/* Confirmacoes vindas do DND (outro modulo) e dos paineis (este). */}
       <DialogHost intent={pendingIntent} onClose={() => setPendingIntent(null)} />
       <ConfirmHost />
+      {/* Um menu de contexto para a tela inteira — e o fim do menu do navegador
+          em tudo o que nao e campo de texto. */}
+      <ContextMenuHost />
       <Toasts />
 
       {/* Reconexao: banner fixo, para nao depender do scroll da toolbar. */}
