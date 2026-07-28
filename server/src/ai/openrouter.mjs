@@ -26,23 +26,24 @@ const ATTRIBUTION = {
 /**
  * O modelo de transcricao.
  *
- * `microsoft/mai-transcribe-1.5` foi escolhido por ser o mais preciso do
- * catalogo em julho de 2026: melhor WER da classe no FLEURS (3,7% em 25
- * idiomas, 43 suportados) e 2,4% no Artificial Analysis, com o portugues entre
- * os idiomas fortes.
+ * A restricao que manda aqui NAO e a acuracia — e o container. O gravador do
+ * navegador entrega webm/opus e nao tem escolha: o Chrome so oferece webm
+ * (`MediaRecorder.isTypeSupported("audio/ogg;codecs=opus")` e `false`), entao
+ * um modelo que recuse webm deixa a funcao inteira morta.
  *
- * O que ele NAO entrega por aqui: o "keyword biasing" anunciado pela Microsoft
- * nao e alcancavel pela OpenRouter — o unico endpoint do modelo e o Azure, e os
- * parametros que ele aceita sao `max_tokens`, `temperature`, `top_p` e
- * `max_completion_tokens`. Nenhum campo de vocabulario. Por isso a correcao de
- * nome de branch acontece DEPOIS, no prompt do agente, que recebe a lista real
- * de refs (ver `prompt.mjs`) — e resolve "pagamento pics" em
- * "feature/pagamento-pix" com contexto que a transcricao nunca teria.
+ * `microsoft/mai-transcribe-1.5` estava aqui e era exatamente esse caso. Ele so
+ * roda na Azure, e a Azure recusa webm com 400 — medido, junto com m4a. O
+ * sintoma era `{"error":"a transcricao falhou","detail":"HTTP 400"}` em toda
+ * gravacao, em qualquer navegador.
  *
- * Trocar de modelo e trocar esta linha. Alternativa muito mais barata, se o
- * custo pesar: `openai/gpt-4o-transcribe`.
+ * `openai/whisper-large-v3-turbo` roda no Groq, aceita os seis containers
+ * testados e responde em ~350 ms. De quebra custa $0,04/h contra $0,36/h.
+ *
+ * Trocar de modelo e trocar esta linha — mas o modelo novo precisa de uma
+ * entrada em `MODEL_AUDIO_FORMATS` que cubra `RECORDER_FORMATS`, e ha teste
+ * que cobra isso.
  */
-export const TRANSCRIBE_MODEL = "microsoft/mai-transcribe-1.5";
+export const TRANSCRIBE_MODEL = "openai/whisper-large-v3-turbo";
 
 /** Teto de espera da transcricao. Acima disso o usuario ja desistiu. */
 export const TRANSCRIBE_TIMEOUT_MS = 60_000;
@@ -51,11 +52,33 @@ export const TRANSCRIBE_TIMEOUT_MS = 60_000;
 export const REACH_TIMEOUT_MS = 8_000;
 
 /**
- * Formatos de audio aceitos. `webm` esta aqui porque e o que o `MediaRecorder`
- * do navegador produz — e por a OpenRouter aceitar webm, nao ha transcodificacao
- * no caminho e o `ffmpeg` nunca entra no projeto.
+ * Containers que o gravador do navegador consegue emitir.
+ *
+ * Espelha o que `formatOf()` devolve em `web/src/hooks/useVoiceRecorder.ts` —
+ * o gravador so produz estes dois, e na pratica quase sempre o primeiro. E a
+ * lista que qualquer modelo candidato precisa cobrir inteira.
  */
-export const AUDIO_FORMATS = ["webm", "ogg", "mp3", "wav", "m4a", "flac", "aac"];
+export const RECORDER_FORMATS = ["webm", "ogg"];
+
+/**
+ * Containers aceitos POR MODELO.
+ *
+ * Medido contra a API, um POST por container, nao copiado da documentacao: a
+ * lista generica da OpenRouter menciona webm, mas quem aceita ou recusa e o
+ * provider por tras do modelo, e os dois discordam. Foi essa confusao que
+ * manteve a transcricao quebrada — a lista antiga era global e dizia que webm
+ * servia para todo mundo.
+ *
+ * `microsoft/mai-transcribe-1.5` fica registrado como o contra-exemplo: ele
+ * existe, funciona, e simplesmente nao serve para audio de navegador.
+ */
+export const MODEL_AUDIO_FORMATS = {
+  "openai/whisper-large-v3-turbo": ["webm", "ogg", "mp3", "wav", "m4a", "flac"],
+  "microsoft/mai-transcribe-1.5": ["ogg", "mp3", "wav", "flac"],
+};
+
+/** Containers aceitos pelo modelo em uso. */
+export const AUDIO_FORMATS = MODEL_AUDIO_FORMATS[TRANSCRIBE_MODEL];
 
 /**
  * @param {string} apiKey
@@ -97,8 +120,10 @@ async function post(path, body, apiKey, timeoutMs) {
  * @param {object} params
  * @param {string} params.apiKey
  * @param {string} params.audio     audio em base64, sem o prefixo `data:`
- * @param {string} [params.format]  um de `AUDIO_FORMATS`
- * @param {string} [params.language] codigo do idioma ("pt"), ajuda o modelo
+ * @param {string} [params.format]  um container aceito pelo modelo em uso
+ * @param {string} [params.language] codigo do idioma ("pt"), ajuda o modelo.
+ *   Nem todo provider declara suportar — os que nao declaram ignoram, medido;
+ *   a OpenRouter nao recusa a chamada por causa dele
  * @param {string} [params.model]
  * @param {typeof fetch} [params.fetchImpl] injetado nos testes; sem isso a
  *   suite do backend precisaria de rede, e ela nao pode precisar
@@ -123,7 +148,12 @@ export async function transcribe({
     error.status = 400;
     throw error;
   }
-  if (!AUDIO_FORMATS.includes(format)) {
+  // Contra os formatos do modelo que VAI ser chamado, nao contra uma lista
+  // global: quem aceita o container e o provider por tras do modelo. Recusar
+  // aqui troca um "HTTP 400" opaco vindo de fora por uma mensagem que diz qual
+  // formato falhou.
+  const accepted = MODEL_AUDIO_FORMATS[model] ?? AUDIO_FORMATS;
+  if (!accepted.includes(format)) {
     const error = new Error("error.aiAudioFormat");
     error.status = 400;
     error.detail = format;

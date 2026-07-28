@@ -16,7 +16,14 @@ import test from "node:test";
 import * as key from "../src/ai/key.mjs";
 import * as pi from "../src/ai/pi.mjs";
 import * as session from "../src/ai/session.mjs";
-import { checkReachable, transcribe } from "../src/ai/openrouter.mjs";
+import {
+  AUDIO_FORMATS,
+  MODEL_AUDIO_FORMATS,
+  RECORDER_FORMATS,
+  TRANSCRIBE_MODEL,
+  checkReachable,
+  transcribe,
+} from "../src/ai/openrouter.mjs";
 import {
   MAX_BRANCHES,
   buildRepoSnapshot,
@@ -424,6 +431,46 @@ test("transcribe manda o audio em base64 e devolve texto, custo e duracao", asyn
 test("transcribe recusa formato que a OpenRouter nao aceita", async () => {
   await assert.rejects(
     () => transcribe({ apiKey: "k", audio: "AAA", format: "aiff" }),
+    /error.aiAudioFormat/,
+  );
+});
+
+/**
+ * A regressao que deixou a transcricao morta: o modelo configurado tem de
+ * aceitar TUDO que o gravador do navegador consegue produzir.
+ *
+ * `microsoft/mai-transcribe-1.5` so roda na Azure, que recusa webm com 400 —
+ * e webm e o unico container que o Chrome grava. O par estava quebrado e nada
+ * apontava para isso, porque o teste de cima mocka o `fetch` e so verifica que
+ * o corpo enviado e o corpo que o codigo monta.
+ *
+ * Sem rede de proposito: a suite do backend nao pode depender de conexao.
+ */
+test("o modelo de transcricao aceita todo container que o gravador produz", () => {
+  const accepted = MODEL_AUDIO_FORMATS[TRANSCRIBE_MODEL];
+  assert.ok(accepted, `${TRANSCRIBE_MODEL} nao tem entrada em MODEL_AUDIO_FORMATS`);
+  assert.deepEqual(accepted, AUDIO_FORMATS);
+  for (const format of RECORDER_FORMATS) {
+    assert.ok(
+      accepted.includes(format),
+      `${TRANSCRIBE_MODEL} nao aceita "${format}", que o navegador pode gravar`,
+    );
+  }
+});
+
+test("o contra-exemplo continua registrado: a mai-transcribe nao serve para webm", async () => {
+  const mai = MODEL_AUDIO_FORMATS["microsoft/mai-transcribe-1.5"];
+  assert.ok(mai, "o contra-exemplo sumiu do mapa e com ele a razao do bug");
+  assert.equal(mai.includes("webm"), false);
+  // E a validacao local tem de barrar antes de gastar a chamada.
+  await assert.rejects(
+    () =>
+      transcribe({
+        apiKey: "k",
+        audio: "AAA",
+        format: "webm",
+        model: "microsoft/mai-transcribe-1.5",
+      }),
     /error.aiAudioFormat/,
   );
 });

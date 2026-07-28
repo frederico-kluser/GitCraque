@@ -6,8 +6,13 @@
  * navegador nunca ve o segredo.
  *
  * O formato gravado e `webm/opus`, que e o que o Chrome e o Firefox produzem
- * nativamente e que a OpenRouter aceita como esta. Nao ha transcodificacao no
- * caminho e o projeto continua sem `ffmpeg`.
+ * nativamente. Nao ha transcodificacao no caminho e o projeto continua sem
+ * `ffmpeg` — mas isso cobra um preco do outro lado: o modelo de transcricao
+ * TEM de aceitar webm, e nem todo modelo aceita. Quem garante o par e
+ * `MODEL_AUDIO_FORMATS` em `server/src/ai/openrouter.mjs`, com teste.
+ *
+ * Nao adianta preferir ogg para escapar disso: o Chrome nao grava ogg
+ * (`isTypeSupported("audio/ogg;codecs=opus")` e `false`), so o Firefox grava.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
 
