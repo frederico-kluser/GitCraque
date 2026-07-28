@@ -385,9 +385,22 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
 
   const naPagina = variant === "page";
 
+  /* ALTURA FIXA, de proposito.
+   *
+   * O seletor tem altura propria em vez de crescer com o conteudo porque o
+   * dialogo e centralizado: qualquer mudanca de altura (esqueleto virando
+   * lista, a dica de "Enter abre este caminho" aparecendo, um rodape que
+   * quebra em duas linhas) reposicionava a caixa inteira. A pilula das abas e
+   * um elemento de `layoutId`, entao ela ANIMAVA esse deslocamento e entrava
+   * voando de baixo ao abrir o dialogo. Com a altura cravada, quem absorve a
+   * folga e a area das abas (`flex-1` logo abaixo) e nada se move. */
   return (
     <div
-      className={cn("flex min-h-0 flex-col gap-3", naPagina && "w-full max-w-3xl", className)}
+      className={cn(
+        "flex min-h-0 flex-col gap-3",
+        naPagina ? "h-[56vh] w-full max-w-3xl" : "h-[52vh]",
+        className,
+      )}
       onKeyDown={onKeyDown}
     >
       {/* --- busca --- */}
@@ -450,12 +463,9 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
           </SmoothTabsTab>
         </SmoothTabsList>
 
-        <SmoothTabsPanels
-          className={cn(
-            "min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-background",
-            naPagina ? "h-[46vh]" : "h-[42vh]",
-          )}
-        >
+        {/* sem altura propria: a area das abas e quem absorve a folga da
+            altura fixa do seletor */}
+        <SmoothTabsPanels className="min-h-0 flex-1 overflow-y-auto rounded-md border border-border bg-background">
           {/* ---------------- favoritos ---------------- */}
           <SmoothTabsPanel value="favoritos">
             <PainelFavoritos

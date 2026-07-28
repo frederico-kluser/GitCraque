@@ -32,7 +32,6 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { BorderBeam } from "@/components/motion-ui/border-beam";
 import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
 import { ProgressBar } from "@/components/motion-ui/progress-bar";
 import { Skeleton } from "@/components/motion-ui/skeleton";
@@ -331,33 +330,33 @@ function WorktreeSelector() {
 
   return (
     <Menu.Root>
-      {/* BorderBeam marca a worktree ativa; `active` e o portao do efeito. */}
-      <BorderBeam active={Boolean(active)} duration={9} size={90} thickness={2} className="rounded-lg">
-        <Menu.Trigger
-          title="Trocar de worktree — o servidor faz process.chdir, sem checkout"
-          className={cn(
-            "flex max-w-[22rem] min-w-0 items-center gap-2.5 rounded-lg border border-border bg-card px-3 py-1.5 text-left",
-            "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
-            "hover:bg-accent data-[popup-open]:bg-accent",
-            FOCUS_RING,
-          )}
-        >
-          <FolderTree className="size-4 shrink-0 text-primary" />
-          <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-1.5">
-              <span className="truncate text-xs font-semibold text-foreground">
-                {active?.label ?? "sem worktree"}
-              </span>
-              {active?.branch && <Chip tone="primary">{active.branch}</Chip>}
+      {/* A worktree ativa e marcada por uma borda ESTATICA em primary — sem
+          efeito animado correndo pela borda. */}
+      <Menu.Trigger
+        title="Trocar de worktree — o servidor faz process.chdir, sem checkout"
+        className={cn(
+          "flex max-w-[22rem] min-w-0 items-center gap-2.5 rounded-lg border bg-card px-3 py-1.5 text-left",
+          "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+          "hover:bg-accent data-[popup-open]:bg-accent",
+          active ? "border-primary/40" : "border-border",
+          FOCUS_RING,
+        )}
+      >
+        <FolderTree className="size-4 shrink-0 text-primary" />
+        <span className="min-w-0 flex-1">
+          <span className="flex items-center gap-1.5">
+            <span className="truncate text-xs font-semibold text-foreground">
+              {active?.label ?? "sem worktree"}
             </span>
-            {/* O caminho absoluto na cara: a troca e por diretorio. */}
-            <span className="block truncate font-mono text-[10px] text-muted-foreground">
-              {active?.path ?? cwd ?? "—"}
-            </span>
+            {active?.branch && <Chip tone="primary">{active.branch}</Chip>}
           </span>
-          <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
-        </Menu.Trigger>
-      </BorderBeam>
+          {/* O caminho absoluto na cara: a troca e por diretorio. */}
+          <span className="block truncate font-mono text-[10px] text-muted-foreground">
+            {active?.path ?? cwd ?? "—"}
+          </span>
+        </span>
+        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+      </Menu.Trigger>
 
       <Menu.Portal>
         <Menu.Positioner sideOffset={8} align="start" className="z-50 outline-none">

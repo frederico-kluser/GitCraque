@@ -4,8 +4,9 @@
  * Ordem fixa: Worktrees, Branches locais, Remotos, Tags, Stashes.
  *
  * Duas regras aparecem aqui de forma visivel:
- *  - a worktree ativa e marcada com `BorderBeam` e clicar em outra chama
- *    `switchWorktree()`, que e `process.chdir()` no servidor — jamais checkout;
+ *  - a worktree ativa e marcada por fundo e cor (marca ESTATICA, sem efeito de
+ *    borda animado) e clicar em outra chama `switchWorktree()`, que e
+ *    `process.chdir()` no servidor — jamais checkout;
  *  - toda acao destrutiva abre dialogo antes de tocar o repositorio; nenhuma
  *    linha deste arquivo chama `api.*` diretamente.
  *
@@ -40,7 +41,6 @@ import {
   AccordionPanel,
   AccordionTrigger,
 } from "@/components/motion-ui/accordion";
-import { BorderBeam } from "@/components/motion-ui/border-beam";
 import { useDraggableEntity, useDroppableTarget } from "@/dnd";
 import {
   selectBranches,
@@ -171,7 +171,7 @@ function RailRow({
 /* ------------------------------------------------------------------ */
 
 function WorktreeRow({ wt }: { wt: Worktree }) {
-  const row = (
+  return (
     <RailRow
       active={wt.isActive}
       onClick={wt.isActive ? undefined : () => void doSwitchWorktree(wt)}
@@ -203,15 +203,6 @@ function WorktreeRow({ wt }: { wt: Worktree }) {
       </div>
       <ActionMenu label={`Acoes da worktree ${wt.label}`} items={worktreeMenu(wt)} />
     </RailRow>
-  );
-
-  // A worktree ATIVA (aquela onde o servidor esta com o cwd) leva o beam.
-  return wt.isActive ? (
-    <BorderBeam active duration={9} size={90} thickness={2} className="rounded-md">
-      {row}
-    </BorderBeam>
-  ) : (
-    row
   );
 }
 
