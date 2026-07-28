@@ -1,6 +1,6 @@
 ---
 name: orchestrating-git-backend
-description: "Injects the invariants of the GitCraque Node backend under server/**: the boot-time route contract, the single git spawn point, the non-reentrant mutation lock, i18n error keys and the security guards. Use whenever a task touches server/**, adds or changes a REST route, endpoint, response payload or WebSocket event, runs a git command from Node, parses git output, or works on worktree switching, credentials, the askpass or sequence-editor trampolines, or contract.mjs — even when the user never mentions skills, the backend, or a file name."
+description: "Injects the invariants of the GitCraque Node backend under server/**: the boot-time route contract, the single git spawn point, the non-reentrant mutation lock, i18n error keys and the security guards. Use whenever a task touches server/**, adds or changes a REST route, endpoint, response payload or WebSocket event, runs a git command from Node, parses git log output (pipe-delimited, where a commit subject may itself contain the separator), refs or status, works on worktree switching, credentials, the askpass or sequence-editor trampolines, or edits contract.mjs or the typed REST client in web/src/lib/api.ts — even when the user never mentions skills, the backend, or a file name."
 metadata:
   type: task
   verification_signal: npm run test:server

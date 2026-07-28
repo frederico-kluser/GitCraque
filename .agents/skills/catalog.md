@@ -11,10 +11,10 @@ below, and deletes the plan file when the work is done.
 
 | Skill | Select it when the task touches | Verification signal |
 |---|---|---|
-| [`orchestrating-git-backend`](orchestrating-git-backend/SKILL.md) | `server/**` — REST routes, WebSocket events, running or parsing git, `contract.mjs`, worktrees, credentials, the askpass/sequence-editor trampolines | `npm run test:server` |
+| [`orchestrating-git-backend`](orchestrating-git-backend/SKILL.md) | `server/**` — REST routes, WebSocket events, running or parsing git, `contract.mjs`, worktrees, credentials, the askpass/sequence-editor trampolines. **Also owns the front-end half of a new route**: the typed client in `web/src/lib/api.ts` and the payload type in `web/src/types/git.ts` | `npm run test:server` |
 | [`laying-out-commit-graph`](laying-out-commit-graph/SKILL.md) | `web/src/graph/**` — lanes, edges, Bezier paths, commit rows, react-window virtualization, reveal/scroll-to-commit, the graph's custom test runner | `npm run test:graph` |
-| [`resolving-drag-intents`](resolving-drag-intents/SKILL.md) | `web/src/dnd/**`, `web/src/dialogs/**` — the intent matrix, drag ids, drop targets, confirmation dialogs, executors, hold-to-confirm | `npm run test:dnd` |
-| [`composing-shell-interface`](composing-shell-interface/SKILL.md) | `web/src/app/**`, `web/src/panels/**`, `web/src/hooks/**` — toolbar, rail, panels, dock, footer, context menus, hotkeys, theming, any new React component | `npm run typecheck` + `check-project-rules.mjs` |
+| [`resolving-drag-intents`](resolving-drag-intents/SKILL.md) | `web/src/dnd/**`, `web/src/dialogs/**` — the intent matrix, drag ids, drop targets, executors, and the **drag-initiated** confirmation dialogs | `npm run test:dnd` |
+| [`composing-shell-interface`](composing-shell-interface/SKILL.md) | `web/src/app/**`, `web/src/panels/**`, `web/src/hooks/**` — toolbar, rail, panels, dock, footer, context menus, hotkeys, theming, any new React component **outside `graph/` and `dnd/`** (directory always wins), and the **`askConfirm`/`ConfirmHost`** gate that makes a toolbar or menu action hold-to-confirm | `npm run typecheck` + `check-project-rules.mjs` |
 | [`translating-interface-text`](translating-interface-text/SKILL.md) | any user-facing string, front-end or backend: labels, toasts, dialog copy, menu entries, plurals, error messages | `npm run typecheck` |
 | [`verifying-changes`](verifying-changes/SKILL.md) | closing **every** task; a failing or flaky suite; adding a test; changing imports in graph, dnd, viewer or i18n | `npm test` |
 

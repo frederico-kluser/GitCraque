@@ -1,6 +1,6 @@
 ---
 name: composing-shell-interface
-description: "Injects the Motion UI cascade, semantic design tokens, the overlay z-ladder, click-time context menus and the confirm/hold-to-confirm gate for GitCraque's shell in web/src/app/**, web/src/panels/** and web/src/hooks/**. Use whenever a task touches the toolbar, rail, panels, dock, footer, dialogs, context menus, keyboard shortcuts, styling or any React component outside graph and dnd — even when the user just says 'add a button', 'change the layout' or names a panel, and never mentions skills."
+description: "Injects the Motion UI cascade, semantic design tokens, the overlay z-ladder, click-time context menus and the askConfirm/ConfirmHost gate that turns a destructive action into hold-to-confirm (pressao continua) on the toolbar, rail and menu paths, for GitCraque's shell in web/src/app/**, web/src/panels/** and web/src/hooks/**. Use whenever a task touches the toolbar, rail, panels, dock, footer, context menus, keyboard shortcuts, styling or any React component outside graph and dnd — including making a toolbar or menu action require hold-to-confirm — even when the user just says 'add a button', 'change the layout' or names a panel, and never mentions skills. Drag-initiated dialogs belong to resolving-drag-intents instead."
 metadata:
   type: task
   verification_signal: npm run typecheck && node .agents/skills/scripts/check-project-rules.mjs

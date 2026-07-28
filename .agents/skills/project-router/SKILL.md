@@ -51,6 +51,13 @@ out mechanically.
 Keep asking while an answer would change what you build. Do not start on a
 "probably".
 
+**When nobody is there to answer** — a one-shot or subagent run — do not stall
+and do not silently guess. Write the questions down, answer each with the most
+defensible reading, and mark every one in `TASK_PLAN.md` as
+`PREMISSA: <a suposição> — confirmar`. Then build under those stated assumptions
+and list them in the final report. An unanswered question is a documented
+assumption, never an invisible one.
+
 ### 2. Write `TASK_PLAN.md`
 
 In Portuguese, at the repository root: objective, agreed scope, out-of-scope,
@@ -69,11 +76,26 @@ must be called out in the commit. A route that is not in `web/src/lib/api.ts`
 does not exist to the front-end. `tsc` catches a removal only if some consumer
 reads the field, so renaming an unread field passes clean: check by hand.
 
+**`LOG_ARGS` is the exception to "additive is safe".** It is byte-frozen, not
+extensible (`server/src/contract.mjs:19-20`, product rule 2). Appending
+`--numstat` or any other flag to it looks like a legal addition and is not — it
+is the single most likely way to break this repo while believing you followed the
+rules, and `check-project-rules.mjs` fails on it. Per-commit derived data comes
+from a **separate** command or an existing route.
+
+**Before designing anything new, check whether it already exists.** Grep
+`web/src/lib/api.ts` and `server/src/contract.mjs` for the data first. Example:
+`GET /commit/:hash` already returns per-commit stats
+(`server/src/git/log.mjs:300-312`), so a request for "files changed per commit"
+is a wiring task, not a new endpoint. This step routinely halves the work.
+
 ### 4. Classify and select
 
-Read `catalog.md`. Pick the domain skill by directory, add
-`translating-interface-text` if any user-facing text is involved, and always
-finish with `verifying-changes`. On ambiguity prefer the most specific skill.
+Read `catalog.md`. **Pick the domain skill by directory** — the directory always
+wins over the description. `CommitRow.tsx` is a React component, but it lives in
+`web/src/graph/**`, so it belongs to `laying-out-commit-graph`, not to the shell
+skill that claims "any new React component". Add `translating-interface-text` if
+any user-facing text is involved, and always finish with `verifying-changes`.
 
 ### 5. Assemble the chain
 

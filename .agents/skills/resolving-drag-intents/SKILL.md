@@ -1,6 +1,6 @@
 ---
 name: resolving-drag-intents
-description: "Injects the drag-intent matrix, scoped dnd-kit ids, the resolve-then-confirm split and the api-contract test of GitCraque's semantic drag engine in web/src/dnd/** and web/src/dialogs/**. Use whenever a task touches drag-and-drop, dropping a commit on a branch, merge/rebase/cherry-pick from a gesture, the trash target, confirmation dialogs or hold-to-confirm — even when the user only says 'dragging' or names a git operation and never mentions skills."
+description: "Injects the drag-intent matrix, scoped dnd-kit ids, the resolve-then-confirm split and the api-contract test of GitCraque's semantic drag engine in web/src/dnd/** and web/src/dialogs/**. Use whenever a task touches drag-and-drop, dropping a commit on a branch, merge/rebase/cherry-pick from a gesture, the trash target, or the drag-initiated confirmation dialogs and their hold-to-confirm — even when the user only says 'dragging' or names a git operation and never mentions skills. A toolbar or menu action that needs confirming belongs to composing-shell-interface instead."
 metadata:
   type: task
   verification_signal: npm run test:dnd

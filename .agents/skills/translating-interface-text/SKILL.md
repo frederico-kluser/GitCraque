@@ -1,6 +1,6 @@
 ---
 name: translating-interface-text
-description: "Injects GitCraque's four-language catalogue rules: pt.ts is the master that defines every key, tsc enforces the other three in both directions, and web/src/i18n/** must stay free of runtime @/ imports. Use whenever a task adds, changes or removes ANY user-facing string, label, toast, dialog copy, menu entry, error message or plural — in the front-end or the backend — even when the user just says 'add a button that says X' and never mentions i18n or skills."
+description: "Injects GitCraque's four-language catalogue rules: pt.ts is the master that defines every key, tsc enforces the other three in both directions, and web/src/i18n/** must stay free of runtime @/ imports. Use whenever a task adds, changes or removes ANY user-facing string, label, toast, dialog copy, menu entry, error message or plural, or mentions the Portuguese, English, Spanish or Chinese (pt/en/es/zh) wording of anything — in the front-end or the backend — even when the user just says 'add a button that says X' and never mentions i18n or skills."
 metadata:
   type: task
   verification_signal: npm run typecheck

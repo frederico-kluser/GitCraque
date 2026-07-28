@@ -27,7 +27,12 @@
     { "query": "add a new label string and translate it to the four languages", "expect": "translating-interface-text" },
     { "query": "the toast message plural is wrong for spanish and chinese", "expect": "translating-interface-text" },
     { "query": "run the tests and check the typecheck before finishing", "expect": "verifying-changes" },
-    { "query": "a test suite is flaky and fails to load a module", "expect": "verifying-changes" }
+    { "query": "a test suite is flaky and fails to load a module", "expect": "verifying-changes" },
+
+    { "query": "the commit subject is cut short when the message contains a pipe character", "expect": "orchestrating-git-backend", "reject": ["laying-out-commit-graph"] },
+    { "query": "the spanish label on the rebase confirmation button is wrong", "expect": "translating-interface-text", "reject": ["resolving-drag-intents"] },
+    { "query": "the bezier curve between two lanes has a visible kink", "expect": "laying-out-commit-graph", "reject": ["composing-shell-interface"] },
+    { "query": "switching worktree is doing a checkout instead of chdir", "expect": "orchestrating-git-backend", "reject": ["composing-shell-interface"] }
   ],
 
   "knowledge": [

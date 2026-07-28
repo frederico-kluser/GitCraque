@@ -43,10 +43,11 @@
     {
       "id": 5,
       "name": "Validation",
-      "done": false,
-      "gate_passed": false,
-      "artifact": ".agents/validation-report.md"
+      "done": true,
+      "gate_passed": true,
+      "artifact": ".agents/validation-report.md",
+      "gate_evidence": "validation-report.md: 17 routing evals incl. 4 near-misses + live PT semantic test; accept case (backend description, gated by npm run test:server); reject case (red signal -> no receipt -> write-gate exit 2); discarded regression (degraded description flipped 2 evals -> restored); router lifecycle verified live (PT questions, TASK_PLAN.md created and deleted). Final: 367 tests, typecheck clean, 39 e2e, 9/9 lint, 38/38 evals, 9 rules clean."
     }
   ],
-  "updated_by": "phase-4-complete"
+  "updated_by": "phase-5-complete"
 }

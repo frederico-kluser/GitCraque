@@ -11,3 +11,7 @@ npm-debug.log*
 coverage/
 .gitcraque/
 *.tsbuildinfo
+
+# plano de tarefa do project-router: descartavel, apagado no fim de cada tarefa.
+# ignorado para que uma tarefa interrompida nao deixe o arquivo commitavel.
+TASK_PLAN.md

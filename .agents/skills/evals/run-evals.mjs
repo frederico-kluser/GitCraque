@@ -45,6 +45,15 @@ const fail = (kind, name, detail) => results.push({ kind, name, ok: false, detai
 
 /* ------------------------- descriptions, for routing ---------------------- */
 
+/*
+ * Only the domain skills are routing candidates.
+ *
+ * project-router is the always-on entry point -- it is never selected *against*
+ * another skill -- and the meta skills are invoked by name at task completion.
+ * Ranking them alongside the domains models the wrong decision, and in practice
+ * the router's generic verbs ("runs", "checks", "before any step") collide with
+ * every query about running or checking anything.
+ */
 function loadDescriptions() {
   const out = new Map();
   for (const dir of readdirSync(SKILLS_DIR)) {
@@ -54,6 +63,8 @@ function loadDescriptions() {
     const file = join(full, "SKILL.md");
     if (!existsSync(file)) continue;
     const raw = readFileSync(file, "utf8");
+    const type = raw.match(/^\s*type:\s*(\w+)/m)?.[1];
+    if (type !== "task" && type !== "knowledge") continue;
     const m = raw.match(/^\s*description:\s*(.+)$/m);
     if (m) out.set(dir, m[1].trim().replace(/^["']|["']$/g, "").toLowerCase());
   }
@@ -73,12 +84,18 @@ const STOP = new Set(
 /* `/` is a separator, not a word character. Keeping it glued "merge/rebase"
    into a single token that matched nothing, which silently under-scored every
    skill whose description lists alternatives that way. */
+/* Crudest possible stemming: drop a trailing plural 's'. Without it "subject"
+   in a query never matches "subjects" in a description, and the score silently
+   under-counts a real hit. Anything more clever would need a dictionary. */
+const stem = (w) => (w.length > 3 && w.endsWith("s") && !w.endsWith("ss") ? w.slice(0, -1) : w);
+
 const terms = (s) =>
   s
     .toLowerCase()
     .replace(/[^a-z0-9*_-]+/g, " ")
     .split(/\s+/)
-    .filter((w) => w.length > 2 && !STOP.has(w));
+    .filter((w) => w.length > 2 && !STOP.has(w))
+    .map(stem);
 
 function scoreRouting(query, descriptions) {
   const qt = [...new Set(terms(query))];
@@ -108,8 +125,15 @@ for (const c of cases.routing) {
   const top = ranked[0];
   const name = `routing: "${c.query.slice(0, 52)}..."`;
 
+  /* Near-miss guard: a query that looks like a neighbouring skill must not
+     select it. This is what keeps a description from growing so greedy that it
+     swallows queries belonging to the skill next door. */
+  const wrongWinner = (c.reject ?? []).find((r) => top?.skill === r);
+
   if (!top || top.score === 0) {
     fail("routing", name, `no description matched at all; expected ${c.expect}`);
+  } else if (wrongWinner) {
+    fail("routing", name, `near-miss: selected ${wrongWinner}, which this query must NOT reach; expected ${c.expect}`);
   } else if (top.skill !== c.expect) {
     fail("routing", name, `ranked ${top.skill} (${top.score}) over ${c.expect} (${ranked.find((r) => r.skill === c.expect)?.score ?? 0})`);
   } else {
