@@ -20,14 +20,14 @@ no-bundler files.
 input cannot triple the runtime (`web/src/graph/__tests__/perf.test.ts:70-76`).
 Serially it passes with 17-30x headroom; run beside another heavy job and the
 2500→5000 step flakes into a false red. This was reproduced: `npm test` alongside
-`tsc` fails, `npm test` alone gives 367/367.
+`tsc` fails, `npm test` alone passes in full.
 
 **The five harnesses** — they are genuinely different mechanisms, not one runner
 with five globs:
 
 | Command | Covers | Count | Note |
 |---|---|---|---|
-| `npm run test:server` | `server/test/*.test.mjs` | 223 | ~25 s, the backend's entire safety net |
+| `npm run test:server` | `server/test/*.test.mjs` | 310 | ~25 s, the backend's entire safety net |
 | `npm run test:graph` | custom runner, 3 phases | 36 + 6 | rewrites a tracked file, see below |
 | `npm run test:dnd` | `web/src/dnd/__tests__/*.test.mjs` | 20 | |
 | `npm run test:viewer` | `web/src/viewer/__tests__/*.test.mjs` | 82 | |
