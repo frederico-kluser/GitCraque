@@ -7,7 +7,7 @@
  * de detalhe (ou o de alteracoes); quem o exibe e este modulo.
  */
 export { FileViewer } from "./FileViewer";
-export type { FileViewerProps } from "./FileViewer";
+export type { FileViewerProps, ViewerMenuEvent } from "./FileViewer";
 export type { ViewerMode } from "./FileViewer";
 
 /**

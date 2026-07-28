@@ -17,8 +17,9 @@ import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import { openFile, selectCommit, selectCommits, useAppState } from "@/state/store";
-import { useCommitDetail } from "@/hooks";
+import { contextMenuFor, useCommitDetail } from "@/hooks";
 import { openSquash } from "@/app/actions";
+import { commitFileMenu, commitMenu } from "@/app/menus";
 import { cn, plural, short } from "@/lib/utils";
 import type { CommitDetail } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
@@ -116,6 +117,7 @@ function SelectionSummary({ selected }: { selected: string[] }) {
               key={commit.hash}
               type="button"
               onClick={() => selectCommit(commit.hash)}
+              onContextMenu={contextMenuFor(`Commit ${short(commit.hash)}`, () => commitMenu(commit.hash))}
               className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-left hover:bg-accent"
             >
               <span className="shrink-0 font-mono text-[10px] text-primary">{short(commit.hash)}</span>
@@ -135,7 +137,12 @@ function SelectionSummary({ selected }: { selected: string[] }) {
 
 function CommitHeader({ detail }: { detail: CommitDetail }) {
   return (
-    <header className="flex flex-col gap-2 border-b border-border p-3">
+    /* O cabecalho e o commit: o botao direito aqui oferece o mesmo menu da
+       linha dele na View Tree, sem obrigar a voltar para o grafo. */
+    <header
+      className="flex flex-col gap-2 border-b border-border p-3"
+      onContextMenu={contextMenuFor(`Commit ${detail.abbrevHash}`, () => commitMenu(detail.hash))}
+    >
       <h2 className="font-heading text-sm leading-snug font-semibold text-balance text-foreground">
         {detail.subject}
       </h2>
@@ -236,6 +243,7 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                 aria-current={isOpen ? "true" : undefined}
                 title={`Ver ${file.path} no visualizador`}
                 onClick={() => openFile(file.path, detail.hash)}
+                onContextMenu={contextMenuFor(file.path, () => commitFileMenu(file, detail.hash))}
                 className={cn(
                   "flex items-center gap-2 rounded-sm px-1.5 py-1 text-left transition-colors",
                   "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",

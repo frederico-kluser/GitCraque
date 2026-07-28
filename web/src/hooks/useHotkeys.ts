@@ -9,6 +9,7 @@
  * listener global; duplicar so faria a paleta abrir e fechar no mesmo evento.
  */
 import { useEffect, useRef } from "react";
+import { getShellState } from "./useShellStore";
 
 export interface HotkeyHandlers {
   /** ⌘R / Ctrl+R — recarrega o estado do repositorio (nao a pagina) */
@@ -51,6 +52,11 @@ export function useHotkeys(handlers: HotkeyHandlers) {
       if (key === "Escape") {
         // Dentro de um campo, o Esc e do campo (fechar autocomplete, etc.).
         if (isTypingTarget(event.target)) return;
+        /* Com um menu de contexto aberto, o Esc e DELE. Este listener e de
+           captura e chegaria antes do Base UI: sem esta saida, dispensar um
+           menu jogaria fora a selecao de commits que a pessoa acabou de montar
+           — e a selecao costuma ser o motivo de o menu ter sido aberto. */
+        if (getShellState().contextMenu) return;
         ref.current.onEscape?.();
       }
     };

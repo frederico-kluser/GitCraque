@@ -129,13 +129,33 @@ function EmptyState() {
 /* Visualizador                                                        */
 /* ------------------------------------------------------------------ */
 
+/**
+ * O que o visualizador entrega a quem monta o menu de contexto dele.
+ *
+ * O visualizador nao decide o que oferecer — ele nao conhece as acoes do app.
+ * Ele so diz ONDE foi o clique, O QUE esta marcado e QUAIS modos existem; quem
+ * traduz isso em itens e o painel que o hospeda. Mesmo arranjo que o grafo usa
+ * para `onRefActivate`.
+ */
+export interface ViewerMenuEvent {
+  x: number;
+  y: number;
+  /** texto marcado dentro do visualizador, "" quando nao ha nada */
+  selection: string;
+  mode: ViewerMode;
+  modes: ViewerMode[];
+  modeLabel: (mode: ViewerMode) => string;
+  onMode: (mode: ViewerMode) => void;
+}
+
 export interface FileViewerProps {
   file: OpenFile | null;
   onClose?: () => void;
+  onMenu?: (event: ViewerMenuEvent) => void;
   className?: string;
 }
 
-export function FileViewer({ file, onClose, className }: FileViewerProps) {
+export function FileViewer({ file, onClose, onMenu, className }: FileViewerProps) {
   const [mode, setMode] = useState<ViewerMode>("diff");
 
   const modes: ViewerMode[] = useMemo(() => (file ? modesFor(file.path) : ["diff"]), [file]);
@@ -173,6 +193,26 @@ export function FileViewer({ file, onClose, className }: FileViewerProps) {
     <section
       className={cn("flex h-full min-h-0 flex-col bg-card", className)}
       aria-label={`Visualizador de ${file.path}`}
+      /* A selecao e lida NA HORA do clique: o menu precisa saber se ha um trecho
+         marcado para oferecer "copiar a selecao" — e o unico uso real que o menu
+         do navegador tinha aqui. */
+      onContextMenu={
+        onMenu
+          ? (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onMenu({
+                x: event.clientX,
+                y: event.clientY,
+                selection: window.getSelection()?.toString() ?? "",
+                mode: activeMode,
+                modes,
+                modeLabel: (m) => MODE_LABEL[m],
+                onMode: setMode,
+              });
+            }
+          : undefined
+      }
     >
       <Header
         file={file}
