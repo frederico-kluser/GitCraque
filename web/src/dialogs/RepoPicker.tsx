@@ -9,10 +9,14 @@
  *   variant="dialog"  dentro do DialogShell, para trocar de repositorio a
  *                     qualquer momento (toolbar e ⌘K).
  *
- * Tres fontes, em abas: os recentes (persistidos pelo servidor), a varredura
- * das raizes conhecidas, e a navegacao livre por pastas. A caixa de busca
- * filtra as duas primeiras e tambem aceita um caminho digitado — colar
- * `~/code/projeto` e apertar Enter abre direto.
+ * Quatro fontes, em abas: os favoritos (fixados a mao, ordenaveis), os recentes
+ * (persistidos pelo servidor), a varredura das raizes conhecidas, e a navegacao
+ * livre por pastas. A caixa de busca filtra as tres primeiras e tambem aceita um
+ * caminho digitado — colar `~/code/projeto` e apertar Enter abre direto.
+ *
+ * Favoritos vem primeiro de proposito: e a unica lista que o usuario escolheu.
+ * Toda a mecanica deles mora em `FavoriteRepos.tsx`; aqui so entram a aba e a
+ * estrela que cada linha das outras tres ganha.
  *
  * Abrir um repositorio e `process.chdir()` no servidor, nunca `git checkout`;
  * o recarregamento vem do evento `cwd:changed`, igual a troca de worktree.
@@ -29,12 +33,12 @@ import {
   Loader2,
   Radar,
   Search,
+  Star,
   Trash2,
   X,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { fuzzyMatch } from "@/components/motion-ui/command-palette";
-import { Skeleton } from "@/components/motion-ui/skeleton";
 import {
   SmoothTabs,
   SmoothTabsList,
@@ -48,11 +52,14 @@ import { cn, truncate } from "@/lib/utils";
 import { initRepository, openRepository, toast, useAppState } from "@/state/store";
 import type {
   DiscoveredRepo,
+  FavoriteRepo,
   FsListPayload,
   FsRootsPayload,
   RecentRepo,
 } from "@/types/git";
+import { EstrelaFavorito, PainelFavoritos, useFavoritos } from "./FavoriteRepos";
 import { Button, Callout } from "./parts";
+import { Esqueleto, ListaVazia, encurtar, relativo } from "./repo-picker-parts";
 
 export type RepoPickerVariant = "page" | "dialog";
 
@@ -63,18 +70,14 @@ export interface RepoPickerProps {
   className?: string;
 }
 
-type Aba = "recentes" | "procurar" | "navegar";
+type Aba = "favoritos" | "recentes" | "procurar" | "navegar";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
 /* ------------------------------------------------------------------ */
 
-/** `/home/ana/code/x` -> `~/code/x`, que e como a pessoa pensa no caminho. */
-function encurtar(caminho: string, home: string) {
-  if (home && caminho === home) return "~";
-  if (home && caminho.startsWith(`${home}/`)) return `~${caminho.slice(home.length)}`;
-  return caminho;
-}
+/* `encurtar`, `relativo`, `ListaVazia` e `Esqueleto` moraram aqui ate os
+ * favoritos precisarem dos mesmos quatro — agora vem de `repo-picker-parts`. */
 
 /** Migalhas de pao clicaveis a partir de um caminho absoluto. */
 function migalhas(caminho: string, home: string, sep: string) {
@@ -94,17 +97,6 @@ function migalhas(caminho: string, home: string, sep: string) {
   }
   return saida;
 }
-
-const relativo = (ms: number) => {
-  const s = Math.max(1, Math.round((Date.now() - ms) / 1000));
-  if (s < 60) return "agora";
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m} min atras`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h} h atras`;
-  const d = Math.round(h / 24);
-  return d === 1 ? "ontem" : `${d} dias atras`;
-};
 
 /* ------------------------------------------------------------------ */
 /* Linha da lista                                                      */
@@ -187,28 +179,6 @@ function Linha({
   );
 }
 
-function ListaVazia({ children }: { children: React.ReactNode }) {
-  return (
-    <p className="px-3 py-8 text-center text-sm text-muted-foreground">{children}</p>
-  );
-}
-
-function Esqueleto() {
-  return (
-    <div className="space-y-2 p-1">
-      {[0, 1, 2, 3].map((i) => (
-        <div key={i} className="flex items-center gap-3 px-3 py-2">
-          <Skeleton className="size-4 rounded" />
-          <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-3 w-40 rounded" />
-            <Skeleton className="h-2.5 w-64 rounded" />
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 /* ------------------------------------------------------------------ */
 /* O seletor                                                           */
 /* ------------------------------------------------------------------ */
@@ -232,7 +202,10 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
   const [navegando, setNavegando] = useState(false);
   const [erroPasta, setErroPasta] = useState<string | null>(null);
 
+  const favoritos = useFavoritos();
+
   const inputRef = useRef<HTMLInputElement>(null);
+  const abaEscolhida = useRef(false);
   const home = raizes?.home ?? pasta?.home ?? "";
   const sep = raizes?.separator ?? pasta?.separator ?? "/";
 
@@ -247,13 +220,24 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
       if (!vivo) return;
       setRecentes(r?.entries ?? []);
       setRaizes(roots);
-      // Sem recentes, a aba util e a varredura — nao a lista vazia.
-      if ((r?.entries.length ?? 0) === 0) setAba("procurar");
     })();
     return () => {
       vivo = false;
     };
   }, []);
+
+  /* --- qual aba abre ---
+   * Favoritos na frente quando existe algum; senao a cascata antiga: recentes,
+   * ou a varredura quando nem recente ha (a lista vazia nao ajuda ninguem).
+   * Espera as DUAS cargas para nao piscar de uma aba para a outra, e a decisao
+   * acontece uma vez so: depois disso a aba e do usuario. */
+  useEffect(() => {
+    if (abaEscolhida.current) return;
+    if (recentes === null || !favoritos.carregado) return;
+    abaEscolhida.current = true;
+    if (favoritos.entries.length > 0) setAba("favoritos");
+    else if (recentes.length === 0) setAba("procurar");
+  }, [recentes, favoritos.carregado, favoritos.entries.length]);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -334,6 +318,10 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
   const q = ehCaminho ? "" : busca.trim().toLowerCase();
   const casa = (texto: string) => !q || fuzzyMatch(q, texto.toLowerCase());
 
+  const favoritosFiltrados = useMemo<FavoriteRepo[]>(
+    () => favoritos.entries.filter((f) => casa(f.label) || casa(f.name) || casa(f.path)),
+    [favoritos.entries, q],
+  );
   const recentesFiltrados = useMemo(
     () => (recentes ?? []).filter((r) => casa(r.name) || casa(r.path)),
     [recentes, q],
@@ -351,11 +339,13 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
   const buscaEhCaminho = ehCaminho;
 
   const lista: Array<{ path: string; isRepo: boolean }> =
-    aba === "recentes"
-      ? recentesFiltrados.map((r) => ({ path: r.path, isRepo: r.exists }))
-      : aba === "procurar"
-        ? encontradosFiltrados.map((r) => ({ path: r.path, isRepo: true }))
-        : entradasFiltradas.map((e) => ({ path: e.path, isRepo: e.isRepo }));
+    aba === "favoritos"
+      ? favoritosFiltrados.map((f) => ({ path: f.path, isRepo: f.exists }))
+      : aba === "recentes"
+        ? recentesFiltrados.map((r) => ({ path: r.path, isRepo: r.exists }))
+        : aba === "procurar"
+          ? encontradosFiltrados.map((r) => ({ path: r.path, isRepo: true }))
+          : entradasFiltradas.map((e) => ({ path: e.path, isRepo: e.isRepo }));
 
   useEffect(() => {
     setCursor(0);
@@ -369,6 +359,10 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
       event.preventDefault();
       setCursor((c) => Math.max(0, c - 1));
     } else if (event.key === "Enter") {
+      // Um botao ja trata Enter como acionamento. Sem esta guarda, apertar
+      // Enter na estrela, no lapis ou na lixeira acionava o botao E abria o
+      // repositorio sob o cursor de uma vez so.
+      if ((event.target as HTMLElement | null)?.tagName === "BUTTON") return;
       event.preventDefault();
       if (buscaEhCaminho) {
         const alvo = busca.trim();
@@ -381,7 +375,8 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
       const alvo = lista[cursor];
       if (!alvo) return;
       if (aba === "navegar" && !alvo.isRepo) void irPara(alvo.path);
-      else void abrir(alvo.path);
+      // Favorito cuja pasta sumiu nao abre — nem pelo teclado.
+      else if (aba !== "favoritos" || alvo.isRepo) void abrir(alvo.path);
     } else if (event.key === "Backspace" && !busca && aba === "navegar" && pasta?.parent) {
       event.preventDefault();
       void irPara(pasta.parent);
@@ -434,6 +429,13 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
         className="flex min-h-0 flex-1 flex-col gap-3"
       >
         <SmoothTabsList ariaLabel="Onde procurar o repositorio">
+          <SmoothTabsTab value="favoritos">
+            <Star
+              className="mr-1.5 inline size-3.5"
+              fill={favoritos.entries.length ? "currentColor" : "none"}
+            />
+            Favoritos {favoritos.entries.length ? `(${favoritos.entries.length})` : ""}
+          </SmoothTabsTab>
           <SmoothTabsTab value="recentes">
             <Clock className="mr-1.5 inline size-3.5" />
             Recentes {recentes?.length ? `(${recentes.length})` : ""}
@@ -454,6 +456,20 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
             naPagina ? "h-[46vh]" : "h-[42vh]",
           )}
         >
+          {/* ---------------- favoritos ---------------- */}
+          <SmoothTabsPanel value="favoritos">
+            <PainelFavoritos
+              controle={favoritos}
+              entradas={favoritosFiltrados}
+              filtrando={q.length > 0}
+              home={home}
+              cwdAtual={cwdAtual}
+              abrindo={abrindo}
+              cursor={cursor}
+              onAbrir={(p) => void abrir(p)}
+            />
+          </SmoothTabsPanel>
+
           {/* ---------------- recentes ---------------- */}
           <SmoothTabsPanel value="recentes">
             {recentes === null ? (
@@ -489,15 +505,18 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                     }
                     onClick={() => void abrir(r.path)}
                     acao={
-                      <button
-                        type="button"
-                        onClick={() => void esquecer(r.path)}
-                        aria-label={`Esquecer ${r.name}`}
-                        title="Remover dos recentes"
-                        className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
-                      >
-                        <Trash2 className="size-3.5" />
-                      </button>
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => void esquecer(r.path)}
+                          aria-label={`Esquecer ${r.name}`}
+                          title="Remover dos recentes"
+                          className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                        >
+                          <Trash2 className="size-3.5" />
+                        </button>
+                        <EstrelaFavorito path={r.path} nome={r.name} controle={favoritos} />
+                      </>
                     }
                   />
                 ))}
@@ -538,6 +557,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                       </span>
                     }
                     onClick={() => void abrir(r.path)}
+                    acao={<EstrelaFavorito path={r.path} nome={r.name} controle={favoritos} />}
                   />
                 ))}
               </div>
@@ -586,6 +606,13 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                         e.isBare ? "bare" : e.isWorktree ? "worktree ligada" : undefined
                       }
                       onClick={() => (e.isRepo ? void abrir(e.path) : void irPara(e.path))}
+                      // So repositorio ganha estrela: fixar uma pasta qualquer
+                      // criaria um favorito que nunca abre.
+                      acao={
+                        e.isRepo ? (
+                          <EstrelaFavorito path={e.path} nome={e.name} controle={favoritos} />
+                        ) : null
+                      }
                     />
                   ))
                 )}
@@ -626,6 +653,12 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
             {varreduraTruncada
               ? "A varredura parou no teto de tempo — nem tudo foi visitado."
               : "Procura nas pastas conhecidas (pessoal, Projects, code, /opt, /srv), ate 4 niveis."}
+          </p>
+        ) : aba === "favoritos" ? (
+          <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">
+            {favoritos.disponivel
+              ? "Arraste pela alca para ordenar, o lapis da um apelido, a estrela desafixa. Ao contrario dos recentes, nada entra nem sai daqui sozinho."
+              : "Fixar projetos depende de uma rota que este servidor ainda nao expoe."}
           </p>
         ) : (
           <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">
