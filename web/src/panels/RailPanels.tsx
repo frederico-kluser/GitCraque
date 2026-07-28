@@ -630,7 +630,8 @@ function StashesSection() {
 export function RailPanels({ className }: PanelProps) {
   return (
     <aside className={className} aria-label={t("rail.label")}>
-      <Accordion multiple defaultValue={["worktrees", "branches", "remotes"]} className="flex flex-col">
+      {/* Remotos, tags e stashes nascem fechados — so worktrees e branches abrem. */}
+      <Accordion multiple defaultValue={["worktrees", "branches"]} className="flex flex-col">
         <WorktreesSection />
         <BranchesSection />
         <RemotesSection />
