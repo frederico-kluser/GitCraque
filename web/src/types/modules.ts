@@ -8,7 +8,7 @@
  *   src/graph/    → GraphView, computeGraphLayout      (motor SVG + virtualizacao)
  *   src/dnd/      → GitDndProvider, resolveDragIntent  (motor semantico @dnd-kit)
  *   src/dialogs/  → DialogHost                          (confirmacoes das intencoes)
- *   src/panels/   → RailPanels, DetailPanel, ConsolePanel, StatusPanel
+ *   src/panels/   → RailPanels, DetailPanel, BottomDock, StatusPanel, Toolbar
  *   src/app/      → App                                 (shell que monta tudo)
  */
 import type { ReactNode } from "react";

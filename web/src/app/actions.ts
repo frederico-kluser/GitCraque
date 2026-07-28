@@ -16,6 +16,7 @@ import { api } from "@/lib/api";
 import {
   getState,
   loadLog,
+  openRepository,
   refreshAll,
   runOperation,
   switchWorktree,
@@ -120,6 +121,13 @@ export function openPushDialog(preset: { remote?: string; branch?: string } = {}
 export function openRepoPicker() {
   openDialog({ kind: "repo-picker" });
 }
+
+/**
+ * Abre OUTRO repositorio direto, sem passar pelo seletor — o caminho ja e
+ * conhecido (um favorito, um recente). Irma de `doSwitchWorktree`: as duas sao
+ * `process.chdir()` no servidor, e o recarregamento vem do `cwd:changed`.
+ */
+export const doOpenRepository = (path: string) => openRepository(path);
 
 export function openCreateBranch(startPoint?: string) {
   askConfirm({

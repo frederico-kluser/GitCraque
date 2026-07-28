@@ -2,9 +2,10 @@
  * Barra superior: identidade do repositorio, worktree ativa, rede e o estado
  * global (conexao, operacao em curso, operacao pendente no .git).
  *
- * O ponto que este painel precisa deixar OBVIO: trocar de worktree e trocar de
- * DIRETORIO. O seletor mostra o caminho absoluto e diz, com todas as letras,
- * que a troca e `process.chdir()` no servidor — nunca `git checkout`.
+ * Dois seletores vivem aqui, e a diferenca entre eles e a espinha do produto:
+ * o de PROJETO troca de repositorio (favoritos e recentes), o de WORKTREE troca
+ * de diretorio de trabalho dentro do mesmo repositorio. Os dois fazem
+ * `process.chdir()` no servidor — nenhum faz `git checkout`.
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { Menu } from "@base-ui/react/menu";
@@ -15,6 +16,7 @@ import {
   Check,
   ChevronDown,
   CircleAlert,
+  Clock,
   FolderTree,
   GitBranch,
   FolderGit2,
@@ -24,6 +26,7 @@ import {
   Plug,
   PlugZap,
   RefreshCw,
+  Star,
   Sun,
   TriangleAlert,
   X,
@@ -36,10 +39,11 @@ import { Skeleton } from "@/components/motion-ui/skeleton";
 import { Sparkline } from "@/components/motion-ui/sparkline";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { selectCommits, selectHead, selectPending, selectWorktrees, useAppState } from "@/state/store";
-import { toggleTheme, useCommitActivity, useShellState, useTrickle } from "@/hooks";
+import { loadProjects, toggleTheme, useCommitActivity, useProjects, useShellState, useTrickle } from "@/hooks";
 import {
   doContinue,
   doFetch,
+  doOpenRepository,
   doPull,
   doRefresh,
   doSwitchWorktree,
@@ -143,6 +147,176 @@ function ConnectionBadge({ connection }: { connection: ConnectionState }) {
       </motion.span>
       {meta.label}
     </span>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Seletor de projeto — favoritos, recentes e "abrir outro"            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A identidade do repositorio no canto E o seletor de projeto.
+ *
+ * CASCATA: menu ancorado nao existe no catalogo do Motion UI (os 19 instalados
+ * sao mecanicas de revelacao e gesto), entao a semantica vem do `Menu` do Base
+ * UI — o mesmo caminho que o seletor de worktree ao lado ja percorre.
+ */
+function ProjectRow({
+  icon,
+  title,
+  path,
+  branch,
+  current,
+  missing,
+  onSelect,
+}: {
+  icon: ReactNode;
+  title: string;
+  path: string;
+  branch?: string | null;
+  current: boolean;
+  missing?: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <Menu.Item
+      onClick={onSelect}
+      disabled={current || missing}
+      className={cn(
+        "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 outline-none select-none",
+        "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+        current && "data-[disabled]:opacity-100",
+        missing && "data-[disabled]:opacity-45",
+      )}
+    >
+      <span className="shrink-0 text-muted-foreground">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span className="truncate text-xs font-medium">{title}</span>
+          {current && <Chip tone="success">aberto</Chip>}
+          {missing && <Chip tone="danger">sumiu do disco</Chip>}
+          {branch && !current && <Chip tone="primary">{branch}</Chip>}
+        </span>
+        <span className="block truncate font-mono text-[10px] text-muted-foreground">{path}</span>
+      </span>
+    </Menu.Item>
+  );
+}
+
+function ProjectSelector() {
+  const repo = useAppState((s) => s.repo);
+  const head = useAppState(selectHead);
+  const cwd = useAppState((s) => s.repo?.cwd ?? null);
+  const { favorites, recents, loading, loaded } = useProjects();
+
+  // Os recentes que ja estao nos favoritos viravam linha repetida.
+  const favoritePaths = new Set(favorites.map((f) => f.path));
+  const outros = recents.filter((r) => !favoritePaths.has(r.path)).slice(0, 8);
+  const vazio = favorites.length === 0 && outros.length === 0;
+
+  return (
+    <Menu.Root onOpenChange={(open) => open && void loadProjects()}>
+      <Menu.Trigger
+        title="Trocar de projeto — favoritos, recentes ou abrir outra pasta"
+        className={cn(
+          "flex max-w-[18rem] min-w-0 items-center gap-2.5 rounded-lg border border-transparent px-2 py-1 text-left",
+          "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+          "hover:border-border hover:bg-accent data-[popup-open]:border-border data-[popup-open]:bg-accent",
+          FOCUS_RING,
+        )}
+      >
+        <FolderGit2 className="size-4 shrink-0 text-primary" />
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-heading text-sm font-semibold text-foreground">
+            {repo?.name ?? "GitCraque"}
+          </span>
+          <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+            <GitBranch className="size-3 shrink-0" />
+            <span className="truncate font-mono">
+              {head?.detached ? `detached em ${head.hash?.slice(0, 7) ?? "?"}` : (head?.branch ?? "—")}
+            </span>
+          </span>
+        </span>
+        <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
+      </Menu.Trigger>
+
+      <Menu.Portal>
+        <Menu.Positioner sideOffset={8} align="start" className="z-50 outline-none">
+          <Menu.Popup className="max-h-[70vh] w-[26rem] max-w-[90vw] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-2xl">
+            <div className="px-2.5 pt-2 pb-1.5">
+              <SectionLabel>Projetos</SectionLabel>
+              <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
+                Abrir outro projeto tambem e{" "}
+                <span className="font-mono text-foreground">process.chdir()</span> no servidor: a View Tree
+                inteira e recarregada do zero.
+              </p>
+            </div>
+
+            {favorites.length > 0 && (
+              <>
+                <Menu.Separator className="my-1 h-px bg-border" />
+                <div className="px-2.5 py-1">
+                  <SectionLabel>Favoritos</SectionLabel>
+                </div>
+                {favorites.map((fav) => (
+                  <ProjectRow
+                    key={fav.path}
+                    icon={<Star className="size-3.5" />}
+                    title={fav.label || fav.name}
+                    path={fav.path}
+                    branch={fav.branch}
+                    current={fav.path === cwd}
+                    missing={!fav.exists}
+                    onSelect={() => void doOpenRepository(fav.path)}
+                  />
+                ))}
+              </>
+            )}
+
+            {outros.length > 0 && (
+              <>
+                <Menu.Separator className="my-1 h-px bg-border" />
+                <div className="px-2.5 py-1">
+                  <SectionLabel>Recentes</SectionLabel>
+                </div>
+                {outros.map((recent) => (
+                  <ProjectRow
+                    key={recent.path}
+                    icon={<Clock className="size-3.5" />}
+                    title={recent.name}
+                    path={recent.path}
+                    branch={recent.branch}
+                    current={recent.path === cwd}
+                    missing={!recent.exists}
+                    onSelect={() => void doOpenRepository(recent.path)}
+                  />
+                ))}
+              </>
+            )}
+
+            {vazio && (
+              <p className="px-2.5 py-3 text-[11px] leading-relaxed text-muted-foreground">
+                {loading || !loaded
+                  ? "Lendo favoritos e recentes…"
+                  : "Nenhum favorito nem recente ainda. Abra uma pasta pelo seletor abaixo e ela aparece aqui na proxima vez."}
+              </p>
+            )}
+
+            <Menu.Separator className="my-1 h-px bg-border" />
+            <Menu.Item
+              onClick={openRepoPicker}
+              className={cn(
+                "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-xs outline-none select-none",
+                "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+              )}
+            >
+              <FolderGit2 className="size-3.5 shrink-0 text-muted-foreground" />
+              Abrir outro…
+            </Menu.Item>
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }
 
@@ -275,8 +449,7 @@ function PendingBanner() {
 /* ------------------------------------------------------------------ */
 
 export function Toolbar({ className }: PanelProps) {
-  const repo = useAppState((s) => s.repo);
-  const head = useAppState(selectHead);
+  // A identidade do repositorio (nome, HEAD) mora no `ProjectSelector`.
   const commits = useAppState(selectCommits);
   const connection = useAppState((s) => s.connection);
   const busy = useAppState((s) => s.loading.operation);
@@ -309,19 +482,9 @@ export function Toolbar({ className }: PanelProps) {
   return (
     <header className={cn("flex flex-col", className)}>
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
-        {/* --- identidade --- */}
+        {/* --- identidade: e o seletor de projeto --- */}
         <div className="flex min-w-0 items-center gap-3">
-          <div className="min-w-0">
-            <h1 className="truncate font-heading text-sm font-semibold text-foreground">
-              {repo?.name ?? "GitCraque"}
-            </h1>
-            <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-              <GitBranch className="size-3" />
-              <span className="truncate font-mono">
-                {head?.detached ? `detached em ${head.hash?.slice(0, 7) ?? "?"}` : (head?.branch ?? "—")}
-              </span>
-            </span>
-          </div>
+          <ProjectSelector />
 
           {/* Atividade das ultimas semanas, derivada do %ar de cada commit.
               Espera o log chegar: montar com a serie zerada faria o Motion

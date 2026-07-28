@@ -4,7 +4,7 @@
  */
 export { RailPanels } from "./RailPanels";
 export { DetailPanel } from "./DetailPanel";
-export { ConsolePanel } from "./ConsolePanel";
+export { BottomDock } from "./BottomDock";
 export { StatusPanel } from "./StatusPanel";
 export { Toolbar } from "./Toolbar";
 export type { PanelProps } from "@/types/modules";

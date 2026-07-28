@@ -3,7 +3,8 @@
  *
  * As linhas usam `SwipeActions` do Motion UI — arrastar revela preparar /
  * despreparar / descartar. O arrasto e um atalho, nunca a unica porta: cada
- * linha tem os mesmos botoes no hover, e o teclado alcanca todos.
+ * linha tem os mesmos botoes no hover, e o teclado alcanca todos. Clicar na
+ * linha abre o arquivo no visualizador do rodape, na aba ao lado.
  *
  * Descartar arquivo passa por `HoldToConfirmButton`: e a unica acao daqui que
  * apaga trabalho do disco sem rede de seguranca no git.
@@ -14,13 +15,20 @@ import { HoldToConfirmButton } from "@/components/motion-ui/hold-to-confirm";
 import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
 import { SwipeAction, SwipeActions, SwipeActionsList } from "@/components/motion-ui/swipe-actions";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
-import { useAppState } from "@/state/store";
-import { registerCommitHandler, useWorkingDiffStats, type DiffStats } from "@/hooks";
+import { openFile, useAppState } from "@/state/store";
+import {
+  registerCommitHandler,
+  selectCommitDraft,
+  setCommitDraft,
+  useShellState,
+  useWorkingDiffStats,
+  type DiffStats,
+} from "@/hooks";
 import { doCommit, doDiscard, doStage, doUnstage } from "@/app/actions";
 import { cn, plural } from "@/lib/utils";
 import type { ChangeStatus, StatusEntry } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
-import { Chip, DiffStat, FilePath, SectionLabel, StatusGlyph, ToolButton } from "./parts";
+import { Chip, DiffStat, FilePath, FOCUS_RING, SectionLabel, StatusGlyph, ToolButton } from "./parts";
 
 /** Acima disso o git deixa a primeira linha feia em `git log --oneline`. */
 const SUBJECT_LIMIT = 72;
@@ -63,11 +71,14 @@ function FileRow({
   index,
   isLast,
   stats,
+  open,
 }: {
   entry: StatusEntry;
   index: number;
   isLast: boolean;
   stats: DiffStats;
+  /** true quando ESTE arquivo e o que esta aberto no visualizador */
+  open: boolean;
 }) {
   const [arming, setArming] = useState(false);
   const delta = stats.get(entry.path);
@@ -77,6 +88,28 @@ function FileRow({
   const stage = () => void doStage([entry.path]);
   const unstage = () => void doUnstage([entry.path]);
   const discard = () => void doDiscard([entry.path]);
+
+  /**
+   * Clicar na linha abre o arquivo no visualizador do rodape.
+   *
+   * A mesma linha e arrastavel, e soltar um swipe tambem dispara `click` — o
+   * guarda de deslocamento separa o toque do gesto. E um clique num botao de
+   * acao (preparar, descartar) nao e um clique na linha: eles tem dono proprio,
+   * exatamente como o `SwipeActions` ja trata o pointerdown deles.
+   */
+  const pressedAt = useRef({ x: 0, y: 0 });
+  const rememberPress = (event: React.PointerEvent<HTMLDivElement>) => {
+    pressedAt.current = { x: event.clientX, y: event.clientY };
+  };
+  const openInViewer = () => openFile(entry.path, null, true);
+  const onRowClick = (event: React.MouseEvent<HTMLDivElement>) => {
+    if ((event.target as HTMLElement).closest("button")) return;
+    const moved =
+      Math.abs(event.clientX - pressedAt.current.x) > 6 ||
+      Math.abs(event.clientY - pressedAt.current.y) > 6;
+    if (moved) return;
+    openInViewer();
+  };
 
   return (
     <SwipeActions
@@ -122,7 +155,25 @@ function FileRow({
     >
       {/* `group` fica na LINHA: os botoes so aparecem no hover desta linha.
           `select-none` porque arrastar a linha e gesto, nao selecao de texto. */}
-      <div className="group flex h-full items-center gap-2 bg-card px-2 select-none">
+      <div
+        role="button"
+        tabIndex={0}
+        aria-current={open ? "true" : undefined}
+        title={`Ver ${entry.path} no visualizador`}
+        onPointerDown={rememberPress}
+        onClick={onRowClick}
+        onKeyDown={(event) => {
+          if (event.key !== "Enter" && event.key !== " ") return;
+          if ((event.target as HTMLElement).closest("button")) return;
+          event.preventDefault();
+          openInViewer();
+        }}
+        className={cn(
+          "group flex h-full cursor-pointer items-center gap-2 px-2 select-none",
+          open ? "bg-primary/12 ring-1 ring-primary ring-inset" : "bg-card hover:bg-accent/60",
+          FOCUS_RING,
+        )}
+      >
         <StatusGlyph status={status} />
         <FilePath path={entry.path} className="flex-1" />
         {entry.oldPath && (
@@ -194,10 +245,13 @@ function Group({
   group,
   entries,
   stats,
+  openPath,
 }: {
   group: GroupKey;
   entries: StatusEntry[];
   stats: DiffStats;
+  /** caminho aberto no visualizador vindo da arvore de trabalho, ou null */
+  openPath: string | null;
 }) {
   if (entries.length === 0) return null;
   const paths = entries.map((e) => e.path);
@@ -238,6 +292,7 @@ function Group({
             index={i}
             isLast={i === entries.length - 1}
             stats={stats}
+            open={openPath === entry.path}
           />
         ))}
       </SwipeActionsList>
@@ -252,9 +307,9 @@ function Group({
 type CommitState = "idle" | "loading" | "ok" | "error";
 
 function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts: number }) {
-  const [message, setMessage] = useState("");
-  const [amend, setAmend] = useState(false);
-  const [signoff, setSignoff] = useState(false);
+  // O rascunho vive no shell store: trocar para a aba do visualizador desmonta
+  // este painel, e estado local viraria mensagem perdida.
+  const { message, amend, signoff } = useShellState(selectCommitDraft);
   const [state, setState] = useState<CommitState>("idle");
 
   const firstLine = message.split("\n", 1)[0] ?? "";
@@ -271,10 +326,8 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
     void doCommit({ message: message.trim(), amend, signoff }).then((result) => {
       const ok = Boolean(result?.ok);
       setState(ok ? "ok" : "error");
-      if (ok) {
-        setMessage("");
-        setAmend(false);
-      }
+      // `--signoff` sobrevive ao commit de proposito: quem assina, assina sempre.
+      if (ok) setCommitDraft({ message: "", amend: false });
       setTimeout(() => setState("idle"), 1_800);
     });
   };
@@ -287,7 +340,7 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
           value={message}
           rows={3}
           placeholder={amend ? "Nova mensagem (vazio mantem a original)" : "Mensagem do commit"}
-          onChange={(e) => setMessage(e.target.value)}
+          onChange={(e) => setCommitDraft({ message: e.target.value })}
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
               e.preventDefault();
@@ -319,14 +372,19 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
       )}
 
       <div className="flex flex-wrap items-center gap-1.5">
-        <ToolButton size="sm" tone={amend ? "primary" : "ghost"} active={amend} onClick={() => setAmend((v) => !v)}>
+        <ToolButton
+          size="sm"
+          tone={amend ? "primary" : "ghost"}
+          active={amend}
+          onClick={() => setCommitDraft({ amend: !amend })}
+        >
           --amend
         </ToolButton>
         <ToolButton
           size="sm"
           tone={signoff ? "primary" : "ghost"}
           active={signoff}
-          onClick={() => setSignoff((v) => !v)}
+          onClick={() => setCommitDraft({ signoff: !signoff })}
         >
           --signoff
         </ToolButton>
@@ -365,6 +423,9 @@ export function StatusPanel({ className }: PanelProps) {
   const status = useAppState((s) => s.status);
   const loading = useAppState((s) => s.loading.status);
   const stats = useWorkingDiffStats(status);
+  // So marca a linha quando o arquivo aberto veio DAQUI: o mesmo caminho pode
+  // estar aberto a partir de um commit, e ai a linha nao e esta.
+  const openPath = useAppState((s) => (s.openFile?.fromWorkingTree ? s.openFile.path : null));
 
   const groups = useMemo(() => {
     const map: Record<GroupKey, StatusEntry[]> = { conflicted: [], staged: [], untracked: [], modified: [] };
@@ -376,8 +437,9 @@ export function StatusPanel({ className }: PanelProps) {
 
   return (
     <section className={cn("flex flex-col", className)} aria-label="Alteracoes da arvore de trabalho">
-      <header className="flex items-center gap-2 border-b border-border px-3 py-2">
-        <SectionLabel className="text-foreground">Alteracoes</SectionLabel>
+      {/* Sem rotulo "Alteracoes": quem nomeia este painel agora e a aba do
+          rodape. Aqui fica so o que a aba nao tem — a branch e o upstream. */}
+      <header className="flex items-center gap-2 border-b border-border px-3 py-1.5">
         {status?.branch && <Chip tone="primary">{status.branch}</Chip>}
         {status?.upstream && (
           <Chip tone="neutral" mono>
@@ -390,6 +452,9 @@ export function StatusPanel({ className }: PanelProps) {
             ↑{status.ahead} ↓{status.behind}
           </span>
         )}
+        <span className="text-[11px] text-muted-foreground">
+          {plural(status?.entries.length ?? 0, "arquivo alterado", "arquivos alterados")}
+        </span>
       </header>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -407,10 +472,10 @@ export function StatusPanel({ className }: PanelProps) {
           </StaggerReveal>
         ) : (
           <div className="flex flex-col gap-2 py-1.5">
-            <Group group="conflicted" entries={groups.conflicted} stats={stats} />
-            <Group group="staged" entries={groups.staged} stats={stats} />
-            <Group group="modified" entries={groups.modified} stats={stats} />
-            <Group group="untracked" entries={groups.untracked} stats={stats} />
+            <Group group="conflicted" entries={groups.conflicted} stats={stats} openPath={openPath} />
+            <Group group="staged" entries={groups.staged} stats={stats} openPath={openPath} />
+            <Group group="modified" entries={groups.modified} stats={stats} openPath={openPath} />
+            <Group group="untracked" entries={groups.untracked} stats={stats} openPath={openPath} />
           </div>
         )}
       </div>

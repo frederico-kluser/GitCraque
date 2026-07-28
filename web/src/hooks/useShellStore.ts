@@ -2,14 +2,12 @@
  * Estado SO da casca — nada do repositorio mora aqui.
  *
  * O `state/store.ts` e a fonte unica do repositorio; este e o complemento
- * estritamente visual: tema, larguras das colunas, paleta aberta, filtro do
- * console, qual linha do console esta em foco e qual acao aguarda confirmacao.
- * Mesmo motor do store central (objeto mutavel + useSyncExternalStore) para nao
- * arrastar dependencia nova, e o que faz sentido persistir vai para o
- * localStorage.
+ * estritamente visual: tema, larguras das colunas, paleta aberta, rascunho do
+ * commit e qual acao aguarda confirmacao. Mesmo motor do store central (objeto
+ * mutavel + useSyncExternalStore) para nao arrastar dependencia nova, e o que
+ * faz sentido persistir vai para o localStorage.
  */
 import { useCallback, useSyncExternalStore } from "react";
-import type { ConsoleLine } from "@/types/git";
 
 /* ------------------------------------------------------------------ */
 /* Acoes que exigem confirmacao antes de tocar o repositorio            */
@@ -47,7 +45,20 @@ export type ConfirmField =
 /* ------------------------------------------------------------------ */
 
 export type ThemeMode = "light" | "dark";
-export type ConsoleFilter = "all" | "command" | "output" | "error";
+
+/**
+ * Rascunho do commit.
+ *
+ * Mora aqui, e nao no `StatusPanel`, por um motivo mecanico: o rodape virou
+ * `SmoothTabs`, e o componente do catalogo renderiza SO o painel ativo — trocar
+ * para o Visualizador desmonta o painel de alteracoes. Com o rascunho local, um
+ * clique num arquivo apagaria a mensagem que a pessoa estava escrevendo.
+ */
+export interface CommitDraft {
+  message: string;
+  amend: boolean;
+  signoff: boolean;
+}
 
 export interface ShellState {
   theme: ThemeMode;
@@ -55,15 +66,15 @@ export interface ShellState {
   /** larguras em px das colunas laterais do grid principal */
   railWidth: number;
   detailWidth: number;
-  /** altura em px da faixa inferior (staging + console) */
+  /** altura em px da faixa inferior (alteracoes + visualizador) */
   bottomHeight: number;
-  consoleFilter: ConsoleFilter;
-  /** id da linha do console que o console deve trazer para a vista */
-  consoleFocus: string | null;
+  commitDraft: CommitDraft;
   confirm: ConfirmAction | null;
 }
 
 const STORAGE_KEY = "gitcraque.shell";
+
+const EMPTY_DRAFT: CommitDraft = { message: "", amend: false, signoff: false };
 
 const DEFAULTS: ShellState = {
   theme: "dark",
@@ -71,13 +82,12 @@ const DEFAULTS: ShellState = {
   railWidth: 264,
   detailWidth: 380,
   bottomHeight: 300,
-  consoleFilter: "all",
-  consoleFocus: null,
+  commitDraft: EMPTY_DRAFT,
   confirm: null,
 };
 
 /** So o que faz sentido sobreviver ao reload. */
-type Persisted = Pick<ShellState, "theme" | "railWidth" | "detailWidth" | "bottomHeight" | "consoleFilter">;
+type Persisted = Pick<ShellState, "theme" | "railWidth" | "detailWidth" | "bottomHeight">;
 
 function readPersisted(): Partial<Persisted> {
   if (typeof localStorage === "undefined") return {};
@@ -96,7 +106,6 @@ function writePersisted(s: ShellState) {
     railWidth: s.railWidth,
     detailWidth: s.detailWidth,
     bottomHeight: s.bottomHeight,
-    consoleFilter: s.consoleFilter,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slice));
@@ -118,7 +127,7 @@ const INITIAL: ShellState = {
   theme: initialTheme(stored),
   // nunca restaura estado efemero
   paletteOpen: false,
-  consoleFocus: null,
+  commitDraft: EMPTY_DRAFT,
   confirm: null,
 };
 
@@ -186,10 +195,8 @@ export const setDetailWidth = (px: number) => set({ detailWidth: clamp(px, DETAI
 export const setBottomHeight = (px: number) =>
   set({ bottomHeight: clamp(px, BOTTOM_RANGE.min, Math.min(BOTTOM_RANGE.max, window.innerHeight - 220)) });
 
-export const setConsoleFilter = (consoleFilter: ConsoleFilter) => set({ consoleFilter });
-
-/** Pede ao console para trazer uma linha para a vista (botao "ver comando"). */
-export const focusConsoleLine = (id: string | null) => set({ consoleFocus: id });
+export const setCommitDraft = (patch: Partial<CommitDraft>) =>
+  set((s) => ({ commitDraft: { ...s.commitDraft, ...patch } }));
 
 export const askConfirm = (confirm: Omit<ConfirmAction, "id"> & { id?: string }) =>
   set({ confirm: { id: confirm.id ?? `confirm-${Date.now().toString(36)}`, ...confirm } });
@@ -221,17 +228,4 @@ export const requestCommit = () => commitHandler?.();
 
 export const selectTheme = (s: ShellState) => s.theme;
 export const selectConfirm = (s: ShellState) => s.confirm;
-
-/** Casa uma linha do console com o filtro corrente. */
-export function matchesConsoleFilter(line: ConsoleLine, filter: ConsoleFilter): boolean {
-  switch (filter) {
-    case "command":
-      return line.kind === "command";
-    case "output":
-      return line.kind === "stdout" || line.kind === "stderr" || line.kind === "exit";
-    case "error":
-      return line.kind === "error" || line.kind === "stderr" || (line.exitCode != null && line.exitCode !== 0);
-    default:
-      return true;
-  }
-}
+export const selectCommitDraft = (s: ShellState) => s.commitDraft;
