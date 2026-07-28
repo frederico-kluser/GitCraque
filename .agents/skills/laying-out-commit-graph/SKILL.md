@@ -22,12 +22,23 @@ consumes.
 `RefChip` are deliberately not exported. Keep it that way — the narrow surface is
 what lets the algorithm change without touching the shell.
 
-**Three files carry type-only imports, and that is load-bearing.**
-`layout.ts:19-30`, `bezier.ts:31` and `reveal.ts:17-20` import nothing at
-runtime. This is not style: it is what lets `node --test` load them directly.
-`LANE_HUES` is deliberately duplicated in `layout.ts:41-45` rather than imported
-from `@/lib/utils`. Adding one ordinary runtime import here passes `tsc` and
-breaks the entire suite with `ERR_MODULE_NOT_FOUND`.
+**These files must load under bare Node, and that is load-bearing.** `layout.ts`,
+`bezier.ts` and `reveal.ts` are read directly by `node --test`, with no bundler
+to resolve anything. The rule is therefore about **what Node can resolve**, not
+about avoiding imports:
+
+- an `@/` alias import of a *value* is fatal — it passes `tsc` and breaks the
+  whole suite with `ERR_MODULE_NOT_FOUND`. `LANE_HUES` is deliberately duplicated
+  in `layout.ts` rather than imported from `@/lib/utils` for exactly this reason;
+- `import type` from `@/` is always fine — it is erased;
+- a **relative** import with an explicit `.ts` is fine and is used: `layout.ts`
+  and `bezier.ts` take their metrics and `CONTROL_RATIO` from `./paint.ts`, the
+  drawing's knobs file. That import is what keeps `DEFAULT_METRICS` from being a
+  second source of truth about the graph's size.
+
+The distinction matters when reading an old note that says these files "have no
+runtime imports": the invariant was always resolvability, and a relative
+`.ts` import satisfies it.
 
 **Lane allocation, and where the architecture doc is wrong.** The pass runs
 top→bottom over `--topo-order` output, with `lanes[]` holding the hash each
@@ -83,8 +94,15 @@ or it is collected as a suite. Anything needing JSX or a runtime `@/` import mus
 be `.domtest.ts`.
 
 **Brittleness to respect.** The perf budget has 17-30x headroom, but the
-linearity assertion (`perf.test.ts:70-76`, doubling must not triple the time) is
-noise-sensitive at the 2500→5000 step and **flakes under CPU contention**. The
+linearity assertion (`perf.test.ts:70-76`, doubling must not triple the time)
+**flakes on its own, on a clean tree**: measured 2026-07-28, HEAD failed 2 of 6
+back-to-back runs of phase 1. The step that gives way is the **last** one,
+10000→20000, where the 20 000-commit median occasionally spikes from ~11 ms to
+~16 ms and the ratio lands just over 3. Isolated (`node --test perf.test.ts`
+alone) it passed 6 of 6 on both trees, so the noise comes from sharing a process
+with the other suites, and it gets worse under CPU contention. Consequence:
+**one red linearity run is not evidence of a regression.** Re-run it, and compare
+against a HEAD worktree before believing it. The
 tightest assertion in the module is `virtualization.domtest.ts:74-77`: DOM node
 count may vary under 15% between 200 and 20 000 commits, and it currently sits at
 11.8%. Adding one element per row can break it.
