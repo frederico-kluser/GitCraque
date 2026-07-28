@@ -17,7 +17,6 @@ import {
   ArrowUpFromLine,
   Boxes,
   Check,
-  Eraser,
   ExternalLink,
   FolderGit2,
   FolderTree,
@@ -25,12 +24,12 @@ import {
   GitMerge,
   Moon,
   RefreshCw,
+  Star,
   Sun,
   Archive,
   Tag as TagIcon,
 } from "lucide-react";
 import {
-  clearConsole,
   selectBranches,
   selectRemotes,
   selectStashes,
@@ -38,11 +37,12 @@ import {
   toast,
   useAppState,
 } from "@/state/store";
-import { toggleTheme, useShellState } from "@/hooks";
+import { toggleTheme, useProjects, useShellState } from "@/hooks";
 import { short, truncate } from "@/lib/utils";
 import {
   doCheckout,
   doFetch,
+  doOpenRepository,
   doPull,
   doRefresh,
   doStashApply,
@@ -86,6 +86,8 @@ export function useAppCommands(): AppCommand[] {
   const stashes = useAppState(selectStashes);
   const selection = useAppState((s) => s.selection.commits);
   const theme = useShellState((s) => s.theme);
+  // Os favoritos viram um comando cada: pular de projeto sem tirar a mao do ⌘K.
+  const { favorites } = useProjects();
 
   return useMemo(() => {
     const items: AppCommand[] = [];
@@ -109,15 +111,22 @@ export function useAppCommands(): AppCommand[] {
         keywords: ["abrir", "open", "trocar", "repositorio", "repo", "projeto", "pasta"],
         run: openRepoPicker,
       },
-      {
-        id: "console.clear",
-        label: "Limpar o console",
-        group: "Repositorio",
-        icon: Eraser,
-        keywords: ["console", "clear", "limpar"],
-        run: clearConsole,
-      },
     );
+    for (const fav of favorites) {
+      const name = fav.label || fav.name;
+      items.push({
+        id: `repo.favorite.${fav.path}`,
+        label: `Abrir ${name}`,
+        hint: fav.exists ? fav.path : `${fav.path} — pasta nao encontrada`,
+        group: "Repositorio",
+        icon: Star,
+        keywords: ["favorito", "projeto", "abrir", "trocar", name.toLowerCase()],
+        run: () =>
+          fav.exists
+            ? void doOpenRepository(fav.path)
+            : toast("warning", `${name} nao esta mais no disco`, fav.path),
+      });
+    }
 
     /* ---- worktrees: process.chdir, nunca checkout ---- */
     for (const wt of worktrees) {
@@ -286,5 +295,5 @@ export function useAppCommands(): AppCommand[] {
     });
 
     return items;
-  }, [worktrees, branches, remotes, stashes, selection, theme]);
+  }, [worktrees, branches, remotes, stashes, selection, theme, favorites]);
 }

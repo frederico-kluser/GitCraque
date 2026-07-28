@@ -414,9 +414,9 @@ function BranchesSection() {
 /* 3. Remotos — `git remote -v`                                        */
 /* ------------------------------------------------------------------ */
 
-function RemoteBranchRow({ rb }: { rb: RemoteBranch }) {
+function RemoteBranchRow({ rb, selected }: { rb: RemoteBranch; selected: boolean }) {
   return (
-    <RailRow onClick={() => selectRef(rb.fullName)} className="pl-6">
+    <RailRow highlighted={selected} onClick={() => selectRef(rb.fullName)} className="pl-6">
       <Cloud className="size-3 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground">{rb.shortName}</span>
       <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{short(rb.target)}</span>
@@ -441,7 +441,15 @@ function RemoteBranchRow({ rb }: { rb: RemoteBranch }) {
   );
 }
 
-function RemoteBlock({ remote, branches }: { remote: Remote; branches: RemoteBranch[] }) {
+function RemoteBlock({
+  remote,
+  branches,
+  selectedRef,
+}: {
+  remote: Remote;
+  branches: RemoteBranch[];
+  selectedRef: string | null;
+}) {
   const [open, setOpen] = useState(true);
   const https = remote.https || isHttpsRemote(remote.fetchUrl);
 
@@ -495,7 +503,9 @@ function RemoteBlock({ remote, branches }: { remote: Remote; branches: RemoteBra
           {branches.length === 0 ? (
             <p className="px-2 py-2 text-[11px] text-muted-foreground">Nenhuma branch remota conhecida.</p>
           ) : (
-            branches.map((rb) => <RemoteBranchRow key={rb.fullName} rb={rb} />)
+            branches.map((rb) => (
+              <RemoteBranchRow key={rb.fullName} rb={rb} selected={selectedRef === rb.fullName} />
+            ))
           )}
         </div>
       )}
@@ -506,6 +516,7 @@ function RemoteBlock({ remote, branches }: { remote: Remote; branches: RemoteBra
 function RemotesSection() {
   const remotes = useAppState(selectRemotes);
   const remoteBranches = useAppState(selectRemoteBranches);
+  const selectedRef = useAppState((s) => s.selection.ref);
 
   const grouped = useMemo(() => {
     const map = new Map<string, RemoteBranch[]>();
@@ -545,7 +556,14 @@ function RemotesSection() {
             }
           />
         ) : (
-          remotes.map((r) => <RemoteBlock key={r.name} remote={r} branches={grouped.get(r.name) ?? []} />)
+          remotes.map((r) => (
+            <RemoteBlock
+              key={r.name}
+              remote={r}
+              branches={grouped.get(r.name) ?? []}
+              selectedRef={selectedRef}
+            />
+          ))
         )}
       </div>
     </RailSection>
@@ -556,9 +574,9 @@ function RemotesSection() {
 /* 4. Tags                                                             */
 /* ------------------------------------------------------------------ */
 
-function TagRow({ tag, remotes }: { tag: Tag; remotes: string[] }) {
+function TagRow({ tag, remotes, selected }: { tag: Tag; remotes: string[]; selected: boolean }) {
   return (
-    <RailRow onClick={() => selectRef(tag.fullName)}>
+    <RailRow highlighted={selected} onClick={() => selectRef(tag.fullName)}>
       <TagIcon className="size-3.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -586,6 +604,7 @@ function TagRow({ tag, remotes }: { tag: Tag; remotes: string[] }) {
 function TagsSection() {
   const tags = useAppState(selectTags);
   const remotes = useAppState(selectRemotes);
+  const selectedRef = useAppState((s) => s.selection.ref);
   const remoteNames = useMemo(() => remotes.map((r) => r.name), [remotes]);
 
   return (
@@ -608,7 +627,14 @@ function TagsSection() {
         {tags.length === 0 ? (
           <EmptyState title="Nenhuma tag" description="Marque uma versao a partir de um commit ou branch." />
         ) : (
-          tags.map((t) => <TagRow key={t.fullName} tag={t} remotes={remoteNames} />)
+          tags.map((t) => (
+            <TagRow
+              key={t.fullName}
+              tag={t}
+              remotes={remoteNames}
+              selected={selectedRef === t.fullName}
+            />
+          ))
         )}
       </div>
     </RailSection>

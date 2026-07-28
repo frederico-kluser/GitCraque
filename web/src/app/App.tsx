@@ -2,21 +2,23 @@
  * Shell do GitCraque — o unico lugar que monta os quatro modulos juntos.
  *
  * Layout: toolbar no topo, rail a esquerda, View Tree ao centro, detalhe a
- * direita, staging e console embaixo, rodape de diagnostico. Tudo em grid; o
- * unico posicionamento absoluto do arquivo e o alvo de arrasto das divisorias.
+ * direita, o rodape de duas abas (alteracoes e visualizador) embaixo, rodape de
+ * diagnostico. Tudo em grid; o unico posicionamento absoluto do arquivo e o
+ * alvo de arrasto das divisorias.
  *
  * As larguras das colunas sao arrastaveis e persistidas (ver `Splitter.tsx`,
  * que explica por que ele e escrito a mao).
  */
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { FolderX, GitCommitHorizontal, PlugZap } from "lucide-react";
 import { GraphView } from "@/graph";
 import { GitDndProvider } from "@/dnd";
 import { DialogHost, RepoPicker } from "@/dialogs";
-import { ConsolePanel, DetailPanel, RailPanels, StatusPanel, Toolbar } from "@/panels";
+import { BottomDock, DetailPanel, RailPanels, Toolbar } from "@/panels";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import {
   bootstrap,
+  clearReveal,
   clearSelection,
   selectCommit,
   selectCommits,
@@ -29,6 +31,7 @@ import {
   RAIL_RANGE,
   requestCommit,
   setBottomHeight,
+  setCommitDraft,
   setDetailWidth,
   setRailWidth,
   togglePalette,
@@ -98,6 +101,9 @@ export function App() {
   const refs = useAppState((s) => s.refs);
   const selected = useAppState((s) => s.selection.commits);
   const primary = useAppState((s) => s.selection.primary);
+  // Clicar numa branch ou tag no rail vira este pedido; o grafo rola ate o
+  // commit, marca a linha e devolve `onRevealed` para o store limpar.
+  const reveal = useAppState((s) => s.reveal);
   const pendingIntent = useAppState((s) => s.pendingIntent);
   const loadingLog = useAppState((s) => s.loading.log);
   const fatal = useAppState((s) => s.fatal);
@@ -115,6 +121,15 @@ export function App() {
     onCommit: requestCommit,
     onEscape: clearSelection,
   });
+
+  // Trocar de projeto ou de worktree e trocar o diretorio do servidor: o
+  // rascunho do commit era daquele repositorio, nao deste. Mora aqui, e nao no
+  // painel de alteracoes, porque aquele desmonta ao trocar de aba do rodape.
+  const lastCwd = useRef<string | null>(null);
+  useEffect(() => {
+    if (lastCwd.current && lastCwd.current !== repoCwd) setCommitDraft({ message: "", amend: false });
+    lastCwd.current = repoCwd;
+  }, [repoCwd]);
 
   // O ⌘K e instalado pelo proprio `useCommandK` do Motion UI; este e o gatilho
   // de reserva para quem chega pelo menu do navegador em tela estreita.
@@ -206,6 +221,8 @@ export function App() {
                 refs={refs}
                 selected={selected}
                 primary={primary}
+                reveal={reveal}
+                onRevealed={clearReveal}
                 loading={loadingLog}
                 onSelect={selectCommit}
                 className="h-full"
@@ -235,10 +252,7 @@ export function App() {
           onChange={setBottomHeight}
         />
 
-        <div className="grid min-h-0 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] border-t border-border">
-          <StatusPanel className="min-h-0 border-r border-border bg-background" />
-          <ConsolePanel className="min-h-0 bg-surface-inset" />
-        </div>
+        <BottomDock className="min-h-0 border-t border-border" />
 
         <StatusFooter className="border-t border-border bg-surface-rail" />
       </div>

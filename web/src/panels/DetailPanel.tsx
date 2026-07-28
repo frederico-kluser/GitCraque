@@ -1,146 +1,33 @@
 /**
  * Painel direito — o detalhe do commit focado, ou o resumo da selecao multipla.
  *
- * Um commit: cabecalho (assunto, corpo, autor, committer, hash, pais
- * clicaveis) e duas abas, Arquivos e Diff. Dois ou mais commits: o painel vira
- * o resumo do intervalo, com o botao de Squash.
+ * Um commit: cabecalho (assunto, corpo, autor, committer, hash, pais clicaveis)
+ * e a lista de arquivos alterados. Cada arquivo e um botao: clicar abre o
+ * conteudo no visualizador do rodape, que tem largura inteira para mostrar o
+ * diff — este painel e estreito e fica com os metadados. Dois ou mais commits:
+ * o painel vira o resumo do intervalo, com o botao de Squash.
  *
  * O carregamento e por hash, com cache e descarte de resposta obsoleta
  * (`useCommitDetail`), e o vazio e coberto por `Skeleton` do Motion UI.
  */
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
 import { CopyButton } from "@/components/motion-ui/copy-button";
-import { SegmentedToggle, SegmentedToggleOption } from "@/components/motion-ui/segmented-toggle";
 import { Skeleton } from "@/components/motion-ui/skeleton";
-import {
-  SmoothTabs,
-  SmoothTabsList,
-  SmoothTabsPanel,
-  SmoothTabsPanels,
-  SmoothTabsTab,
-} from "@/components/motion-ui/smooth-tabs";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
-import { selectCommit, selectCommits, useAppState } from "@/state/store";
-import { useCommitDetail, useCommitDiff } from "@/hooks";
+import { openFile, selectCommit, selectCommits, useAppState } from "@/state/store";
+import { useCommitDetail } from "@/hooks";
 import { openSquash } from "@/app/actions";
 import { cn, plural, short } from "@/lib/utils";
-import type { CommitDetail, DiffHunk, DiffLine, DiffPayload } from "@/types/git";
+import type { CommitDetail } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
-import { Chip, DiffStat, EmptyState, FilePath, SectionLabel, StatusGlyph, ToolButton } from "./parts";
+import { Chip, DiffStat, EmptyState, FilePath, FOCUS_RING, SectionLabel, StatusGlyph, ToolButton } from "./parts";
 
 const DATE_FORMAT = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" });
 
 function absoluteDate(raw: string): string {
   const date = new Date(raw);
   return Number.isNaN(date.getTime()) ? raw : DATE_FORMAT.format(date);
-}
-
-/* ------------------------------------------------------------------ */
-/* Diff                                                                */
-/* ------------------------------------------------------------------ */
-
-type DiffMode = "unified" | "split";
-
-const LINE_CLASS: Record<DiffLine["kind"], string> = {
-  add: "bg-diff-add-bg text-diff-add-fg",
-  del: "bg-diff-del-bg text-diff-del-fg",
-  context: "text-muted-foreground",
-  meta: "text-muted-foreground/70 italic",
-};
-
-const GUTTER = "w-9 shrink-0 select-none pr-1.5 text-right text-[10px] text-muted-foreground tabular-nums";
-
-function UnifiedHunk({ hunk }: { hunk: DiffHunk }) {
-  return (
-    <div>
-      <div className="bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{hunk.header}</div>
-      {hunk.lines.map((line, i) => (
-        <div key={i} className={cn("flex font-mono text-[11px] leading-[1.55]", LINE_CLASS[line.kind])}>
-          <span className={GUTTER}>{line.oldNumber ?? ""}</span>
-          <span className={GUTTER}>{line.newNumber ?? ""}</span>
-          <span className="w-3 shrink-0 select-none text-center">
-            {line.kind === "add" ? "+" : line.kind === "del" ? "−" : " "}
-          </span>
-          <span className="min-w-0 flex-1 whitespace-pre-wrap break-all">{line.content}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** Emparelha remocoes com adicoes na ordem em que aparecem no hunk. */
-function splitRows(hunk: DiffHunk): Array<{ left: DiffLine | null; right: DiffLine | null }> {
-  const rows: Array<{ left: DiffLine | null; right: DiffLine | null }> = [];
-  let pendingDeletions: DiffLine[] = [];
-  let pendingAdditions: DiffLine[] = [];
-
-  const flush = () => {
-    const height = Math.max(pendingDeletions.length, pendingAdditions.length);
-    for (let i = 0; i < height; i++) {
-      rows.push({ left: pendingDeletions[i] ?? null, right: pendingAdditions[i] ?? null });
-    }
-    pendingDeletions = [];
-    pendingAdditions = [];
-  };
-
-  for (const line of hunk.lines) {
-    if (line.kind === "del") pendingDeletions.push(line);
-    else if (line.kind === "add") pendingAdditions.push(line);
-    else {
-      flush();
-      rows.push({ left: line, right: line });
-    }
-  }
-  flush();
-  return rows;
-}
-
-function SplitHunk({ hunk }: { hunk: DiffHunk }) {
-  const rows = useMemo(() => splitRows(hunk), [hunk]);
-  return (
-    <div>
-      <div className="bg-muted px-2 py-0.5 font-mono text-[10px] text-muted-foreground">{hunk.header}</div>
-      {rows.map((row, i) => (
-        <div key={i} className="flex font-mono text-[11px] leading-[1.55]">
-          <span className={cn("flex min-w-0 flex-1", row.left ? LINE_CLASS[row.left.kind] : "")}>
-            <span className={GUTTER}>{row.left?.oldNumber ?? ""}</span>
-            <span className="min-w-0 flex-1 whitespace-pre-wrap break-all">{row.left?.content ?? ""}</span>
-          </span>
-          <span className="w-px shrink-0 bg-border" />
-          <span className={cn("flex min-w-0 flex-1", row.right ? LINE_CLASS[row.right.kind] : "")}>
-            <span className={GUTTER}>{row.right?.newNumber ?? ""}</span>
-            <span className="min-w-0 flex-1 whitespace-pre-wrap break-all">{row.right?.content ?? ""}</span>
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function DiffFile({ file, mode }: { file: DiffPayload; mode: DiffMode }) {
-  return (
-    <article className="overflow-hidden rounded-md border border-border">
-      <header className="flex items-center gap-2 border-b border-border bg-card px-2 py-1.5">
-        <FilePath path={file.path} className="flex-1" />
-        <CopyButton
-          variant="icon"
-          value={file.raw}
-          label={`Copiar o patch de ${file.path}`}
-          copiedLabel="Patch copiado"
-        />
-      </header>
-      {file.binary ? (
-        <p className="px-2 py-3 text-[11px] text-muted-foreground">Arquivo binario — sem diff textual.</p>
-      ) : (
-        <div className="overflow-x-auto">
-          {file.hunks.map((hunk, i) =>
-            mode === "unified" ? <UnifiedHunk key={i} hunk={hunk} /> : <SplitHunk key={i} hunk={hunk} />,
-          )}
-        </div>
-      )}
-    </article>
-  );
 }
 
 /* ------------------------------------------------------------------ */
@@ -320,45 +207,41 @@ function CommitHeader({ detail }: { detail: CommitDetail }) {
   );
 }
 
-function CommitBody({ detail }: { detail: CommitDetail }) {
-  const [tab, setTab] = useState("files");
-  const [mode, setMode] = useState<DiffMode>("unified");
-  const diff = useCommitDiff(detail.hash, tab === "diff");
+/** A lista de arquivos do commit: cada linha abre o arquivo no visualizador. */
+function CommitFiles({ detail }: { detail: CommitDetail }) {
+  const opened = useAppState((s) => s.openFile);
 
   return (
-    <SmoothTabs value={tab} onValueChange={setTab} className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2">
-        <SmoothTabsList ariaLabel="Detalhe do commit">
-          <SmoothTabsTab value="files">Arquivos</SmoothTabsTab>
-          <SmoothTabsTab value="diff">Diff</SmoothTabsTab>
-        </SmoothTabsList>
+    <div className="flex flex-col">
+      {/* `sticky`: a lista pode ser longa, e a coluna inteira rola de uma vez. */}
+      <header className="sticky top-0 z-10 flex items-center gap-2 bg-card/95 px-3 py-2 backdrop-blur-sm">
+        <SectionLabel className="text-foreground">Arquivos</SectionLabel>
+        <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{detail.files.length}</span>
         <span className="flex-1" />
-        {tab === "diff" && (
-          <SegmentedToggle
-            value={mode}
-            onChange={(next) => setMode(next as DiffMode)}
-            ariaLabel="Formato do diff"
-            className="p-0.5"
-          >
-            <SegmentedToggleOption value="unified" className="px-2 py-1 text-[11px]">
-              unificado
-            </SegmentedToggleOption>
-            <SegmentedToggleOption value="split" className="px-2 py-1 text-[11px]">
-              lado a lado
-            </SegmentedToggleOption>
-          </SegmentedToggle>
-        )}
-      </div>
+        <span className="text-[10px] text-muted-foreground">clique para ver o diff embaixo</span>
+      </header>
 
-      {/* O viewport ja e `grid overflow-hidden`; a rolagem fica no painel ativo,
-          que ocupa a celula inteira. */}
-      <SmoothTabsPanels className="min-h-0 flex-1">
-        <SmoothTabsPanel value="files" className="flex h-full flex-col gap-0.5 overflow-y-auto px-2 pb-3">
-          {detail.files.length === 0 ? (
-            <EmptyState title="Nenhum arquivo" description="O commit nao alterou arquivos." />
-          ) : (
-            detail.files.map((file) => (
-              <div key={file.path} className="flex items-center gap-2 rounded-sm px-1.5 py-1 hover:bg-accent">
+      <div className="flex flex-col gap-0.5 px-2 pb-3">
+        {detail.files.length === 0 ? (
+          <EmptyState title="Nenhum arquivo" description="O commit nao alterou arquivos." />
+        ) : (
+          detail.files.map((file) => {
+            const isOpen =
+              opened?.path === file.path && !opened.fromWorkingTree && opened.hash === detail.hash;
+            return (
+              <button
+                key={file.path}
+                type="button"
+                aria-current={isOpen ? "true" : undefined}
+                title={`Ver ${file.path} no visualizador`}
+                onClick={() => openFile(file.path, detail.hash)}
+                className={cn(
+                  "flex items-center gap-2 rounded-sm px-1.5 py-1 text-left transition-colors",
+                  "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+                  isOpen ? "bg-primary/12 ring-1 ring-primary ring-inset" : "hover:bg-accent",
+                  FOCUS_RING,
+                )}
+              >
                 <StatusGlyph status={file.status} />
                 <FilePath path={file.path} className="flex-1" />
                 {file.oldPath && (
@@ -371,26 +254,12 @@ function CommitBody({ detail }: { detail: CommitDetail }) {
                 ) : (
                   <DiffStat insertions={file.insertions} deletions={file.deletions} />
                 )}
-              </div>
-            ))
-          )}
-        </SmoothTabsPanel>
-
-        <SmoothTabsPanel value="diff" className="flex h-full flex-col gap-2 overflow-y-auto px-2 pb-3">
-          {diff.loading && (
-            <div className="flex flex-col gap-2">
-              <Skeleton className="h-6 w-full rounded-md" />
-              <Skeleton className="h-32 w-full rounded-md" />
-            </div>
-          )}
-          {diff.error && <p className="px-2 py-3 text-xs text-destructive">{diff.error}</p>}
-          {!diff.loading && !diff.error && (diff.data?.length ?? 0) === 0 && (
-            <EmptyState title="Sem patch" description="`git diff` nao devolveu conteudo para este commit." />
-          )}
-          {diff.data?.map((file) => <DiffFile key={file.path} file={file} mode={mode} />)}
-        </SmoothTabsPanel>
-      </SmoothTabsPanels>
-    </SmoothTabs>
+              </button>
+            );
+          })
+        )}
+      </div>
+    </div>
   );
 }
 
@@ -434,10 +303,12 @@ export function DetailPanel({ className }: PanelProps) {
         <EmptyState title="Nao foi possivel ler o commit" description={detail.error} />
       )}
       {detail.data && (
-        <>
+        // O cabecalho rola junto com a lista: num painel estreito, prender os
+        // metadados no topo comeria a metade util da coluna.
+        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <CommitHeader detail={detail.data} />
-          <CommitBody detail={detail.data} />
-        </>
+          <CommitFiles detail={detail.data} />
+        </div>
       )}
     </section>
   );
