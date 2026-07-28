@@ -11,7 +11,7 @@
  */
 import { memo } from "react";
 import type { MouseEvent } from "react";
-import { motion } from "motion/react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { areEqual } from "react-window";
 import type { ListChildComponentProps } from "react-window";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
@@ -27,9 +27,13 @@ export const CommitRow = memo(function CommitRow({
   style,
   data,
 }: ListChildComponentProps<GraphRowData>) {
-  const { layout, metrics, graphWidth, selected, primary, headHash } = data;
+  const { layout, metrics, graphWidth, selected, primary, headHash, marked } = data;
   const node = layout.nodes[row];
   const snap = useMotionUITransition("snap");
+  const ui = useMotionUITransition("ui");
+  /* o tema ja degrada sozinho, mas o realce do reveal e um efeito proprio: em
+     modo reduzido ele aparece e some estatico, sem entrada nem saida. */
+  const reduced = !!useReducedMotion();
 
   /* o gancho de arraste da frente de DND: todo commit e arrastavel. */
   const commit = node.commit;
@@ -43,6 +47,7 @@ export const CommitRow = memo(function CommitRow({
   const isSelected = selected.has(commit.hash);
   const isPrimary = primary === commit.hash;
   const isHead = headHash === commit.hash;
+  const isMarked = marked !== null && marked.hash === commit.hash;
 
   /* so as arestas que ATRAVESSAM esta linha, pelo indice pre-calculado. */
   const edges = layout.rowEdges.forRow(row);
@@ -75,6 +80,7 @@ export const CommitRow = memo(function CommitRow({
       aria-rowindex={row + 2 /* 1 e o cabecalho */}
       aria-selected={isSelected}
       data-dragging={draggable.isDragging || undefined}
+      data-revealed={isMarked || undefined}
       /* `style` vem do react-window e ja traz position/top/height — e o que faz
          a linha ser um bloco de posicionamento para o realce abaixo. */
       style={style}
@@ -99,6 +105,29 @@ export const CommitRow = memo(function CommitRow({
       {isPrimary && (
         <span aria-hidden className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-primary" />
       )}
+
+      {/* Realce do REVEAL — temporario, apaga-se sozinho. Precisa se distinguir
+          da selecao porque o commit revelado tambem fica selecionado: a selecao
+          e so o banho de fundo, este aqui tem contorno e um pulo de escala na
+          entrada. So `opacity` e `transform` animam; a saida vem do
+          `AnimatePresence`, que em modo reduzido simplesmente nao existe (sem
+          `exit`, a remocao e imediata). */}
+      {/* sem `initial={false}` de proposito: a rolagem costuma MONTAR a linha
+          revelada ja marcada, e e justamente nesse caso que o realce precisa
+          entrar animado. */}
+      <AnimatePresence>
+        {isMarked && (
+          <motion.span
+            key={marked.nonce}
+            aria-hidden
+            className="pointer-events-none absolute inset-0 bg-primary/20 ring-2 ring-primary ring-inset"
+            initial={reduced ? false : { opacity: 0, scaleY: 0.82 }}
+            animate={{ opacity: 1, scaleY: 1 }}
+            exit={reduced ? undefined : { opacity: 0 }}
+            transition={ui}
+          />
+        )}
+      </AnimatePresence>
 
       {/* ---- coluna do grafo ------------------------------------------- */}
       <svg

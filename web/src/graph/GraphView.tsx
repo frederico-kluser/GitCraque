@@ -8,10 +8,11 @@
  * Teclado, selecao multipla e menu de contexto vivem aqui; o layout X/Y vem de
  * `layout.ts` e a geometria das curvas de `bezier.ts`.
  */
-import { forwardRef, useCallback, useMemo, useRef } from "react";
+import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, HTMLAttributes, KeyboardEvent } from "react";
 import { motion } from "motion/react";
 import { FixedSizeList } from "react-window";
+import type { ListOnScrollProps } from "react-window";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import {
@@ -23,6 +24,8 @@ import { cn } from "@/lib/utils";
 import type { GraphMetrics, GraphViewProps } from "@/types/modules";
 import { CommitRow } from "./CommitRow.tsx";
 import { computeGraphLayout, DEFAULT_METRICS } from "./layout.ts";
+import { applyRevealPlan, MARK_DURATION_MS, planReveal } from "./reveal.ts";
+import type { RevealSurface, RevealTarget } from "./reveal.ts";
 import {
   FALLBACK_HEIGHT,
   OVERSCAN,
@@ -114,6 +117,8 @@ export function GraphView({
   primary,
   onSelect,
   onContextMenu,
+  reveal,
+  onRevealed,
   metrics: metricsProp,
   loading,
   className,
@@ -147,12 +152,88 @@ export function GraphView({
   const gridRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<FixedSizeList<GraphRowData>>(null);
   const { ref: bodyRef, height } = useElementHeight<HTMLDivElement>();
+  const viewportHeight = height || FALLBACK_HEIGHT;
 
   /* ancora da selecao por intervalo: o store usa `primary` como ponta, e o
      Shift+seta precisa manter a ponta ORIGINAL para o intervalo crescer. */
   const anchorRef = useRef<string | null>(null);
 
   const focusGrid = useCallback(() => gridRef.current?.focus(), []);
+
+  /* ---- reveal: levar a View Tree ate um commit e marcar a linha ------- */
+
+  /** a linha marcada agora; o realce se apaga sozinho depois de MARK_DURATION_MS */
+  const [mark, setMark] = useState<RevealTarget | null>(null);
+  /* ultimo nonce atendido. Sem ele o ciclo `reveal muda -> rola -> onRevealed
+     limpa -> re-render` viraria laco. */
+  const servedNonceRef = useRef<number | null>(null);
+  const markTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  /* deslocamento atual da lista, alimentado pelo onScroll do react-window —
+     ler o state interno dele seria depender de coisa privada. */
+  const scrollOffsetRef = useRef(0);
+  /* de onde as setas continuam quando nao ha commit focado */
+  const revealedHashRef = useRef<string | null>(null);
+
+  /* o shell pode passar uma closure nova a cada render; como dependencia de
+     efeito isso reabriria o laco. Fica numa ref. */
+  const onRevealedRef = useRef(onRevealed);
+  useEffect(() => {
+    onRevealedRef.current = onRevealed;
+  });
+
+  const handleListScroll = useCallback(({ scrollOffset }: ListOnScrollProps) => {
+    scrollOffsetRef.current = scrollOffset;
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (markTimerRef.current !== null) clearTimeout(markTimerRef.current);
+    },
+    [],
+  );
+
+  /* o efeito observa o NONCE, nao o hash: clicar duas vezes na mesma branch tem
+     de rolar de novo. Toda a decisao esta em `planReveal`; aqui so se aplica. */
+  const revealHash = reveal?.hash ?? null;
+  const revealNonce = reveal?.nonce ?? null;
+
+  useEffect(() => {
+    const surface: RevealSurface = {
+      scrollToRow: (row) => listRef.current?.scrollToItem(row, "center"),
+      focusRow: (hash) => {
+        /* o teclado acompanha: cursor das setas e ancora do Shift passam a ser a
+           linha revelada, e o grid toma o foco do DOM — o clique aconteceu no
+           rail, entao sem isso as setas nao chegariam aqui. */
+        revealedHashRef.current = hash;
+        anchorRef.current = hash;
+        gridRef.current?.focus({ preventScroll: true });
+      },
+      mark: (target) => {
+        setMark(target);
+        if (markTimerRef.current !== null) clearTimeout(markTimerRef.current);
+        markTimerRef.current = setTimeout(() => setMark(null), MARK_DURATION_MS);
+      },
+      release: () => onRevealedRef.current?.(),
+    };
+
+    const plan = planReveal(
+      revealHash !== null && revealNonce !== null
+        ? { hash: revealHash, nonce: revealNonce }
+        : null,
+      {
+        layout,
+        viewport: {
+          scrollOffset: scrollOffsetRef.current,
+          height: viewportHeight,
+          rowHeight: metrics.rowHeight,
+        },
+        servedNonce: servedNonceRef.current,
+        loading,
+      },
+    );
+    if (plan !== null) servedNonceRef.current = plan.nonce;
+    applyRevealPlan(plan, surface);
+  }, [revealHash, revealNonce, layout, viewportHeight, metrics.rowHeight, loading]);
 
   const handleSelect = useCallback<GraphViewProps["onSelect"]>(
     (hash, mode) => {
@@ -187,8 +268,11 @@ export function GraphView({
     (event: KeyboardEvent<HTMLDivElement>) => {
       const count = layout.nodes.length;
       if (count === 0) return;
-      const current = primary !== null ? (layout.index.get(primary) ?? -1) : -1;
-      const page = Math.max(1, Math.floor((height || FALLBACK_HEIGHT) / metrics.rowHeight) - 1);
+      /* o cursor e o commit focado; na falta dele, a ultima linha revelada — e
+         assim que as setas continuam de onde o reveal parou. */
+      const cursor = primary ?? revealedHashRef.current;
+      const current = cursor !== null ? (layout.index.get(cursor) ?? -1) : -1;
+      const page = Math.max(1, Math.floor(viewportHeight / metrics.rowHeight) - 1);
 
       switch (event.key) {
         case "ArrowDown":
@@ -219,7 +303,7 @@ export function GraphView({
           break;
       }
     },
-    [layout, primary, height, metrics.rowHeight, moveTo],
+    [layout, primary, viewportHeight, metrics.rowHeight, moveTo],
   );
 
   const itemData = useMemo<GraphRowData>(
@@ -230,6 +314,7 @@ export function GraphView({
       selected: selectedSet,
       primary,
       headHash,
+      marked: mark,
       onSelect: handleSelect,
       onContextMenu,
       onFocusGrid: focusGrid,
@@ -241,6 +326,7 @@ export function GraphView({
       selectedSet,
       primary,
       headHash,
+      mark,
       handleSelect,
       onContextMenu,
       focusGrid,
@@ -289,11 +375,12 @@ export function GraphView({
           >
             <FixedSizeList<GraphRowData>
               ref={listRef}
-              height={height || FALLBACK_HEIGHT}
+              height={viewportHeight}
               width="100%"
               itemCount={commits.length}
               itemSize={metrics.rowHeight}
               overscanCount={OVERSCAN}
+              onScroll={handleListScroll}
               itemData={itemData}
               itemKey={(index, data) => data.layout.nodes[index].commit.hash}
               innerElementType={ListInner}
