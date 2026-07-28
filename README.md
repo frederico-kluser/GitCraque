@@ -13,6 +13,7 @@ npm install
 npm run build
 npx gitcraque                 # no diretorio do repositorio que voce quer abrir
 npx gitcraque --repo ~/code/projeto --port 5271
+npx gitcraque --repo ~        # fora de um repo: abre o seletor
 ```
 
 ## O que ele faz
@@ -26,6 +27,13 @@ desenho e SVG escrito a mao — `<circle>` para commits, `<path>` com Bezier
 cubica para ramificacoes e merges — com virtualizacao de janela, entao um
 repositorio de dezenas de milhares de commits rola liso. Nenhuma biblioteca de
 gitgraph esta envolvida.
+
+**Seletor de repositorios.** Subiu fora de um repositorio? A tela nao e um
+aviso, e o seletor: os repositorios abertos recentemente, uma varredura das
+pastas conhecidas da maquina (pessoal, `Projects`, `code`, `/opt`, `/srv`) e um
+navegador de pastas com migalhas de pao. Colar um caminho e apertar Enter
+tambem funciona, e ha um `git init` para a pasta em que voce estiver. Trocar de
+repositorio depois disso e o botao **Abrir** na barra, ou ⌘K.
 
 **Worktrees sem checkout.** `git worktree list --porcelain` alimenta o rail. Ao
 clicar num rotulo de worktree, o servidor executa `process.chdir()` para o

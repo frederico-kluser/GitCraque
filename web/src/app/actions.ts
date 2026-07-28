@@ -21,6 +21,7 @@ import {
   switchWorktree,
   toast,
 } from "@/state/store";
+import { openDialog } from "@/dialogs";
 import { askConfirm } from "@/hooks";
 import type { ConfirmField } from "@/hooks";
 import type { PendingOperationKind, Remote, Worktree } from "@/types/git";
@@ -114,6 +115,11 @@ export function openPushDialog(preset: { remote?: string; branch?: string } = {}
 /* ------------------------------------------------------------------ */
 /* Branches                                                            */
 /* ------------------------------------------------------------------ */
+
+/** Abre o seletor de repositorios da maquina (recentes, varredura, navegacao). */
+export function openRepoPicker() {
+  openDialog({ kind: "repo-picker" });
+}
 
 export function openCreateBranch(startPoint?: string) {
   askConfirm({

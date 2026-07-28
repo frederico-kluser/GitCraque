@@ -10,6 +10,7 @@ import { API_PREFIX, ROUTES } from "../contract.mjs";
 import { Router } from "../router.mjs";
 
 import { registerRepoRoutes } from "./repo.mjs";
+import { registerRepoPickerRoutes } from "./repos.mjs";
 import { registerWorktreeRoutes } from "./worktrees.mjs";
 import { registerBranchRoutes } from "./branches.mjs";
 import { registerRemoteRoutes } from "./remotes.mjs";
@@ -25,6 +26,7 @@ export { API_PREFIX };
 export function buildRouter(deps = {}) {
   const router = new Router();
   registerRepoRoutes(router, deps);
+  registerRepoPickerRoutes(router, deps);
   registerWorktreeRoutes(router, deps);
   registerBranchRoutes(router, deps);
   registerRemoteRoutes(router, deps);

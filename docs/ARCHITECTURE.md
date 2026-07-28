@@ -132,6 +132,37 @@ clicar em "squash" — o que nenhum cliente grafico decente exige. O mesmo vale
 para o rebase de ramo. Quando o `stash pop` do fim conflita, isso **nao** e
 silencioso: a resposta volta com `ok: false` e `pending` preenchido.
 
+### Seletor de repositorios — `git/discover.mjs`
+
+Sem ele, subir o `gitcraque` fora de um repositorio era um beco sem saida: a
+interface so sabia dizer "este diretorio nao e um repositorio git" e mandar a
+pessoa voltar ao terminal. A CLI tambem recusava subir; hoje ela sobe e a
+interface mostra o seletor.
+
+Tres capacidades e uma guarda diferente para cada uma:
+
+| Rota | O que faz | Guarda |
+|---|---|---|
+| `GET /fs/list` | subpastas de um caminho, marcando quais sao repos | devolve **so nomes de diretorio**; nunca arquivo, nunca conteudo |
+| `POST /repos/scan` | varre as raizes conhecidas procurando `.git` | tetos de profundidade, de resultados e de tempo; realpath contra ciclo de symlink |
+| `POST /repos/open` | troca o repositorio ativo | so aceita diretorio que o `git rev-parse --git-dir` reconhece |
+
+`POST /repos/open` e irma de `POST /worktrees/switch`: as duas fazem
+`process.chdir()` e emitem `cwd:changed`, e nenhuma faz `git checkout`. O que
+muda e quem autoriza o caminho — a de worktree confere contra
+`git worktree list`, esta exige que o destino seja mesmo um repositorio. Abrir
+por uma subpasta entra pela raiz da worktree (`--show-toplevel`), senao o status
+e o log sairiam parciais.
+
+Os recentes ficam em `~/.config/gitcraque/recent.json` (respeita
+`XDG_CONFIG_HOME`), gravados por arquivo temporario + rename para nunca ficarem
+pela metade, com `exists` recalculado a cada leitura.
+
+**Nao estar num repositorio deixou de ser erro.** `GET /log` e `GET /status`
+devolvem payload vazio em vez de 500 quando o git responde *"not a git
+repository"* — antes, a tela do seletor nascia com um toast vermelho carregando
+um stack trace.
+
 ### Trampolim de askpass
 
 `askpass.mjs` roda como processo **filho do git**, nao do servidor. Ele nao tem

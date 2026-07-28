@@ -17,6 +17,7 @@ import {
   CircleAlert,
   FolderTree,
   GitBranch,
+  FolderGit2,
   GitBranchPlus,
   Loader2,
   Moon,
@@ -45,6 +46,7 @@ import {
   openAbort,
   openCreateBranch,
   openPushDialog,
+  openRepoPicker,
   openStashPush,
 } from "@/app/actions";
 import { CommandBar } from "@/app/CommandBar";
@@ -391,6 +393,13 @@ export function Toolbar({ className }: PanelProps) {
 
         {/* --- acoes rapidas --- */}
         <div className="flex items-center gap-1.5">
+          <ToolButton
+            icon={<FolderGit2 className="size-3.5" />}
+            onClick={openRepoPicker}
+            title="Abrir outro repositorio da maquina (process.chdir, sem checkout)"
+          >
+            Abrir
+          </ToolButton>
           <ToolButton icon={<GitBranchPlus className="size-3.5" />} onClick={() => openCreateBranch()}>
             Branch
           </ToolButton>

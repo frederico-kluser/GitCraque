@@ -77,6 +77,18 @@ export const ROUTES = [
   ["POST", "/credentials"],
   ["DELETE", "/credentials/:host"],
 
+  // Seletor de repositorios da maquina. Sem estas rotas, subir o gitcraque
+  // fora de um repositorio e um beco sem saida.
+  ["GET", "/fs/roots"],
+  ["GET", "/fs/list"],
+  ["GET", "/repos/recent"],
+  // O caminho vai no CORPO, nao na url: caminho absoluto tem barra e nao cabe
+  // num :param sem virar um festival de encoding.
+  ["POST", "/repos/recent/remove"],
+  ["POST", "/repos/scan"],
+  ["POST", "/repos/open"],
+  ["POST", "/repos/init"],
+
   ["POST", "/raw"],
 ];
 

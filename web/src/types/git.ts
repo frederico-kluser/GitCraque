@@ -510,7 +510,90 @@ export interface RepoPayload {
 }
 
 /* ------------------------------------------------------------------ *
- * 11. Console de comandos (o log cru que a UI exibe)
+ * 11. Seletor de repositorios da maquina
+ * ------------------------------------------------------------------ *
+ * Acrescentado depois das secoes acima (aditivo — nada foi removido nem
+ * renomeado). Existe porque, sem isto, subir o gitcraque fora de um
+ * repositorio e um beco sem saida.
+ */
+
+/** Uma pasta na navegacao. NUNCA representa arquivo: o seletor so lista pastas. */
+export interface FsEntry {
+  name: string;
+  path: string;
+  /** tem `.git` (diretorio ou arquivo), ou e um repositorio bare */
+  isRepo: boolean;
+  isBare: boolean;
+  /** `.git` e ARQUIVO: worktree ligada a outro repositorio */
+  isWorktree: boolean;
+  hidden: boolean;
+  symlink: boolean;
+}
+
+/** GET /api/fs/list */
+export interface FsListPayload {
+  path: string;
+  /** null na raiz do sistema de arquivos */
+  parent: string | null;
+  home: string;
+  separator: string;
+  /** o que o proprio diretorio listado e */
+  self: { isRepo: boolean; isBare: boolean; isWorktree: boolean };
+  entries: FsEntry[];
+  /** a pasta tinha mais subpastas do que o teto de listagem */
+  truncated: boolean;
+}
+
+/** GET /api/fs/roots — pontos de partida que existem nesta maquina. */
+export interface FsRootsPayload {
+  home: string;
+  separator: string;
+  cwd: string;
+  roots: Array<{ path: string; label: string; isRepo: boolean }>;
+}
+
+/** Um repositorio encontrado pela varredura. */
+export interface DiscoveredRepo {
+  path: string;
+  name: string;
+  /** ramo atual, "(detached abc1234)", ou null em repo vazio/bare */
+  branch: string | null;
+  /** `%ar` do ultimo commit */
+  lastCommitRelative: string | null;
+  bare: boolean;
+  linkedWorktree: boolean;
+}
+
+/** POST /api/repos/scan */
+export interface ScanPayload {
+  repos: DiscoveredRepo[];
+  roots: string[];
+  /** quantos diretorios foram visitados */
+  scanned: number;
+  /** a varredura parou por teto de tempo/resultados antes de terminar */
+  truncated: boolean;
+  elapsedMs: number;
+}
+
+/** Um repositorio ja aberto antes, persistido em ~/.config/gitcraque/recent.json */
+export interface RecentRepo {
+  path: string;
+  name: string;
+  branch: string | null;
+  lastOpenedAt: number;
+  /** recalculado a cada leitura: a pasta pode ter sido movida ou apagada */
+  exists: boolean;
+}
+
+/** GET /api/repos/recent */
+export interface RecentReposPayload {
+  entries: RecentRepo[];
+  /** caminho do arquivo, exibido na UI para quem quiser editar na mao */
+  file: string;
+}
+
+/* ------------------------------------------------------------------ *
+ * 12. Console de comandos (o log cru que a UI exibe)
  * ------------------------------------------------------------------ */
 
 export interface ConsoleLine {

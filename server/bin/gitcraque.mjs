@@ -4,9 +4,12 @@
  *
  *   gitcraque [--repo <path>] [--port <n>] [--host <addr>] [--open|--no-open] [--dev]
  *
- * Valida que o caminho e um repositorio git, faz `process.chdir()` para ele,
- * sobe o servidor e imprime o banner. Fecha servidor, watcher e socket do
- * trampolim em SIGINT/SIGTERM.
+ * Faz `process.chdir()` para o caminho, sobe o servidor e imprime o banner.
+ * Fecha servidor, watcher e socket do trampolim em SIGINT/SIGTERM.
+ *
+ * Caminho que NAO e repositorio git nao impede a subida: a interface tem um
+ * seletor de repositorios da maquina, e ela precisa do servidor no ar para
+ * poder oferece-lo.
  */
 import { spawn } from "node:child_process";
 import fs from "node:fs";
@@ -197,13 +200,15 @@ async function main() {
   // Entra no repo ANTES de qualquer comando git: tudo depois roda no cwd certo.
   process.chdir(repo);
 
+  // Nao e um repositorio? Isso NAO e motivo para recusar a subir. A interface
+  // tem um seletor de repositorios da maquina (recentes, navegacao e varredura),
+  // e ela so consegue oferece-lo se o servidor estiver no ar. Sair aqui era
+  // deixar o usuario num beco sem saida: a mensagem mandava voltar ao terminal.
   const gitDir = await readGitLine(["rev-parse", "--git-dir"]);
   if (!gitDir) {
     process.stderr.write(
-      `gitcraque: ${repo} nao e um repositorio git\n` +
-        `  rode 'git init' ali, ou aponte outro caminho com --repo\n`,
+      `gitcraque: ${repo} nao e um repositorio git — abrindo o seletor de repositorios\n`,
     );
-    process.exit(1);
   }
 
   const gitVersion = await detectGitVersion();
@@ -231,8 +236,12 @@ async function main() {
   process.stdout.write(
     `${banner({
       url: handle.url,
-      repo: active?.isMain ? active.path : (worktrees[0]?.path ?? repo),
-      worktree: active ? `${active.label} ${active.branch ? `(${active.branch})` : "(detached)"}` : repo,
+      repo: gitDir ? (active?.isMain ? active.path : (worktrees[0]?.path ?? repo)) : repo,
+      worktree: !gitDir
+        ? "nenhuma — escolha um repositorio na interface"
+        : active
+          ? `${active.label} ${active.branch ? `(${active.branch})` : "(detached)"}`
+          : repo,
       gitVersion,
       version,
       port: handle.port,

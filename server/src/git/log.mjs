@@ -12,7 +12,7 @@
  *   - o que sobra no meio, inteiro e sem tocar, e o assunto.
  */
 import { LOG_ARGS } from "../contract.mjs";
-import { execGitLines, readGit, readGitLine } from "./exec.mjs";
+import { execGitLines, isNotARepoError, readGit, readGitLine } from "./exec.mjs";
 
 /** Quantos campos saem pela esquerda e quantos pela direita. */
 const LEFT_FIELDS = 4;
@@ -172,7 +172,9 @@ export async function getLog(opts = {}) {
 
   if (!result.ok) {
     // Repositorio sem commit nao e erro: e um estado valido do produto.
-    if (isEmptyRepoError(result.stderr)) {
+    // Diretorio que nao e repositorio tambem nao: e o estado de quem acabou de
+    // subir o gitcraque fora de um repo e vai escolher um no seletor.
+    if (isEmptyRepoError(result.stderr) || isNotARepoError(result.stderr)) {
       return { commits: [], total: 0, skip: opts.skip ?? 0, cwd, empty: true, elapsedMs };
     }
     const error = new Error(result.error || "git log falhou");

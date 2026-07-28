@@ -6,7 +6,7 @@
  * acento ou aspas, e o parser vira um inferno de unquoting. Com `-z` os campos
  * vem crus, separados por NUL.
  */
-import { execGit, readGit, withMutationLock } from "./exec.mjs";
+import { execGit, isNotARepoError, readGit, withMutationLock } from "./exec.mjs";
 import { statusFromLetter } from "./log.mjs";
 
 /**
@@ -146,6 +146,11 @@ export async function getStatus(cwd = process.cwd()) {
     { cwd },
   );
   if (!result.ok) {
+    // Fora de um repositorio, "sem alteracoes" e a resposta honesta — nao 500.
+    // A interface esta mostrando o seletor de repositorios nessa hora.
+    if (isNotARepoError(result.stderr)) {
+      return { branch: null, ahead: 0, behind: 0, entries: [], clean: true, cwd };
+    }
     const error = new Error(result.error || "git status falhou");
     error.command = result;
     throw error;

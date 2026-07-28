@@ -12,7 +12,7 @@ import { useEffect } from "react";
 import { FolderX, GitCommitHorizontal, PlugZap } from "lucide-react";
 import { GraphView } from "@/graph";
 import { GitDndProvider } from "@/dnd";
-import { DialogHost } from "@/dialogs";
+import { DialogHost, RepoPicker } from "@/dialogs";
 import { ConsolePanel, DetailPanel, RailPanels, StatusPanel, Toolbar } from "@/panels";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import {
@@ -144,18 +144,33 @@ export function App() {
     );
   }
 
+  // Sem repositorio, a tela NAO e um aviso: e o seletor. Mandar o usuario voltar
+  // ao terminal para subir o app de novo era um beco sem saida.
   if (!isRepo) {
     return (
-      <BoundaryScreen icon={<FolderX className="size-7 text-warning" />} title="Este diretorio nao e um repositorio git">
-        <p>
-          O servidor esta em <span className="font-mono break-all">{repoCwd ?? "?"}</span>, e ali nao ha{" "}
-          <span className="font-mono">.git</span>.
-        </p>
-        <p className="mt-2 text-xs">
-          Suba o <span className="font-mono">gitcraque</span> apontando para um repositorio, ou rode{" "}
-          <span className="font-mono">git init</span> nesse diretorio.
-        </p>
-      </BoundaryScreen>
+      <>
+        {/* Ancorado no topo, nao centralizado: a lista cresce e encolhe conforme
+            a aba e o filtro, e centralizar faria a tela inteira pular a cada
+            tecla digitada. */}
+        <main className="h-full overflow-y-auto bg-background px-6 py-[7vh]">
+          <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+            <header className="flex items-start gap-3">
+              <FolderX className="mt-0.5 size-6 shrink-0 text-warning" />
+              <div className="min-w-0">
+                <h1 className="font-heading text-lg text-foreground">Escolha um repositorio</h1>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  O servidor esta em{" "}
+                  <span className="break-all font-mono text-foreground">{repoCwd ?? "?"}</span>, e ali
+                  nao ha <span className="font-mono">.git</span>. Abra um dos seus repositorios abaixo —
+                  ou crie um novo com <span className="font-mono">git init</span> pela aba Navegar.
+                </p>
+              </div>
+            </header>
+            <RepoPicker variant="page" className="w-full max-w-none" />
+          </div>
+        </main>
+        <Toasts />
+      </>
     );
   }
 

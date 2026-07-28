@@ -24,6 +24,7 @@ import {
 } from "./DeleteBranchDialogs";
 import { IntentDialog } from "./IntentDialog";
 import { PushDialog } from "./PushDialog";
+import { RepoPickerDialog } from "./RepoPickerDialog";
 import { SquashDialog } from "./SquashDialog";
 import { useLingering } from "./parts";
 import { INTENT_ENDPOINTS } from "@/dnd/intents";
@@ -108,6 +109,8 @@ function SpecDialogs({ spec, open }: { spec: DialogSpec | null; open: boolean })
       );
     case "create-tag":
       return <CreateTagDialog open={open} target={spec.ref} onClose={closeDialog} />;
+    case "repo-picker":
+      return <RepoPickerDialog open={open} onClose={closeDialog} />;
     case "conflict":
       // O ConflictDialog le a spec sozinho (ele tambem abre por estado).
       return null;

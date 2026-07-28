@@ -31,7 +31,9 @@ export type DialogSpec =
   /** `git tag <name> [ref]`. */
   | { kind: "create-tag"; ref?: string }
   /** Reabre o painel de conflito da operacao pendente. */
-  | { kind: "conflict" };
+  | { kind: "conflict" }
+  /** Seletor de repositorios da maquina: recentes, varredura e navegacao. */
+  | { kind: "repo-picker" };
 
 export type DialogKind = DialogSpec["kind"];
 

@@ -40,6 +40,10 @@
  * console e nos toasts e faz o refresh.
  */
 export { DialogHost } from "./DialogHost";
+/* O seletor de repositorios tambem e usado FORA de dialogo, na tela de
+ * contorno de "este diretorio nao e um repositorio git". */
+export { RepoPicker } from "./RepoPicker";
+export type { RepoPickerProps, RepoPickerVariant } from "./RepoPicker";
 export { openDialog, closeDialog, useDialogState, getDialog } from "./store";
 export type { DialogSpec, DialogKind } from "./store";
 export type { DialogHostProps } from "@/types/modules";

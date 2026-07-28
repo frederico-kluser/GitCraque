@@ -377,3 +377,17 @@ export async function isGitRepo(dir) {
   const result = await readGit(["rev-parse", "--git-dir"], { cwd: dir, timeout: 15_000 });
   return result.ok;
 }
+
+/**
+ * O git recusou porque o diretorio NAO e um repositorio.
+ *
+ * Isso deixou de ser erro quando o app ganhou o seletor de repositorios: o
+ * servidor pode legitimamente estar fora de um repo, esperando o usuario
+ * escolher um. Rota que trata isso como 500 faz a interface gritar um stack
+ * trace no rosto de quem so precisa abrir uma pasta.
+ */
+export function isNotARepoError(stderr) {
+  return /not a git repository|nao e um repositorio git|fatal: detected dubious ownership/i.test(
+    stderr || "",
+  );
+}

@@ -8,10 +8,14 @@ import type {
   CommitDetail,
   CredentialsPayload,
   DiffPayload,
+  FsListPayload,
+  FsRootsPayload,
   GitCommandResult,
   LogPayload,
+  RecentReposPayload,
   RefsPayload,
   RepoPayload,
+  ScanPayload,
   SquashRequest,
   SquashResult,
   StatusPayload,
@@ -172,6 +176,22 @@ export const api = {
   saveCredential: (body: { host: string; username: string; token: string }) =>
     post<{ ok: true }>("/credentials", body),
   deleteCredential: (host: string) => del<{ ok: true }>(`/credentials/${encodeURIComponent(host)}`),
+
+  /* ---- seletor de repositorios da maquina ----
+   * `openRepo` e irma de `switchWorktree`: as duas fazem process.chdir() no
+   * servidor e disparam `cwd:changed`; nenhuma faz `git checkout`. A diferenca
+   * e a guarda — a de worktree confere contra `git worktree list`, esta exige
+   * que o diretorio seja um repositorio git de verdade.
+   */
+  fsRoots: () => get<FsRootsPayload>("/fs/roots"),
+  fsList: (path?: string) => get<FsListPayload>(`/fs/list${qs({ path })}`),
+  recentRepos: () => get<RecentReposPayload>("/repos/recent"),
+  forgetRepo: (path: string) => post<RecentReposPayload>("/repos/recent/remove", { path }),
+  scanRepos: (body: { roots?: string[]; depth?: number; limit?: number; budgetMs?: number } = {}) =>
+    post<ScanPayload>("/repos/scan", body),
+  openRepo: (path: string) => post<RepoPayload>("/repos/open", { path }),
+  initRepo: (body: { path: string; bare?: boolean; initialBranch?: string }) =>
+    post<RepoPayload>("/repos/init", body),
 
   /* ---- escotilha: qualquer comando git cru ---- */
   raw: (body: { args: string[] }) => post<GitCommandResult>("/raw", body),

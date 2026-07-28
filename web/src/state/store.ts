@@ -379,6 +379,51 @@ export async function switchWorktree(wt: Worktree | string) {
   }
 }
 
+/**
+ * Abre OUTRO repositorio da maquina — irma de `switchWorktree`.
+ *
+ * Tambem e `process.chdir()` no servidor, nunca `git checkout`. O refresh
+ * completo vem do evento `cwd:changed`, nao daqui: e o mesmo caminho que a
+ * troca de worktree percorre, entao a View Tree e descartada e recarregada.
+ */
+export async function openRepository(path: string) {
+  set({
+    loading: { ...state.loading, operation: true },
+    operationLabel: `Abrindo ${path}`,
+  });
+  try {
+    const repo = await api.openRepo(path);
+    set({ repo, fatal: null });
+    pushConsole({ kind: "info", text: `process.chdir("${repo.cwd}")`, cwd: repo.cwd });
+    toast("success", "Repositorio aberto", repo.name);
+    return repo;
+  } catch (e) {
+    toast("error", "Nao foi possivel abrir o repositorio", describe(e));
+    return null;
+  } finally {
+    set({ loading: { ...state.loading, operation: false }, operationLabel: null });
+  }
+}
+
+/** `git init` numa pasta e abre em seguida. */
+export async function initRepository(path: string, initialBranch?: string) {
+  set({
+    loading: { ...state.loading, operation: true },
+    operationLabel: `git init em ${path}`,
+  });
+  try {
+    const repo = await api.initRepo({ path, initialBranch });
+    set({ repo, fatal: null });
+    toast("success", "Repositorio criado", repo.cwd);
+    return repo;
+  } catch (e) {
+    toast("error", "git init falhou", describe(e));
+    return null;
+  } finally {
+    set({ loading: { ...state.loading, operation: false }, operationLabel: null });
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Credenciais (trampolim de askpass)                                  */
 /* ------------------------------------------------------------------ */

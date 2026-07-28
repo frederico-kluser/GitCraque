@@ -315,7 +315,12 @@ function sendError(res, err) {
   const payload = { error: err?.message || "erro interno" };
   if (err?.detail) payload.detail = err.detail;
   if (err?.command) payload.command = err.command;
-  if (status === 500 && !err?.detail && err?.stack) payload.detail = String(err.stack).split("\n")[1]?.trim();
+  // Dica de onde estourou, sem entregar o caminho absoluto do disco para a UI:
+  // `at getLog (log.mjs:178:19)` ajuda; `file:///home/ana/...` e vazamento.
+  if (status === 500 && !err?.detail && err?.stack) {
+    const frame = String(err.stack).split("\n")[1]?.trim();
+    if (frame) payload.detail = frame.replace(/\(?(?:file:\/\/)?[^\s()]*[/\\]([^/\\\s()]+:\d+:\d+)\)?/, "($1)");
+  }
   sendJson(res, status, payload);
 }
 
