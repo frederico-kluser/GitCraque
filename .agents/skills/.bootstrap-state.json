@@ -19,16 +19,18 @@
     {
       "id": 2,
       "name": "Skill map",
-      "done": false,
-      "gate_passed": false,
-      "artifact": ".agents/skill-map.md"
+      "done": true,
+      "gate_passed": true,
+      "artifact": ".agents/skill-map.md",
+      "gate_evidence": "skill-map.md covers catalogue, composition graph, per-skill signal + what each signal is blind to, and records the rejected alternatives"
     },
     {
       "id": 3,
       "name": "Generate knowledge and task skills",
-      "done": false,
-      "gate_passed": false,
-      "artifact": ".agents/skills/catalog.md"
+      "done": true,
+      "gate_passed": true,
+      "artifact": ".agents/skills/catalog.md",
+      "gate_evidence": "lint-skills.mjs: 6/6 pass, exit 0, median ~1514 tokens (max 5000); catalog.md written"
     },
     {
       "id": 4,
@@ -45,5 +47,5 @@
       "artifact": ".agents/validation-report.md"
     }
   ],
-  "updated_by": "phase-1-complete"
+  "updated_by": "phase-3-complete"
 }

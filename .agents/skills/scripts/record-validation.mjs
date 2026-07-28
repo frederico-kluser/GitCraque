@@ -41,6 +41,7 @@ const ALLOWED_SIGNALS = new Set([
   "npm run test:viewer",
   "npm run test:e2e",
   "node .agents/skills/scripts/lint-skills.mjs",
+  "node .agents/skills/scripts/check-project-rules.mjs",
   "node .agents/skills/evals/run-evals.mjs",
 ]);
 
