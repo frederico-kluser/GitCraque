@@ -248,6 +248,31 @@ gigante e proibido: e exatamente o que trava em repositorios grandes.
 Para saber quais arestas cruzam a linha `r`, o layout pre-calcula um indice
 `row → GraphEdge[]`, montado uma vez.
 
+### Reveal — "leve-me ate este commit"
+
+Clicar numa branch ou tag no rail chama `selectRef`, que resolve o alvo e poe um
+`RevealRequest` no store; o shell repassa em `GraphViewProps.reveal` e o grafo
+atende. A decisao inteira e pura, em `graph/reveal.ts` (`planReveal` +
+`applyRevealPlan`), fora do React — e por isso testavel sem DOM.
+
+As quatro regras que a implementacao existe para cumprir:
+
+1. **Observa o `nonce`, nao o hash.** Clicar duas vezes na mesma branch tem de
+   rolar de novo; so o hash nao mudaria nada na segunda vez.
+2. **A linha sai de `layout.index` em O(1)** e a lista centraliza nela com
+   `scrollToItem(row, "center")` — a menos que ela ja esteja *confortavelmente*
+   visivel (folga de duas linhas ate a borda), porque rolar a toa desorienta.
+3. **Realce temporario de ~2 s**, com contorno proprio para nao se confundir com
+   a selecao — o commit revelado tambem fica selecionado. Anima so `opacity` e
+   `transform`; em modo reduzido aparece e some estatico.
+4. **Hash fora do log carregado** (paginado fora, ou ref para objeto que o
+   `--all` nao alcanca) nao rola para lugar nenhum, mas `onRevealed()` e chamado
+   assim mesmo — senao o pedido fica preso no store.
+
+O laco `reveal muda → rola → onRevealed limpa → re-render` e cortado por uma ref
+com o ultimo nonce atendido. O foco de teclado acompanha: depois do reveal, as
+setas continuam da linha revelada.
+
 ## 3. Motor semantico de DND — `web/src/dnd/`
 
 `@dnd-kit/core`, ids estaveis `${type}:${key}`.

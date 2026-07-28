@@ -8,6 +8,7 @@
  */
 import type { CSSProperties } from "react";
 import type { GraphLayout, GraphMetrics } from "@/types/modules";
+import type { RevealTarget } from "./reveal.ts";
 
 /** Grid compartilhado: Grafo | Descricao | Autor | Data | Hash. */
 export const ROW_GRID =
@@ -48,6 +49,12 @@ export interface GraphRowData {
   selected: Set<string>;
   primary: string | null;
   headHash: string | null;
+  /**
+   * Linha marcada pelo reveal — realce TEMPORARIO, some sozinho. Carrega o
+   * nonce junto para que revelar o mesmo commit de novo reanime o realce em vez
+   * de deixar a marca parada na tela.
+   */
+  marked: RevealTarget | null;
   onSelect: (hash: string, mode: "replace" | "toggle" | "range") => void;
   onContextMenu?: (hash: string, position: { x: number; y: number }) => void;
   onFocusGrid: () => void;
