@@ -825,9 +825,18 @@ export const en: Messages = {
   "picker.tabs.aria": "Where to look for the repository",
   "picker.tab.favorites": "Favorites",
   "picker.tab.recents": "Recents",
-  "picker.tab.scan": "Search",
+  "picker.tab.search": "Search",
+  // "Scan", not "Search": the tab next to it now searches the known-repo
+  // history, and two tabs with the same name would be a coin toss.
+  "picker.tab.scan": "Scan",
   "picker.tab.browse": "Browse",
-  "picker.recents.empty": "No repository opened yet. Use Search or Browse.",
+  "picker.search.historyEmpty":
+    "No git folder known yet. Use Scan or Browse — whatever turns up there is remembered here.",
+  "picker.search.noMatch": "No known repository matches the search.",
+  "picker.search.insideOf": "inside {name}",
+  "picker.search.note_one": "Searches {count} git folder already seen, wherever it lives.",
+  "picker.search.note_other": "Searches {count} git folders already seen, wherever they live.",
+  "picker.recents.empty": "No repository opened yet. Use Scan or Browse.",
   "picker.recents.noMatch": "No recent matches the filter.",
   "picker.recents.forget": "Forget {name}",
   "picker.recents.forgetTitle": "Remove from recents",
@@ -849,6 +858,9 @@ export const en: Messages = {
   "picker.browse.tooMany": "The folder has more subfolders than the listing cap — narrow it with the filter.",
   "picker.browse.gitInit": "git init in {name}",
   "picker.browse.openHere": "Open this folder",
+  "picker.browse.open": "Open",
+  "picker.browse.openRepo": "Open {name}",
+  "picker.browse.openRepoTitle": "Open this repository — clicking the row only enters the folder",
   "picker.favorites.note":
     "Drag by the handle to reorder, the pencil sets a nickname, the star unpins. Unlike recents, nothing comes or goes here on its own.",
   "picker.favorites.unavailableNote":

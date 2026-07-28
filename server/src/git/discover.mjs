@@ -33,8 +33,8 @@ import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
 
+import { db, dbFile, quieto } from "./db.mjs";
 import { execGit, readGitLine } from "./exec.mjs";
-import { readStore, storePath, writeStore } from "./store.mjs";
 import { getWorktreesPayload } from "./worktree.mjs";
 
 /* ------------------------------------------------------------------ */
@@ -252,6 +252,30 @@ export async function listDirectory(target) {
     return a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" });
   });
 
+  // Navegar tambem e descobrir: cada repositorio avistado aqui entra no
+  // historico, e e assim que a busca acha um git interno que varredura nenhuma
+  // listaria. Sem ramo de proposito — seria um `git` por subpasta a cada
+  // listagem, e `rememberDiscovered` preserva o ramo que ja souber.
+  const self = detectRepoKind(dir);
+  rememberDiscoveredMany(
+    entries
+      // O proprio `.git` casa com a deteccao de repositorio bare (tem HEAD,
+      // objects e refs), e a listagem o mostra como tal. Ele nao pode entrar no
+      // historico: ninguem procura o `.git` de um projeto na busca de projetos,
+      // e uma entrada dessas por repositorio afogaria a lista. A varredura ja
+      // barra o mesmo caso por SKIP_DIRS.
+      .filter((e) => e.isRepo && e.name !== ".git")
+      .map((e) => ({
+        path: e.path,
+        name: e.name,
+        bare: e.isBare,
+        linkedWorktree: e.isWorktree,
+        nested: self.isRepo,
+        parentRepo: self.isRepo ? dir : null,
+      })),
+    "browse",
+  );
+
   const parent = path.dirname(dir);
   return {
     path: dir,
@@ -335,7 +359,7 @@ export async function scanForRepos(options = {}) {
       const real = await fsp.realpath(path.resolve(raiz));
       if (!visitados.has(real)) {
         visitados.add(real);
-        fila.push({ dir: real, depth: 0 });
+        fila.push({ dir: real, depth: 0, repoPai: null });
       }
     } catch {
       /* raiz inexistente e so ignorada */
@@ -351,13 +375,26 @@ export async function scanForRepos(options = {}) {
       truncated = fila.length > 0;
       break;
     }
-    const { dir, depth } = fila.shift();
+    const { dir, depth, repoPai } = fila.shift();
     scanned += 1;
 
+    // Qual repositorio envolve o que for encontrado abaixo daqui. Comeca no que
+    // veio da fila e passa a ser ESTE quando este e um repositorio: assim um
+    // git interno aponta para quem o contem de imediato, nao para a raiz mais
+    // distante.
+    let envolvente = repoPai;
     if (detectRepoKind(dir).isRepo) {
-      achados.push(dir);
-      // nao desce: o que ha dentro pertence a este repositorio
-      continue;
+      achados.push({ dir, nested: Boolean(repoPai), parentRepo: repoPai ?? null });
+      envolvente = dir;
+      // CONTINUA DESCENDO, de proposito. Ate 2026-07 este ramo tinha um
+      // `continue` aqui, com o argumento de que o que ha dentro pertence ao
+      // repositorio pai. So que projeto com git interno existe — submodulo,
+      // worktree, pasta de terceiro versionada a parte — e um repositorio que
+      // a varredura nunca lista e um repositorio que a busca nunca acha. Os
+      // internos entram marcados com `nested`, e quem nao quiser ve-los filtra
+      // por isso. O custo fica contido pelos mesmos tres tetos de sempre
+      // (profundidade, resultados, tempo) e por SKIP_DIRS, que ja barra `.git`
+      // e as arvores grandes de dependencia.
     }
     if (depth >= depthMax) continue;
 
@@ -384,12 +421,27 @@ export async function scanForRepos(options = {}) {
       }
       if (visitados.has(real)) continue; // symlink circular
       visitados.add(real);
-      fila.push({ dir: full, depth: depth + 1 });
+      fila.push({ dir: full, depth: depth + 1, repoPai: envolvente });
     }
   }
 
-  const repos = await Promise.all(achados.map((dir) => describeRepo(dir)));
-  repos.sort((a, b) => a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }));
+  const repos = await Promise.all(
+    achados.map(async (achado) => ({
+      ...(await describeRepo(achado.dir)),
+      nested: achado.nested,
+      parentRepo: achado.parentRepo,
+    })),
+  );
+  // Pai antes do filho quando os dois aparecem: uma lista que mostra o interno
+  // solto, longe do repositorio que o contem, nao explica o que esta vendo.
+  repos.sort(
+    (a, b) =>
+      a.name.localeCompare(b.name, "pt-BR", { sensitivity: "base" }) ||
+      a.path.localeCompare(b.path),
+  );
+
+  // Toda varredura alimenta o historico: e dele que a busca do seletor vive.
+  rememberDiscoveredMany(repos, "scan");
 
   return {
     repos,
@@ -404,26 +456,37 @@ export async function scanForRepos(options = {}) {
 /* Recentes                                                            */
 /* ------------------------------------------------------------------ */
 
-/** `~/.config/gitcraque/recent.json` (respeita XDG_CONFIG_HOME). */
+/** Onde os recentes moram hoje: `~/.config/gitcraque/gitcraque.db`. */
 function recentFile() {
-  return storePath("recent.json");
+  return dbFile();
 }
 
-const readRecentRaw = () => readStore(recentFile());
-
 /**
- * A gravacao atomica mora em `store.mjs`, compartilhada com os favoritos.
- * Aqui ela engole erro de escrita de proposito: nao poder gravar os recentes
- * nunca pode derrubar uma operacao de git.
+ * As linhas cruas, ja no formato da API.
+ *
+ * Do banco, mas com a MESMA postura tolerante de quando eram JSON: banco
+ * ilegivel devolve lista vazia em vez de derrubar o seletor — o historico e
+ * efeito colateral, nao a razao de o app existir.
  */
-const writeRecentRaw = (entries) => writeStore(recentFile(), entries, { swallowErrors: true });
+const readRecentRaw = () =>
+  quieto(() =>
+    db()
+      .prepare("SELECT * FROM recents ORDER BY last_opened_at DESC")
+      .all()
+      .map((linha) => ({
+        path: linha.path,
+        name: linha.name,
+        branch: linha.branch ?? null,
+        lastOpenedAt: linha.last_opened_at,
+      })),
+  ) ?? [];
 
 /**
  * GET /api/repos/recent — os ultimos repositorios abertos, com `exists`
  * recalculado (a pasta pode ter sido movida ou apagada desde a ultima vez).
  */
 export async function getRecentRepos() {
-  const entries = await readRecentRaw();
+  const entries = readRecentRaw();
   const enriquecidos = await Promise.all(
     entries.map(async (e) => {
       const exists = detectRepoKind(e.path).isRepo;
@@ -436,18 +499,41 @@ export async function getRecentRepos() {
   return { entries: enriquecidos, file: recentFile() };
 }
 
-/** Poe (ou promove) um repositorio no topo dos recentes. */
+/**
+ * Poe (ou promove) um repositorio no topo dos recentes.
+ *
+ * O teto rotativo (`RECENT_LIMIT`) e aplicado na escrita, como sempre foi: sem
+ * ele a tabela cresceria para sempre e a lista deixaria de ser "recentes".
+ * A escrita engole erro de proposito — nao poder gravar o historico nunca pode
+ * derrubar uma operacao de git.
+ */
 export async function rememberRepo(dir) {
-  const entries = await readRecentRaw();
   const resolved = path.resolve(dir);
-  const sem = entries.filter((e) => path.resolve(e.path) !== resolved);
-  sem.unshift({
-    path: resolved,
-    name: path.basename(resolved) || resolved,
-    branch: await branchOf(resolved),
-    lastOpenedAt: Date.now(),
+  const ramo = await branchOf(resolved);
+  quieto(() => {
+    const conexao = db();
+    conexao
+      .prepare(
+        `INSERT INTO recents (path, name, branch, last_opened_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT(path) DO UPDATE SET
+           name = excluded.name,
+           branch = excluded.branch,
+           last_opened_at = excluded.last_opened_at`,
+      )
+      .run(resolved, path.basename(resolved) || resolved, ramo, Date.now());
+    conexao
+      .prepare(
+        `DELETE FROM recents WHERE path NOT IN (
+           SELECT path FROM recents ORDER BY last_opened_at DESC LIMIT ?
+         )`,
+      )
+      .run(RECENT_LIMIT);
   });
-  await writeRecentRaw(sem.slice(0, RECENT_LIMIT));
+  // Abrir um repositorio tambem e uma forma de descobri-lo.
+  rememberDiscovered(
+    { path: resolved, name: path.basename(resolved) || resolved, branch: ramo },
+    "open",
+  );
 }
 
 /** POST /api/repos/recent/remove */
@@ -457,10 +543,84 @@ export async function forgetRepo(dir) {
     error.status = 400;
     throw error;
   }
-  const entries = await readRecentRaw();
   const resolved = path.resolve(dir);
-  await writeRecentRaw(entries.filter((e) => path.resolve(e.path) !== resolved));
+  quieto(() => db().prepare("DELETE FROM recents WHERE path = ?").run(resolved));
   return getRecentRepos();
+}
+
+/* ------------------------------------------------------------------ */
+/* Historico de descobertas                                            */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Registra que uma pasta git foi VISTA — pela varredura, pela navegacao ou por
+ * uma abertura.
+ *
+ * E a terceira lista, e a unica sem teto: e ela que faz a busca do seletor
+ * achar um repositorio interno que so a navegacao revelou uma vez, semanas
+ * atras. `first_seen_at` nunca e reescrito; `last_seen_at` sim, e e por ele que
+ * a busca desempata.
+ *
+ * Nunca lanca: descobrir e efeito colateral de navegar, e navegar nao pode
+ * quebrar porque o banco esta ocupado.
+ *
+ * @param {{path: string, name?: string, branch?: string|null, bare?: boolean,
+ *          linkedWorktree?: boolean, nested?: boolean, parentRepo?: string|null}} repo
+ * @param {"scan"|"browse"|"open"} source
+ */
+export function rememberDiscovered(repo, source) {
+  if (!repo || typeof repo.path !== "string" || !repo.path.trim()) return;
+  const alvo = path.resolve(repo.path);
+  const agora = Date.now();
+  quieto(() =>
+    db()
+      .prepare(
+        `INSERT INTO discovered
+           (path, name, branch, bare, linked_worktree, nested, parent_repo,
+            source, first_seen_at, last_seen_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON CONFLICT(path) DO UPDATE SET
+           name = excluded.name,
+           -- COALESCE, nao atribuicao: a navegacao registra sem ramo (seria um
+           -- git por subpasta a cada listagem). Sobrescrever com null apagaria
+           -- o ramo que a varredura ja tinha descoberto.
+           branch = COALESCE(excluded.branch, branch),
+           bare = excluded.bare,
+           linked_worktree = excluded.linked_worktree,
+           nested = excluded.nested,
+           parent_repo = excluded.parent_repo,
+           source = excluded.source,
+           last_seen_at = excluded.last_seen_at`,
+      )
+      .run(
+        alvo,
+        repo.name || path.basename(alvo) || alvo,
+        repo.branch ?? null,
+        repo.bare ? 1 : 0,
+        repo.linkedWorktree ? 1 : 0,
+        repo.nested ? 1 : 0,
+        repo.parentRepo ?? null,
+        source,
+        agora,
+        agora,
+      ),
+  );
+}
+
+/** O mesmo para uma lista inteira, numa transacao so. */
+export function rememberDiscoveredMany(repos, source) {
+  if (!repos?.length) return;
+  quieto(() => {
+    const conexao = db();
+    conexao.exec("BEGIN");
+    try {
+      for (const repo of repos) rememberDiscovered(repo, source);
+      conexao.exec("COMMIT");
+    } catch (err) {
+      conexao.exec("ROLLBACK");
+      throw err;
+    }
+  });
 }
 
 /* ------------------------------------------------------------------ */

@@ -11,7 +11,9 @@
  * um menu util, um menu que explode nao e.
  */
 import { useCallback, useEffect, useSyncExternalStore } from "react";
+import { t } from "@/i18n";
 import { api } from "@/lib/api";
+import { toast } from "@/state/store";
 import type { FavoriteRepo, RecentRepo } from "@/types/git";
 
 export interface ProjectsState {
@@ -61,6 +63,52 @@ export function loadProjects(): Promise<void> {
     inflight = null;
   });
   return inflight;
+}
+
+/**
+ * Fixa ou desfixa um projeto — a estrela do menu de projetos da toolbar.
+ *
+ * Pinta na hora e volta atras se o servidor recusar, porque o menu fecha no
+ * clique: sem a pintura otimista a estrela so mudaria na proxima abertura, e
+ * quem clicou concluiria que o botao nao funciona.
+ *
+ * Nao reaproveita o `useFavoritos` do RepoPicker de proposito: aquele e estado
+ * de dialogo, montado e desmontado com ele, e mora em `dialogs/**` — outra
+ * frente. Este e do menu, que vive na casca. As duas listas se reencontram na
+ * releitura: o menu chama `loadProjects()` ao abrir, o dialogo relê ao montar.
+ */
+export async function toggleFavorite(path: string, name?: string): Promise<void> {
+  const fixado = state.favorites.some((f) => f.path === path);
+  const anterior = state.favorites;
+
+  set({
+    favorites: fixado
+      ? anterior.filter((f) => f.path !== path)
+      : [
+          ...anterior,
+          {
+            path,
+            label: "",
+            name: name || path.split(/[\\/]/).filter(Boolean).pop() || path,
+            branch: null,
+            order: anterior.length,
+            addedAt: Date.now(),
+            exists: true,
+          },
+        ],
+  });
+
+  try {
+    const payload = fixado ? await api.removeFavorite(path) : await api.addFavorite({ path });
+    set({ favorites: payload.entries });
+  } catch (e) {
+    set({ favorites: anterior });
+    toast(
+      "error",
+      fixado ? t("favorites.error.unpin") : t("favorites.error.pin"),
+      e instanceof Error ? e.message : String(e),
+    );
+  }
 }
 
 /**

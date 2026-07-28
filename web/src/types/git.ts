@@ -567,6 +567,42 @@ export interface DiscoveredRepo {
   lastCommitRelative: string | null;
   bare: boolean;
   linkedWorktree: boolean;
+  /** esta DENTRO de outro repositorio (submodulo, worktree, pasta versionada a parte) */
+  nested: boolean;
+  /** o repositorio que o contem de imediato, quando `nested` */
+  parentRepo: string | null;
+}
+
+/**
+ * Uma pasta git ja avistada alguma vez — pela varredura, pela navegacao ou por
+ * uma abertura. Vive na tabela `discovered` do banco e nao tem teto: e o que
+ * faz a busca do seletor achar um repositorio que nao esta em raiz nenhuma.
+ */
+export interface RepoSearchHit {
+  path: string;
+  name: string;
+  branch: string | null;
+  bare: boolean;
+  linkedWorktree: boolean;
+  nested: boolean;
+  parentRepo: string | null;
+  /** como ele foi avistado da ultima vez */
+  source: "scan" | "browse" | "open";
+  firstSeenAt: number;
+  lastSeenAt: number;
+  /** recalculado a cada busca: a pasta pode ter sumido desde que foi vista */
+  exists: boolean;
+}
+
+/** GET /api/repos/search */
+export interface RepoSearchPayload {
+  entries: RepoSearchHit[];
+  /** o termo depois do trim, para a UI saber que busca esta vendo */
+  query: string;
+  /** quantas pastas git o historico conhece no total */
+  total: number;
+  /** bateu o teto de resultados */
+  truncated: boolean;
 }
 
 /** POST /api/repos/scan */

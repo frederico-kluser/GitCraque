@@ -835,9 +835,19 @@ export const es: Messages = {
   "picker.tabs.aria": "Dónde buscar el repositorio",
   "picker.tab.favorites": "Favoritos",
   "picker.tab.recents": "Recientes",
-  "picker.tab.scan": "Buscar",
+  "picker.tab.search": "Buscar",
+  // "Escanear", no "Buscar": la pestaña de al lado ahora busca en el historial
+  // de repositorios conocidos, y dos pestañas con el mismo nombre serían un
+  // volado.
+  "picker.tab.scan": "Escanear",
   "picker.tab.browse": "Explorar",
-  "picker.recents.empty": "Todavía no has abierto ningún repositorio. Usa Buscar o Explorar.",
+  "picker.search.historyEmpty":
+    "Todavía no se conoce ninguna carpeta git. Usa Escanear o Explorar — lo que aparezca ahí queda guardado aquí.",
+  "picker.search.noMatch": "Ningún repositorio conocido coincide con la búsqueda.",
+  "picker.search.insideOf": "dentro de {name}",
+  "picker.search.note_one": "Busca en {count} carpeta git ya vista, esté donde esté.",
+  "picker.search.note_other": "Busca en {count} carpetas git ya vistas, estén donde estén.",
+  "picker.recents.empty": "Todavía no has abierto ningún repositorio. Usa Escanear o Explorar.",
   "picker.recents.noMatch": "Ningún reciente coincide con el filtro.",
   "picker.recents.forget": "Olvidar {name}",
   "picker.recents.forgetTitle": "Quitar de los recientes",
@@ -861,6 +871,10 @@ export const es: Messages = {
     "La carpeta tiene más subcarpetas que el límite de listado — acótalo con el filtro.",
   "picker.browse.gitInit": "git init en {name}",
   "picker.browse.openHere": "Abrir esta carpeta",
+  "picker.browse.open": "Abrir",
+  "picker.browse.openRepo": "Abrir {name}",
+  "picker.browse.openRepoTitle":
+    "Abrir este repositorio — al hacer clic en la fila solo se entra en la carpeta",
   "picker.favorites.note":
     "Arrastra por el asa para ordenar, el lápiz pone un alias, la estrella desancla. A diferencia de los recientes, aquí nada entra ni sale solo.",
   "picker.favorites.unavailableNote":

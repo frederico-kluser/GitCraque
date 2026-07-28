@@ -842,8 +842,15 @@ export const pt = {
   "picker.tabs.aria": "Onde procurar o repositório",
   "picker.tab.favorites": "Favoritos",
   "picker.tab.recents": "Recentes",
+  "picker.tab.search": "Buscar",
   "picker.tab.scan": "Procurar",
   "picker.tab.browse": "Navegar",
+  "picker.search.historyEmpty":
+    "Nenhuma pasta git conhecida ainda. Use Procurar ou Navegar — tudo que aparecer por lá fica guardado aqui.",
+  "picker.search.noMatch": "Nenhum repositório conhecido casa com a busca.",
+  "picker.search.insideOf": "dentro de {name}",
+  "picker.search.note_one": "Busca em {count} pasta git já vista, esteja ela onde estiver.",
+  "picker.search.note_other": "Busca em {count} pastas git já vistas, estejam elas onde estiverem.",
   "picker.recents.empty": "Nenhum repositório aberto ainda. Use Procurar ou Navegar.",
   "picker.recents.noMatch": "Nenhum recente casa com o filtro.",
   "picker.recents.forget": "Esquecer {name}",
@@ -868,6 +875,9 @@ export const pt = {
     "A pasta tem mais subpastas do que o teto de listagem — refine com o filtro.",
   "picker.browse.gitInit": "git init em {name}",
   "picker.browse.openHere": "Abrir esta pasta",
+  "picker.browse.open": "Abrir",
+  "picker.browse.openRepo": "Abrir {name}",
+  "picker.browse.openRepoTitle": "Abrir este repositório — o clique na linha só entra na pasta",
   "picker.favorites.note":
     "Arraste pela alça para ordenar, o lápis dá um apelido, a estrela desafixa. Ao contrário dos recentes, nada entra nem sai daqui sozinho.",
   "picker.favorites.unavailableNote":

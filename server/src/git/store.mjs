@@ -19,6 +19,7 @@
  * suite de testes aponta a variavel para um temporario e nao pode depender da
  * ordem de import para nao mexer na configuracao real de quem roda os testes.
  */
+import fs from "node:fs";
 import fsp from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -51,6 +52,23 @@ export async function readStore(file) {
     return Array.isArray(parsed?.entries) ? parsed.entries : [];
   } catch {
     return []; // arquivo ausente ou corrompido: comeca do zero, sem barulho
+  }
+}
+
+/**
+ * A MESMA leitura, sincrona. Existe para um unico chamador: a migracao dos
+ * arquivos JSON para o banco em `db.mjs`, que roda dentro da abertura sincrona
+ * do `DatabaseSync`. Duplicar a tolerancia a arquivo corrompido em outro lugar
+ * era garantir que uma das duas copias ia envelhecer mais fraca.
+ * @param {string} file
+ * @returns {object[]}
+ */
+export function readStoreSync(file) {
+  try {
+    const parsed = JSON.parse(fs.readFileSync(file, "utf8"));
+    return Array.isArray(parsed?.entries) ? parsed.entries : [];
+  } catch {
+    return [];
   }
 }
 

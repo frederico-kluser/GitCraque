@@ -20,6 +20,7 @@ import type {
   RecentReposPayload,
   RefsPayload,
   RepoPayload,
+  RepoSearchPayload,
   ScanPayload,
   SquashRequest,
   SquashResult,
@@ -207,6 +208,11 @@ export const api = {
   forgetRepo: (path: string) => post<RecentReposPayload>("/repos/recent/remove", { path }),
   scanRepos: (body: { roots?: string[]; depth?: number; limit?: number; budgetMs?: number } = {}) =>
     post<ScanPayload>("/repos/scan", body),
+  /* Irma da varredura, com custo oposto: `scanRepos` toca o disco sob
+   * orcamento, esta le o indice que aquela (e a navegacao) alimentaram. Por
+   * isso pode ser chamada a cada tecla. */
+  searchRepos: (q: string, limit?: number) =>
+    get<RepoSearchPayload>(`/repos/search${qs({ q, limit })}`),
   openRepo: (path: string) => post<RepoPayload>("/repos/open", { path }),
   initRepo: (body: { path: string; bare?: boolean; initialBranch?: string }) =>
     post<RepoPayload>("/repos/init", body),
