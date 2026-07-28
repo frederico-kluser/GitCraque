@@ -1030,4 +1030,148 @@ export const es: Messages = {
     "Borra la rama {name} EN EL SERVIDOR {remote}. Todos los que usan ese remoto pierden la referencia; eso no se deshace con un comando local.",
   "intent.delete.remote.title": "Borrar {remote}/{name} en el servidor",
   "intent.delete.remote.label": "Borrar {remote}/{name}",
+
+  /* ---------------------------------------------------------------- */
+  /* Menús contextuales                                                */
+  /* ---------------------------------------------------------------- */
+  "menu.reveal": "Llevar el View Tree hasta aquí",
+  "menu.copyName": "Copiar el nombre",
+  "menu.copyPath": "Copiar la ruta",
+  "menu.copyFileName": "Copiar el nombre del archivo",
+
+  "menu.hint.current": "actual",
+  "menu.hint.isCurrent": "es la actual",
+  "menu.hint.detached": "detached",
+  "menu.hint.chdir": "process.chdir",
+
+  "menu.commit.squashSelected": "Squash de los {count} commits",
+  "menu.commit.cherryPickSelected": "Cherry-pick de los {count} en la rama actual",
+  "menu.commit.copyHashes": "Copiar los hashes",
+  "menu.commit.clearSelection": "Limpiar la selección",
+  "menu.commit.checkout": "Checkout de este commit",
+  "menu.commit.createBranch": "Crear rama aquí",
+  "menu.commit.createTag": "Crear etiqueta aquí",
+  "menu.commit.cherryPick": "Cherry-pick en la rama actual",
+  "menu.commit.revert": "Revertir",
+  "menu.commit.reset": "Reset de la rama actual hasta aquí",
+  "menu.commit.copyHash": "Copiar el hash",
+  "menu.commit.copySubject": "Copiar el asunto",
+
+  "menu.branch.mergeInto": "Fusionar en {branch}",
+  "menu.branch.rebaseOnto": "Rebasar {branch} sobre esta",
+  "menu.branch.createFrom": "Crear rama a partir de aquí",
+  "menu.remoteBranch.checkoutExisting": "Checkout de {name}",
+  "menu.remoteBranch.checkoutNew": "Checkout (crea la local siguiéndola)",
+  "menu.tag.createBranch": "Crear rama a partir de la etiqueta",
+
+  "menu.remote.fetch": "Fetch --prune de este remoto",
+  "menu.remote.copyFetchUrl": "Copiar la url de fetch",
+  "menu.remote.browse": "Abrir en el navegador",
+  "menu.stash.copyMessage": "Copiar el mensaje",
+  "menu.worktree.switch": "Cambiar a este worktree",
+
+  "menu.file.view": "Ver en el visor",
+  "menu.commitFile.view": "Ver en este commit",
+  "menu.commitFile.viewWorking": "Ver la versión del árbol de trabajo",
+
+  "menu.viewer.copySelection": "Copiar la selección",
+  "menu.viewer.nothingSelected": "nada seleccionado",
+  "menu.viewer.chars": "{count} car.",
+  "menu.viewer.copySourceHash": "Copiar el hash de origen",
+  "menu.viewer.viewMode": "Ver en {mode}",
+  "menu.viewer.openWorking": "Abrir la versión del árbol de trabajo",
+
+  /* ---------------------------------------------------------------- */
+  /* Portapapeles                                                      */
+  /* ---------------------------------------------------------------- */
+  "copy.hash": "Hash copiado",
+  "copy.hashes": "Hashes copiados",
+  "copy.subject": "Asunto copiado",
+  "copy.name": "Nombre copiado",
+  "copy.path": "Ruta copiada",
+  "copy.url": "Url copiada",
+  "copy.message": "Mensaje copiado",
+  "copy.selection": "Selección copiada",
+  "copy.failed": "No se pudo copiar: {label}",
+  "copy.failed.body": "El navegador rechazó el acceso al portapapeles.",
+
+  /* ---------------------------------------------------------------- */
+  /* Acciones                                                          */
+  /* ---------------------------------------------------------------- */
+  "action.fetchRemote.op": "Fetch {remote}",
+  "action.fetchRemote.done": "Fetch de {remote} completado",
+
+  "action.detached.title": "HEAD detached",
+  "action.merge.detached.body":
+    "No hay rama actual que reciba el merge. Haz checkout de una rama antes.",
+  "action.merge.title": "Merge de {source} en {target}",
+  "action.merge.description":
+    "Trae los commits de {source} a {target}. NO se reescribe ningún historial; si divergieron, nace un commit de merge.",
+  "action.merge.confirm": "Merge",
+  "action.merge.noFf.hint": "commit de merge incluso cuando sería fast-forward",
+  "action.merge.squash.hint": "junta todo en el index sin hacer commit ni registrar el merge",
+  "action.merge.op": "Merge",
+  "action.merge.done": "{source} fusionado en {target}",
+
+  "action.rebase.detached.body":
+    "El rebase necesita una rama actual que reescribir. Haz checkout de una rama antes.",
+  "action.rebase.title": "Rebase de {branch} sobre {onto}",
+  "action.rebase.description":
+    "REESCRIBE {branch}: los commits que tiene y {onto} no, se reaplican uno a uno encima de {onto}. {onto} no cambia. Si {branch} ya se publicó, el próximo push exigirá --force-with-lease.",
+  "action.rebase.confirm": "Rebase",
+  "action.rebase.op": "Rebase",
+  "action.rebase.done": "{branch} rebasada sobre {onto}",
+
+  "action.checkoutCommit.title": "Checkout de {hash}",
+  "action.checkoutCommit.description":
+    "Lleva el árbol de trabajo hasta {what} con el HEAD DETACHED: ninguna rama sigue lo que hagas commit desde aquí. Para volver, haz checkout de una rama; para quedarte, crea una rama en este punto.",
+  "action.checkoutCommit.done": "Detached en {hash}",
+
+  "action.cherryPick.title_one": "Cherry-pick de {hash}",
+  "action.cherryPick.title_other": "Cherry-pick de {count} commits",
+  "action.cherryPick.description":
+    "Aplica {what} sobre {target}. Crea commits NUEVOS, con hashes nuevos; no se reescribe nada. El backend reordena del más antiguo al más nuevo antes de aplicar.",
+  "action.cherryPick.what_one": "{subject}",
+  "action.cherryPick.what_other": "los {count} commits seleccionados",
+  "action.cherryPick.currentHead": "el HEAD actual",
+  "action.cherryPick.confirm": "Cherry-pick",
+  "action.cherryPick.noCommit.hint": "aplica en el index y para, sin crear commit",
+  "action.cherryPick.op": "Cherry-pick",
+  "action.cherryPick.done": "Cherry-pick completado",
+
+  "action.revert.title": "Revertir {hash}",
+  "action.revert.description":
+    "Crea un commit NUEVO que deshace {what}. El commit original sigue en el historial — no se reescribe nada.",
+  "action.revert.confirm": "Revertir",
+  "action.revert.noCommit.hint": "deshace en el index y para, sin crear commit",
+  "action.revert.op": "Revert",
+  "action.revert.done": "{hash} revertido",
+
+  "action.reset.title": "Reset de {branch} a {hash}",
+  "action.reset.description":
+    "Mueve {branch} a {hash}. Los commits que queden atrás dejan de ser alcanzables desde esta rama. Con --hard, los cambios del árbol de trabajo también se van, y no hay deshacer.",
+  "action.reset.confirm": "Reset",
+  "action.reset.field.mode": "Modo",
+  "action.reset.mode.soft": "--soft — mueve la rama; index y árbol intactos",
+  "action.reset.mode.mixed": "--mixed — mueve la rama y limpia el index; árbol intacto",
+  "action.reset.mode.hard": "--hard — mueve todo y DESCARTA el árbol de trabajo",
+  "action.reset.op": "Reset",
+  "action.reset.done": "Reset --{mode} a {hash}",
+  "action.reset.head": "el HEAD",
+
+  "action.discard.title_one": "Descartar {path}",
+  "action.discard.title_other": "Descartar {count} archivos",
+  "action.discard.description_one":
+    "Devuelve el archivo al estado del último commit. Lo que no estaba en un commit se pierde, y git no guarda copia de eso.",
+  "action.discard.description_other":
+    "Devuelve los archivos al estado del último commit. Lo que no estaba en un commit se pierde, y git no guarda copia de eso.",
+  "action.discard.confirm": "Descartar",
+
+  "graph.copyHash": "Copiar el hash completo",
+  "graph.copyHash.aria": "Copiar el hash {hash}",
+  "graph.copyHash.failed": "No se pudo copiar el hash",
+  "argv.name": "<nombre>",
+  "argv.newName": "<nombre-nuevo>",
+  "argv.url": "<url>",
+  "argv.path": "<ruta>",
 };

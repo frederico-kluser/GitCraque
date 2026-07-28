@@ -445,6 +445,13 @@ Duas consequencias que valem o desenho:
 - **o servidor nao guarda idioma.** E um processo local que pode ter varias abas
   abertas, cada uma na sua lingua.
 
+### Os menus de contexto tambem saem do catalogo
+
+`app/menus.ts` monta a lista NO CLIQUE, entao `t()` e chamado ali dentro, a cada
+abertura — nao ha `MenuItemSpec[]` congelado em constante de modulo. E o que faz
+o mesmo arquivo servir o botao direito e o "⋯" da linha nos quatro idiomas sem
+nenhuma cerimonia a mais.
+
 ### O que NAO e traduzido
 
 Nome de comando git, flag (`--force-with-lease`), `HEAD`, `origin`, saida do

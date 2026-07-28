@@ -16,7 +16,7 @@ import { areEqual } from "react-window";
 import type { ListChildComponentProps } from "react-window";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { useDraggableEntity } from "@/dnd/bindings";
-import { formatGitRelativeDate } from "@/i18n";
+import { formatGitRelativeDate, t } from "@/i18n";
 import { cn, laneVar, short } from "@/lib/utils";
 import { toast } from "@/state/store";
 import { clipEdgePath, laneX } from "./bezier.ts";
@@ -70,10 +70,10 @@ export const CommitRow = memo(function CommitRow({
     event.stopPropagation();
     try {
       await navigator.clipboard.writeText(commit.hash);
-      toast("success", "Hash copiado", commit.hash);
+      toast("success", t("copy.hash"), commit.hash);
     } catch {
       /* clipboard negado (contexto inseguro, permissao) — nao ha plano B util */
-      toast("error", "Nao deu para copiar o hash", commit.hash);
+      toast("error", t("graph.copyHash.failed"), commit.hash);
     }
   };
 
@@ -233,8 +233,8 @@ export const CommitRow = memo(function CommitRow({
         <button
           type="button"
           onClick={(event) => void handleCopyHash(event)}
-          title="Copiar o hash completo"
-          aria-label={`Copiar o hash ${commit.hash}`}
+          title={t("graph.copyHash")}
+          aria-label={t("graph.copyHash.aria", { hash: commit.hash })}
           className={cn(
             "-mx-1 block max-w-full truncate rounded px-1 font-mono text-xs text-muted-foreground",
             "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",

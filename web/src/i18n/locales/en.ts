@@ -1017,4 +1017,148 @@ export const en: Messages = {
     "Deletes branch {name} ON THE SERVER {remote}. Everyone using that remote loses the reference; no local command undoes it.",
   "intent.delete.remote.title": "Delete {remote}/{name} on the server",
   "intent.delete.remote.label": "Delete {remote}/{name}",
+
+  /* ---------------------------------------------------------------- */
+  /* Context menus                                                     */
+  /* ---------------------------------------------------------------- */
+  "menu.reveal": "Take the View Tree here",
+  "menu.copyName": "Copy name",
+  "menu.copyPath": "Copy the path",
+  "menu.copyFileName": "Copy the file name",
+
+  "menu.hint.current": "current",
+  "menu.hint.isCurrent": "is the current one",
+  "menu.hint.detached": "detached",
+  "menu.hint.chdir": "process.chdir",
+
+  "menu.commit.squashSelected": "Squash the {count} commits",
+  "menu.commit.cherryPickSelected": "Cherry-pick the {count} onto the current branch",
+  "menu.commit.copyHashes": "Copy the hashes",
+  "menu.commit.clearSelection": "Clear the selection",
+  "menu.commit.checkout": "Checkout this commit",
+  "menu.commit.createBranch": "Create branch here",
+  "menu.commit.createTag": "Create tag here",
+  "menu.commit.cherryPick": "Cherry-pick onto the current branch",
+  "menu.commit.revert": "Revert",
+  "menu.commit.reset": "Reset the current branch to here",
+  "menu.commit.copyHash": "Copy hash",
+  "menu.commit.copySubject": "Copy subject",
+
+  "menu.branch.mergeInto": "Merge into {branch}",
+  "menu.branch.rebaseOnto": "Rebase {branch} onto this one",
+  "menu.branch.createFrom": "Create branch from here",
+  "menu.remoteBranch.checkoutExisting": "Checkout {name}",
+  "menu.remoteBranch.checkoutNew": "Checkout (creates the local one tracking it)",
+  "menu.tag.createBranch": "Create branch from the tag",
+
+  "menu.remote.fetch": "Fetch --prune from this remote",
+  "menu.remote.copyFetchUrl": "Copy the fetch url",
+  "menu.remote.browse": "Open in the browser",
+  "menu.stash.copyMessage": "Copy the message",
+  "menu.worktree.switch": "Switch to this worktree",
+
+  "menu.file.view": "View in the viewer",
+  "menu.commitFile.view": "View in this commit",
+  "menu.commitFile.viewWorking": "View the working tree version",
+
+  "menu.viewer.copySelection": "Copy the selection",
+  "menu.viewer.nothingSelected": "nothing selected",
+  "menu.viewer.chars": "{count} chars",
+  "menu.viewer.copySourceHash": "Copy the source hash",
+  "menu.viewer.viewMode": "View as {mode}",
+  "menu.viewer.openWorking": "Open the working tree version",
+
+  /* ---------------------------------------------------------------- */
+  /* Clipboard                                                         */
+  /* ---------------------------------------------------------------- */
+  "copy.hash": "Hash copied",
+  "copy.hashes": "Hashes copied",
+  "copy.subject": "Subject copied",
+  "copy.name": "Name copied",
+  "copy.path": "Path copied",
+  "copy.url": "Url copied",
+  "copy.message": "Message copied",
+  "copy.selection": "Selection copied",
+  "copy.failed": "Could not copy: {label}",
+  "copy.failed.body": "The browser refused access to the clipboard.",
+
+  /* ---------------------------------------------------------------- */
+  /* Actions                                                           */
+  /* ---------------------------------------------------------------- */
+  "action.fetchRemote.op": "Fetch {remote}",
+  "action.fetchRemote.done": "Fetch from {remote} done",
+
+  "action.detached.title": "HEAD detached",
+  "action.merge.detached.body":
+    "There is no current branch to receive the merge. Check out a branch first.",
+  "action.merge.title": "Merge {source} into {target}",
+  "action.merge.description":
+    "Brings the commits of {source} into {target}. NO history is rewritten; if they diverged, a merge commit is born.",
+  "action.merge.confirm": "Merge",
+  "action.merge.noFf.hint": "merge commit even when it would fast-forward",
+  "action.merge.squash.hint": "joins everything in the index without committing or recording the merge",
+  "action.merge.op": "Merge",
+  "action.merge.done": "{source} merged into {target}",
+
+  "action.rebase.detached.body":
+    "Rebase needs a current branch to rewrite. Check out a branch first.",
+  "action.rebase.title": "Rebase {branch} onto {onto}",
+  "action.rebase.description":
+    "REWRITES {branch}: the commits it has and {onto} does not are reapplied one by one on top of {onto}. {onto} does not change. If {branch} was already published, the next push will require --force-with-lease.",
+  "action.rebase.confirm": "Rebase",
+  "action.rebase.op": "Rebase",
+  "action.rebase.done": "{branch} rebased onto {onto}",
+
+  "action.checkoutCommit.title": "Checkout {hash}",
+  "action.checkoutCommit.description":
+    "Takes the working tree to {what} with a DETACHED HEAD: no branch follows what you commit from here. To go back, check out a branch; to stay, create a branch at this point.",
+  "action.checkoutCommit.done": "Detached at {hash}",
+
+  "action.cherryPick.title_one": "Cherry-pick {hash}",
+  "action.cherryPick.title_other": "Cherry-pick {count} commits",
+  "action.cherryPick.description":
+    "Applies {what} onto {target}. Creates NEW commits, with new hashes; nothing is rewritten. The backend reorders oldest to newest before applying.",
+  "action.cherryPick.what_one": "{subject}",
+  "action.cherryPick.what_other": "the {count} selected commits",
+  "action.cherryPick.currentHead": "the current HEAD",
+  "action.cherryPick.confirm": "Cherry-pick",
+  "action.cherryPick.noCommit.hint": "applies to the index and stops, without creating a commit",
+  "action.cherryPick.op": "Cherry-pick",
+  "action.cherryPick.done": "Cherry-pick applied",
+
+  "action.revert.title": "Revert {hash}",
+  "action.revert.description":
+    "Creates a NEW commit that undoes {what}. The original commit stays in history — nothing is rewritten.",
+  "action.revert.confirm": "Revert",
+  "action.revert.noCommit.hint": "undoes in the index and stops, without creating a commit",
+  "action.revert.op": "Revert",
+  "action.revert.done": "{hash} reverted",
+
+  "action.reset.title": "Reset {branch} to {hash}",
+  "action.reset.description":
+    "Moves {branch} to {hash}. The commits left behind stop being reachable from this branch. With --hard, the working tree changes go too, and there is no undo.",
+  "action.reset.confirm": "Reset",
+  "action.reset.field.mode": "Mode",
+  "action.reset.mode.soft": "--soft — moves the branch; index and tree untouched",
+  "action.reset.mode.mixed": "--mixed — moves the branch and clears the index; tree untouched",
+  "action.reset.mode.hard": "--hard — moves everything and DISCARDS the working tree",
+  "action.reset.op": "Reset",
+  "action.reset.done": "Reset --{mode} to {hash}",
+  "action.reset.head": "HEAD",
+
+  "action.discard.title_one": "Discard {path}",
+  "action.discard.title_other": "Discard {count} files",
+  "action.discard.description_one":
+    "Returns the file to the state of the last commit. Whatever was not committed is lost, and git keeps no copy of it.",
+  "action.discard.description_other":
+    "Returns the files to the state of the last commit. Whatever was not committed is lost, and git keeps no copy of it.",
+  "action.discard.confirm": "Discard",
+
+  "graph.copyHash": "Copy the full hash",
+  "graph.copyHash.aria": "Copy the hash {hash}",
+  "graph.copyHash.failed": "Could not copy the hash",
+  "argv.name": "<name>",
+  "argv.newName": "<new-name>",
+  "argv.url": "<url>",
+  "argv.path": "<path>",
 };

@@ -976,4 +976,146 @@ export const zh: Messages = {
     "在服务器 {remote} 上删除分支 {name}。所有使用该远程的人都会失去这个引用；这无法用本地命令撤销。",
   "intent.delete.remote.title": "在服务器上删除 {remote}/{name}",
   "intent.delete.remote.label": "删除 {remote}/{name}",
+
+  /* ---------------------------------------------------------------- */
+  /* 右键菜单                                                          */
+  /* ---------------------------------------------------------------- */
+  "menu.reveal": "把 View Tree 带到这里",
+  "menu.copyName": "复制名称",
+  "menu.copyPath": "复制路径",
+  "menu.copyFileName": "复制文件名",
+
+  "menu.hint.current": "当前",
+  "menu.hint.isCurrent": "就是当前分支",
+  "menu.hint.detached": "detached",
+  "menu.hint.chdir": "process.chdir",
+
+  "menu.commit.squashSelected": "压缩这 {count} 个提交",
+  "menu.commit.cherryPickSelected": "把这 {count} 个 cherry-pick 到当前分支",
+  "menu.commit.copyHashes": "复制这些哈希",
+  "menu.commit.clearSelection": "清除选区",
+  "menu.commit.checkout": "检出此提交",
+  "menu.commit.createBranch": "在此创建分支",
+  "menu.commit.createTag": "在此创建标签",
+  "menu.commit.cherryPick": "Cherry-pick 到当前分支",
+  "menu.commit.revert": "还原",
+  "menu.commit.reset": "把当前分支重置到这里",
+  "menu.commit.copyHash": "复制哈希",
+  "menu.commit.copySubject": "复制标题",
+
+  "menu.branch.mergeInto": "合并到 {branch}",
+  "menu.branch.rebaseOnto": "把 {branch} 变基到此分支之上",
+  "menu.branch.createFrom": "以此创建分支",
+  "menu.remoteBranch.checkoutExisting": "检出 {name}",
+  "menu.remoteBranch.checkoutNew": "检出（创建跟踪它的本地分支）",
+  "menu.tag.createBranch": "以该标签创建分支",
+
+  "menu.remote.fetch": "从此远程执行 Fetch --prune",
+  "menu.remote.copyFetchUrl": "复制 fetch 地址",
+  "menu.remote.browse": "在浏览器中打开",
+  "menu.stash.copyMessage": "复制该信息",
+  "menu.worktree.switch": "切换到此工作树",
+
+  "menu.file.view": "在查看器中查看",
+  "menu.commitFile.view": "在此提交中查看",
+  "menu.commitFile.viewWorking": "查看工作区的版本",
+
+  "menu.viewer.copySelection": "复制所选内容",
+  "menu.viewer.nothingSelected": "未选中任何内容",
+  "menu.viewer.chars": "{count} 字符",
+  "menu.viewer.copySourceHash": "复制来源哈希",
+  "menu.viewer.viewMode": "以{mode}查看",
+  "menu.viewer.openWorking": "打开工作区的版本",
+
+  /* ---------------------------------------------------------------- */
+  /* 剪贴板                                                            */
+  /* ---------------------------------------------------------------- */
+  "copy.hash": "哈希已复制",
+  "copy.hashes": "哈希已复制",
+  "copy.subject": "标题已复制",
+  "copy.name": "名称已复制",
+  "copy.path": "路径已复制",
+  "copy.url": "地址已复制",
+  "copy.message": "信息已复制",
+  "copy.selection": "所选内容已复制",
+  "copy.failed": "无法复制：{label}",
+  "copy.failed.body": "浏览器拒绝了剪贴板访问。",
+
+  /* ---------------------------------------------------------------- */
+  /* 操作                                                              */
+  /* ---------------------------------------------------------------- */
+  "action.fetchRemote.op": "Fetch {remote}",
+  "action.fetchRemote.done": "从 {remote} 的 Fetch 完成",
+
+  "action.detached.title": "HEAD detached",
+  "action.merge.detached.body": "没有当前分支来接收这次合并。请先检出一个分支。",
+  "action.merge.title": "把 {source} 合并到 {target}",
+  "action.merge.description":
+    "把 {source} 的提交带到 {target}。不会重写任何历史；如果有分叉，就会产生一个合并提交。",
+  "action.merge.confirm": "合并",
+  "action.merge.noFf.hint": "即使可以快进也创建合并提交",
+  "action.merge.squash.hint": "只把内容合并到 index，不提交也不记录这次合并",
+  "action.merge.op": "Merge",
+  "action.merge.done": "{source} 已合并到 {target}",
+
+  "action.rebase.detached.body": "变基需要一个当前分支来重写。请先检出一个分支。",
+  "action.rebase.title": "把 {branch} 变基到 {onto}",
+  "action.rebase.description":
+    "会重写 {branch}：它有而 {onto} 没有的提交将被逐个重新应用到 {onto} 之上。{onto} 不会改变。如果 {branch} 已经发布过，下一次 push 将需要 --force-with-lease。",
+  "action.rebase.confirm": "变基",
+  "action.rebase.op": "Rebase",
+  "action.rebase.done": "{branch} 已变基到 {onto}",
+
+  "action.checkoutCommit.title": "检出 {hash}",
+  "action.checkoutCommit.description":
+    "把工作区带到 {what}，并进入 HEAD DETACHED 状态：从这里提交的内容不会有任何分支跟随。要返回，请检出一个分支；要留下，请在此处创建一个分支。",
+  "action.checkoutCommit.done": "已在 {hash} 处 detached",
+
+  "action.cherryPick.title_one": "Cherry-pick {hash}",
+  "action.cherryPick.title_other": "Cherry-pick {count} 个提交",
+  "action.cherryPick.description":
+    "把 {what} 应用到 {target} 之上。会创建带有新哈希的新提交；不会重写任何内容。后端会先从最旧到最新重新排序再应用。",
+  "action.cherryPick.what_one": "{subject}",
+  "action.cherryPick.what_other": "选中的这 {count} 个提交",
+  "action.cherryPick.currentHead": "当前 HEAD",
+  "action.cherryPick.confirm": "Cherry-pick",
+  "action.cherryPick.noCommit.hint": "只应用到 index 就停止，不创建提交",
+  "action.cherryPick.op": "Cherry-pick",
+  "action.cherryPick.done": "Cherry-pick 完成",
+
+  "action.revert.title": "还原 {hash}",
+  "action.revert.description":
+    "创建一个撤销 {what} 的新提交。原提交仍留在历史中 —— 不会重写任何内容。",
+  "action.revert.confirm": "还原",
+  "action.revert.noCommit.hint": "只在 index 中撤销就停止，不创建提交",
+  "action.revert.op": "Revert",
+  "action.revert.done": "{hash} 已还原",
+
+  "action.reset.title": "把 {branch} 重置到 {hash}",
+  "action.reset.description":
+    "把 {branch} 移动到 {hash}。落在后面的提交将无法再从此分支到达。使用 --hard 时，工作区的更改也会一并消失，且无法撤销。",
+  "action.reset.confirm": "重置",
+  "action.reset.field.mode": "模式",
+  "action.reset.mode.soft": "--soft —— 移动分支；index 和工作区不变",
+  "action.reset.mode.mixed": "--mixed —— 移动分支并清空 index；工作区不变",
+  "action.reset.mode.hard": "--hard —— 移动一切并丢弃工作区",
+  "action.reset.op": "Reset",
+  "action.reset.done": "已 Reset --{mode} 到 {hash}",
+  "action.reset.head": "HEAD",
+
+  "action.discard.title_one": "丢弃 {path}",
+  "action.discard.title_other": "丢弃 {count} 个文件",
+  "action.discard.description_one":
+    "把该文件恢复到最后一次提交的状态。尚未提交的内容会丢失，git 不会为此保留任何副本。",
+  "action.discard.description_other":
+    "把这些文件恢复到最后一次提交的状态。尚未提交的内容会丢失，git 不会为此保留任何副本。",
+  "action.discard.confirm": "丢弃",
+
+  "graph.copyHash": "复制完整哈希",
+  "graph.copyHash.aria": "复制哈希 {hash}",
+  "graph.copyHash.failed": "无法复制哈希",
+  "argv.name": "<名称>",
+  "argv.newName": "<新名称>",
+  "argv.url": "<url>",
+  "argv.path": "<路径>",
 };

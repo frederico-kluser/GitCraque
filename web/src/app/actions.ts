@@ -71,8 +71,8 @@ export async function doCopy(text: string, label: string) {
   else
     toast(
       "error",
-      `Nao foi possivel copiar: ${label.toLowerCase()}`,
-      "O navegador recusou o acesso a area de transferencia.",
+      t("copy.failed", { label: label.toLowerCase() }),
+      t("copy.failed.body"),
     );
 }
 
@@ -115,9 +115,9 @@ export const doFetch = () =>
 
 /** Fetch de UM remoto — o menu do remoto no rail. */
 export const doFetchRemote = (remote: string) =>
-  runOperation(`Fetch ${remote}`, () => api.fetch({ remote, prune: true }), {
+  runOperation(t("action.fetchRemote.op", { remote }), () => api.fetch({ remote, prune: true }), {
     refresh: "refs",
-    successMessage: `Fetch de ${remote} concluido`,
+    successMessage: t("action.fetchRemote.done", { remote }),
   });
 
 export const doPull = (rebase = false) =>
@@ -214,7 +214,7 @@ export function openCreateBranch(startPoint?: string) {
     description: startPoint
       ? t("action.branch.new.from", { ref: short(startPoint) })
       : t("action.branch.new.fromHead"),
-    preview: ["git", "branch", "<nome>", startPoint ?? ""].filter(Boolean),
+    preview: ["git", "branch", t("argv.name"), startPoint ?? ""].filter(Boolean),
     confirmLabel: t("common.create"),
     fields: [
       {
@@ -319,25 +319,37 @@ export function openMergeInto(source: string) {
   if (!alvo) {
     toast(
       "warning",
-      "HEAD detached",
-      "Nao ha branch atual para receber o merge. Faca checkout de uma branch antes.",
+      t("action.detached.title"),
+      t("action.merge.detached.body"),
     );
     return;
   }
   askConfirm({
-    title: `Merge de ${source} em ${alvo}`,
-    description: `Traz os commits de ${source} para ${alvo}. NENHUM historico e reescrito; se houver divergencia, nasce um commit de merge.`,
+    title: t("action.merge.title", { source, target: alvo }),
+    description: t("action.merge.description", { source, target: alvo }),
     preview: ["git", "merge", "--no-edit", source],
-    confirmLabel: "Merge",
+    confirmLabel: t("action.merge.confirm"),
     fields: [
-      { kind: "toggle", name: "noFf", label: "--no-ff", value: false, hint: "commit de merge mesmo quando daria fast-forward" },
-      { kind: "toggle", name: "squash", label: "--squash", value: false, hint: "junta tudo no index sem commitar nem gravar o merge" },
+      {
+        kind: "toggle",
+        name: "noFf",
+        label: "--no-ff",
+        value: false,
+        hint: t("action.merge.noFf.hint"),
+      },
+      {
+        kind: "toggle",
+        name: "squash",
+        label: "--squash",
+        value: false,
+        hint: t("action.merge.squash.hint"),
+      },
     ],
     run: (values) =>
       runOperation(
-        "Merge",
+        t("action.merge.op"),
         () => api.merge({ source, noFf: flag(values, "noFf"), squash: flag(values, "squash") }),
-        { refresh: "all", successMessage: `${source} mesclado em ${alvo}` },
+        { refresh: "all", successMessage: t("action.merge.done", { source, target: alvo }) },
       ),
   });
 }
@@ -351,21 +363,21 @@ export function openRebaseOnto(onto: string) {
   if (!alvo) {
     toast(
       "warning",
-      "HEAD detached",
-      "Rebase precisa de uma branch atual para reescrever. Faca checkout de uma branch antes.",
+      t("action.detached.title"),
+      t("action.rebase.detached.body"),
     );
     return;
   }
   askConfirm({
-    title: `Rebase de ${alvo} sobre ${onto}`,
-    description: `REESCREVE ${alvo}: os commits que ela tem e ${onto} nao tem sao reaplicados um a um em cima de ${onto}. ${onto} nao muda. Se ${alvo} ja foi publicada, o proximo push vai exigir --force-with-lease.`,
+    title: t("action.rebase.title", { branch: alvo, onto }),
+    description: t("action.rebase.description", { branch: alvo, onto }),
     preview: ["git", "rebase", "--autostash", onto, alvo],
     destructive: true,
-    confirmLabel: "Rebase",
+    confirmLabel: t("action.rebase.confirm"),
     run: () =>
-      runOperation("Rebase", () => api.rebase({ source: alvo, onto }), {
+      runOperation(t("action.rebase.op"), () => api.rebase({ source: alvo, onto }), {
         refresh: "all",
-        successMessage: `${alvo} rebaseada sobre ${onto}`,
+        successMessage: t("action.rebase.done", { branch: alvo, onto }),
       }),
   });
 }
@@ -374,7 +386,7 @@ export function openRenameBranch(from: string) {
   askConfirm({
     title: t("action.branch.rename.title", { name: from }),
     description: t("action.branch.rename.description"),
-    preview: ["git", "branch", "-m", from, "<novo-nome>"],
+    preview: ["git", "branch", "-m", from, t("argv.newName")],
     confirmLabel: t("action.branch.rename.confirm"),
     fields: [{ kind: "text", name: "to", label: t("action.branch.rename.field"), value: from, required: true }],
     run: (values) =>
@@ -440,14 +452,16 @@ export function openDeleteBranchRemote(remote: string, name: string) {
 export function openCheckoutCommit(hash: string) {
   const subject = commitOf(hash)?.subject;
   askConfirm({
-    title: `Checkout de ${short(hash)}`,
-    description: `Leva a arvore de trabalho ate ${subject ? `"${truncate(subject, 60)}"` : short(hash)} com o HEAD DETACHED: nenhuma branch acompanha o que voce commitar daqui. Para voltar, faca checkout de uma branch; para ficar, crie uma branch neste ponto.`,
+    title: t("action.checkoutCommit.title", { hash: short(hash) }),
+    description: t("action.checkoutCommit.description", {
+      what: subject ? `"${truncate(subject, 60)}"` : short(hash),
+    }),
     preview: ["git", "checkout", short(hash)],
-    confirmLabel: "Checkout",
+    confirmLabel: t("action.checkout"),
     run: () =>
-      runOperation("Checkout", () => api.checkout({ ref: hash }), {
+      runOperation(t("action.checkout"), () => api.checkout({ ref: hash }), {
         refresh: "head",
-        successMessage: `Detached em ${short(hash)}`,
+        successMessage: t("action.checkoutCommit.done", { hash: short(hash) }),
       }),
   });
 }
@@ -465,24 +479,30 @@ export function openCherryPick(commits: string[]) {
   const subject = um ? commitOf(commits[0])?.subject : null;
 
   askConfirm({
-    title: um ? `Cherry-pick de ${short(commits[0])}` : `Cherry-pick de ${commits.length} commits`,
-    description: `Aplica ${um ? (subject ? `"${truncate(subject, 48)}"` : short(commits[0])) : `os ${commits.length} commits selecionados`} sobre ${alvo ?? "o HEAD atual"}. Cria commits NOVOS, com hashes novos; nada e reescrito. O backend reordena do mais antigo para o mais novo antes de aplicar.`,
+    title: t("action.cherryPick.title", { count: commits.length, hash: short(commits[0]) }),
+    description: t("action.cherryPick.description", {
+      what: t("action.cherryPick.what", {
+        count: commits.length,
+        subject: subject ? `"${truncate(subject, 48)}"` : short(commits[0]),
+      }),
+      target: alvo ?? t("action.cherryPick.currentHead"),
+    }),
     preview: ["git", "cherry-pick", ...commits.slice(0, 4).map((h) => short(h)), commits.length > 4 ? "…" : ""].filter(Boolean),
-    confirmLabel: "Cherry-pick",
+    confirmLabel: t("action.cherryPick.confirm"),
     fields: [
       {
         kind: "toggle",
         name: "noCommit",
         label: "-n (--no-commit)",
         value: false,
-        hint: "aplica no index e para, sem criar commit",
+        hint: t("action.cherryPick.noCommit.hint"),
       },
     ],
     run: (values) =>
       runOperation(
-        "Cherry-pick",
+        t("action.cherryPick.op"),
         () => api.cherryPick({ commits, noCommit: flag(values, "noCommit") }),
-        { refresh: "all", successMessage: "Cherry-pick concluido" },
+        { refresh: "all", successMessage: t("action.cherryPick.done") },
       ),
   });
 }
@@ -491,23 +511,25 @@ export function openCherryPick(commits: string[]) {
 export function openRevert(hash: string) {
   const subject = commitOf(hash)?.subject;
   askConfirm({
-    title: `Reverter ${short(hash)}`,
-    description: `Cria um commit NOVO que desfaz ${subject ? `"${truncate(subject, 48)}"` : short(hash)}. O commit original continua no historico — nada e reescrito.`,
+    title: t("action.revert.title", { hash: short(hash) }),
+    description: t("action.revert.description", {
+      what: subject ? `"${truncate(subject, 48)}"` : short(hash),
+    }),
     preview: ["git", "revert", "--no-edit", short(hash)],
-    confirmLabel: "Reverter",
+    confirmLabel: t("action.revert.confirm"),
     fields: [
       {
         kind: "toggle",
         name: "noCommit",
         label: "-n (--no-commit)",
         value: false,
-        hint: "desfaz no index e para, sem criar commit",
+        hint: t("action.revert.noCommit.hint"),
       },
     ],
     run: (values) =>
-      runOperation("Revert", () => api.revert({ hash, noCommit: flag(values, "noCommit") }), {
+      runOperation(t("action.revert.op"), () => api.revert({ hash, noCommit: flag(values, "noCommit") }), {
         refresh: "all",
-        successMessage: `${short(hash)} revertido`,
+        successMessage: t("action.revert.done", { hash: short(hash) }),
       }),
   });
 }
@@ -519,29 +541,32 @@ export function openRevert(hash: string) {
 export function openResetTo(hash: string) {
   const alvo = currentBranch();
   askConfirm({
-    title: `Reset de ${alvo ?? "HEAD"} para ${short(hash)}`,
-    description: `Move ${alvo ?? "o HEAD"} para ${short(hash)}. Os commits que ficarem para tras deixam de ser alcancaveis por esta branch. Com --hard, as alteracoes da arvore de trabalho tambem vao embora e nao ha desfazer.`,
+    title: t("action.reset.title", { branch: alvo ?? "HEAD", hash: short(hash) }),
+    description: t("action.reset.description", {
+      branch: alvo ?? t("action.reset.head"),
+      hash: short(hash),
+    }),
     preview: ["git", "reset", "--mixed", short(hash)],
     destructive: true,
-    confirmLabel: "Reset",
+    confirmLabel: t("action.reset.confirm"),
     fields: [
       {
         kind: "select",
         name: "mode",
-        label: "Modo",
+        label: t("action.reset.field.mode"),
         value: "mixed",
         options: [
-          { value: "soft", label: "--soft — move a branch; index e arvore intactos" },
-          { value: "mixed", label: "--mixed — move a branch e limpa o index; arvore intacta" },
-          { value: "hard", label: "--hard — move tudo e DESCARTA a arvore de trabalho" },
+          { value: "soft", label: t("action.reset.mode.soft") },
+          { value: "mixed", label: t("action.reset.mode.mixed") },
+          { value: "hard", label: t("action.reset.mode.hard") },
         ],
       },
     ],
     run: (values) => {
       const mode = (text(values, "mode") || "mixed") as "soft" | "mixed" | "hard";
-      return runOperation("Reset", () => api.reset({ ref: hash, mode }), {
+      return runOperation(t("action.reset.op"), () => api.reset({ ref: hash, mode }), {
         refresh: "all",
-        successMessage: `Reset --${mode} para ${short(hash)}`,
+        successMessage: t("action.reset.done", { mode, hash: short(hash) }),
       });
     },
   });
@@ -555,7 +580,7 @@ export function openCreateTag(ref?: string) {
   askConfirm({
     title: t("action.tag.new"),
     description: ref ? t("action.tag.new.at", { ref: short(ref) }) : t("action.tag.new.atHead"),
-    preview: ["git", "tag", "<nome>", ref ?? ""].filter(Boolean),
+    preview: ["git", "tag", t("argv.name"), ref ?? ""].filter(Boolean),
     confirmLabel: t("action.tag.confirm"),
     fields: [
       { kind: "text", name: "name", label: t("action.tag.field.name"), placeholder: "v1.0.0", required: true },
@@ -620,7 +645,7 @@ export function openAddRemote(name = "origin") {
   askConfirm({
     title: t("action.remote.add.title"),
     description: t("action.remote.add.description"),
-    preview: ["git", "remote", "add", name, "<url>"],
+    preview: ["git", "remote", "add", name, t("argv.url")],
     confirmLabel: t("action.remote.add.confirm"),
     fields: [
       { kind: "text", name: "name", label: t("action.remote.field.name"), value: name, required: true },
@@ -646,7 +671,7 @@ export function openEditRemoteUrl(remote: Remote) {
   askConfirm({
     title: t("action.remote.url.title", { name: remote.name }),
     description: t("action.remote.url.description"),
-    preview: ["git", "remote", "set-url", remote.name, "<url>"],
+    preview: ["git", "remote", "set-url", remote.name, t("argv.url")],
     confirmLabel: t("action.remote.url.confirm"),
     fields: [
       { kind: "text", name: "url", label: t("action.remote.field.url"), value: remote.fetchUrl, required: true },
@@ -687,7 +712,7 @@ export function openAddWorktree() {
   askConfirm({
     title: t("action.worktree.add.title"),
     description: t("action.worktree.add.description"),
-    preview: ["git", "worktree", "add", "<caminho>"],
+    preview: ["git", "worktree", "add", t("argv.path")],
     confirmLabel: t("action.worktree.add.confirm"),
     fields: [
       {
@@ -843,13 +868,12 @@ export const doDiscard = (paths: string[]) =>
  */
 export function openDiscard(paths: string[]) {
   if (paths.length === 0) return;
-  const um = paths.length === 1;
   askConfirm({
-    title: um ? `Descartar ${paths[0]}` : `Descartar ${paths.length} arquivos`,
-    description: `Devolve ${um ? "o arquivo" : "os arquivos"} ao estado do ultimo commit. O que nao estava commitado se perde, e o git nao guarda copia disso.`,
+    title: t("action.discard.title", { count: paths.length, path: paths[0] }),
+    description: t("action.discard.description", { count: paths.length }),
     preview: ["git", "restore", "--", ...paths.slice(0, 3), paths.length > 3 ? "…" : ""].filter(Boolean),
     destructive: true,
-    confirmLabel: "Descartar",
+    confirmLabel: t("action.discard.confirm"),
     run: () => doDiscard(paths),
   });
 }
