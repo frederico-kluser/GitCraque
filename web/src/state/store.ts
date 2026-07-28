@@ -328,7 +328,14 @@ export async function refreshAll() {
   await Promise.all([loadRepo(), loadLog(), loadRefs(), loadStatus(), loadWorktrees()]);
 }
 
-/** Refresh direcionado pelo motivo que o watcher do .git reportou. */
+/**
+ * Refresh direcionado pelo motivo que o watcher do .git reportou.
+ *
+ * `loadWorktrees` entra em `head` e `refs` de proposito: criar ou remover uma
+ * worktree mexe em `refs/` (a branch nasce ou morre) e no HEAD dela. Sem isso a
+ * lista de worktrees so era recarregada pelo `default`, e uma worktree criada
+ * por fora do app ficava invisivel ate a proxima troca de repositorio.
+ */
 export async function refreshFor(reason: RepoChangeReason) {
   switch (reason) {
     case "index":
@@ -336,10 +343,10 @@ export async function refreshFor(reason: RepoChangeReason) {
       await loadStatus();
       break;
     case "head":
-      await Promise.all([loadRepo(), loadRefs(), loadStatus()]);
+      await Promise.all([loadRepo(), loadRefs(), loadStatus(), loadWorktrees()]);
       break;
     case "refs":
-      await Promise.all([loadLog(), loadRefs()]);
+      await Promise.all([loadLog(), loadRefs(), loadWorktrees()]);
       break;
     case "rebase-state":
       await Promise.all([loadRepo(), loadStatus(), loadLog()]);
@@ -350,6 +357,30 @@ export async function refreshFor(reason: RepoChangeReason) {
     default:
       await refreshAll();
   }
+}
+
+/**
+ * O tick do poll: status + worktrees, as duas leituras baratas.
+ *
+ * Existe porque o watcher e `fs.watch` sobre o `.git` — e editar um arquivo no
+ * editor NAO toca no `.git`. Nenhum evento e emitido, e o status ficaria parado
+ * ate alguem rodar um comando git. Log e refs continuam fora daqui: sao as
+ * leituras caras, e o watcher ja cobre as duas.
+ *
+ * NAO passa por `loadStatus`/`loadWorktrees`: elas mexem em `loading.status`, e
+ * o StatusPanel usa essa flag para decidir se a arvore esta limpa
+ * (`panels/StatusPanel.tsx:449`). Ligar e desligar isso duas vezes por segundo
+ * faria o painel piscar sozinho — um poll que se anuncia e pior que nenhum.
+ * Falha tambem e silenciosa: o servidor pode estar reiniciando, e um toast de
+ * erro a cada meio segundo seria intoleravel.
+ */
+export async function pollRepo() {
+  const [status, worktrees] = await Promise.all([
+    api.status().catch(() => null),
+    api.worktrees().catch(() => null),
+  ]);
+  if (status) set({ status });
+  if (worktrees) set({ worktrees });
 }
 
 /* ------------------------------------------------------------------ */

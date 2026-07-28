@@ -216,6 +216,9 @@ export const pt = {
   "rail.branches.tagHere": "Criar tag aqui",
   "rail.branches.push": "Push desta branch",
   "rail.branches.deleteLocal": "Deletar Branch (Local)",
+  "rail.branches.deleteBoth": "Deletar Branch (Local e {remote})",
+  "rail.branches.deleteAll": "Deletar Tudo (worktree, alterações, local e remoto)",
+  "rail.branches.deleteBoth.noRemote": "sem branch correspondente no remoto",
   "rail.branches.ahead": "{count} commits à frente do upstream",
   "rail.branches.behind": "{count} commits atrás do upstream",
   "rail.branches.empty.title": "Nenhuma branch local",
@@ -503,6 +506,26 @@ export const pt = {
   "action.branch.deleteRemote.confirm": "Deletar em {remote}",
   "action.branch.deleteRemote.op": "Deletar branch remota",
   "action.branch.deleteRemote.done": "{remote}/{name} apagada",
+
+  "action.branch.deleteBoth.title": "Deletar Branch (Local e {remote})",
+  "action.branch.deleteBoth.description":
+    "Apaga {name} aqui e em {remote}, na mesma operação. Se não houver nada em {remote}, só o lado local é apagado.",
+  "action.branch.deleteBoth.confirm": "Deletar dos dois lados",
+  "action.branch.deleteBoth.op": "Deletar branch local e remota",
+  "action.branch.deleteBoth.done": "{name} apagada aqui e em {remote}",
+  "action.branch.deleteBoth.doneLocalOnly": "{name} apagada — não havia nada em {remote}",
+
+  "action.branch.deleteAll.title": "Deletar Tudo de {name}",
+  "action.branch.deleteAll.description":
+    "Remove a worktree que prende {name}, joga fora o código não commitado dela e apaga a branch local.",
+  "action.branch.deleteAll.description.withRemote":
+    "Remove a worktree que prende {name}, joga fora o código não commitado dela e apaga a branch local e em {remote}.",
+  "action.branch.deleteAll.pinned": "A worktree {worktree} será removida do disco.",
+  "action.branch.deleteAll.pinnedMain":
+    "A branch está na worktree principal: ela não pode ser removida, então o HEAD é solto e as alterações não commitadas são descartadas.",
+  "action.branch.deleteAll.confirm": "Deletar tudo",
+  "action.branch.deleteAll.op": "Deletar branch, worktree e alterações",
+  "action.branch.deleteAll.done": "{name} apagada com a worktree e as alterações",
 
   "action.tag.new": "Nova tag",
   "action.tag.new.at": "Cria uma tag em {ref}.",

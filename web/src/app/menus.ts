@@ -17,6 +17,7 @@
  */
 import {
   Archive,
+  Bomb,
   Check,
   ClipboardCopy,
   Cloud,
@@ -70,9 +71,13 @@ import {
   openCherryPick,
   openCreateBranch,
   openCreateTag,
+  openDeleteBranchAll,
+  openDeleteBranchBoth,
   openDeleteBranchLocal,
   openDeleteBranchRemote,
   openDeleteTag,
+  hasRemoteCounterpart,
+  remoteOfBranch,
   openDiscard,
   openEditRemoteUrl,
   openMergeInto,
@@ -100,6 +105,19 @@ const branchByName = (name: string) =>
   getState().refs?.branches.find((b) => b.name === name || b.fullName === name);
 
 const remoteNames = () => (getState().repo?.remotes ?? getState().refs?.remotes ?? []).map((r) => r.name);
+
+/**
+ * O nome curto da worktree que prende uma branch.
+ *
+ * `checkedOutIn` vem como caminho absoluto, e caminho absoluto nao cabe na dica
+ * de um item de menu: ele empurra o rotulo para fora dos 342 px do popup e a
+ * acao fica sem nome. O `label` da worktree e o basename, que e o que a pessoa
+ * usa para se referir a ela de qualquer jeito.
+ */
+const worktreeLabel = (caminho: string) =>
+  getState().worktrees?.worktrees.find((w) => w.path === caminho)?.label ??
+  caminho.split(/[\\/]/).filter(Boolean).at(-1) ??
+  caminho;
 
 /* ------------------------------------------------------------------ */
 /* 1. Commit — o alvo mais rico da View Tree                           */
@@ -193,6 +211,8 @@ export function branchMenu(branch: Branch): MenuItemSpec[] {
   // Merge e rebase precisam de uma branch atual DIFERENTE desta para fazer
   // sentido — mesclar uma branch nela mesma nao e operacao.
   const integravel = Boolean(atual) && !branch.isHead;
+  const remoto = remoteOfBranch(branch.name);
+  const temRemoto = hasRemoteCounterpart(branch.name, remoto);
 
   return [
     {
@@ -253,6 +273,29 @@ export function branchMenu(branch: Branch): MenuItemSpec[] {
       disabled: branch.isHead || presa,
       hint: branch.isHead ? t("menu.hint.isCurrent") : undefined,
       onSelect: () => openDeleteBranchLocal(branch.name),
+    },
+    {
+      label: t("rail.branches.deleteBoth", { remote: remoto }),
+      icon: Trash2,
+      destructive: true,
+      disabled: branch.isHead || presa || !temRemoto,
+      hint: temRemoto ? undefined : t("rail.branches.deleteBoth.noRemote"),
+      onSelect: () => openDeleteBranchBoth(branch.name, remoto),
+    },
+    // NUNCA desabilitada. E justamente a saida para quando as duas de cima
+    // estao travadas — desabilita-la nos mesmos casos recriaria o beco sem
+    // saida que ela existe para abrir. A barreira e o hold-to-confirm, e o
+    // dialogo diz antes o que vai ser destruido.
+    {
+      label: t("rail.branches.deleteAll"),
+      icon: Bomb,
+      destructive: true,
+      hint: branch.isHead
+        ? t("menu.hint.isCurrent")
+        : branch.checkedOutIn
+          ? t("rail.branches.pinnedIn", { worktree: worktreeLabel(branch.checkedOutIn) })
+          : undefined,
+      onSelect: () => openDeleteBranchAll(branch.name),
     },
   ];
 }

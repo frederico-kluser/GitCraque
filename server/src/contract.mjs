@@ -40,6 +40,7 @@ export const ROUTES = [
   ["POST", "/branch/create"],
   ["POST", "/branch/delete-local"],
   ["POST", "/branch/delete-remote"],
+  ["POST", "/branch/delete-all"],
   ["POST", "/branch/rename"],
   ["POST", "/checkout"],
 

@@ -207,6 +207,9 @@ export const en: Messages = {
   "rail.branches.tagHere": "Create tag here",
   "rail.branches.push": "Push this branch",
   "rail.branches.deleteLocal": "Delete Branch (Local)",
+  "rail.branches.deleteBoth": "Delete Branch (Local and {remote})",
+  "rail.branches.deleteAll": "Delete Everything (worktree, changes, local and remote)",
+  "rail.branches.deleteBoth.noRemote": "no matching branch on the remote",
   "rail.branches.ahead": "{count} commits ahead of upstream",
   "rail.branches.behind": "{count} commits behind upstream",
   "rail.branches.empty.title": "No local branches",
@@ -492,6 +495,26 @@ export const en: Messages = {
   "action.branch.deleteRemote.confirm": "Delete on {remote}",
   "action.branch.deleteRemote.op": "Delete remote branch",
   "action.branch.deleteRemote.done": "{remote}/{name} deleted",
+
+  "action.branch.deleteBoth.title": "Delete Branch (Local and {remote})",
+  "action.branch.deleteBoth.description":
+    "Deletes {name} here and on {remote}, in one operation. If there is nothing on {remote}, only the local side is deleted.",
+  "action.branch.deleteBoth.confirm": "Delete both sides",
+  "action.branch.deleteBoth.op": "Delete local and remote branch",
+  "action.branch.deleteBoth.done": "{name} deleted here and on {remote}",
+  "action.branch.deleteBoth.doneLocalOnly": "{name} deleted — there was nothing on {remote}",
+
+  "action.branch.deleteAll.title": "Delete Everything for {name}",
+  "action.branch.deleteAll.description":
+    "Removes the worktree holding {name}, throws away its uncommitted code and deletes the local branch.",
+  "action.branch.deleteAll.description.withRemote":
+    "Removes the worktree holding {name}, throws away its uncommitted code and deletes the branch locally and on {remote}.",
+  "action.branch.deleteAll.pinned": "The worktree {worktree} will be removed from disk.",
+  "action.branch.deleteAll.pinnedMain":
+    "The branch is on the main worktree: it cannot be removed, so HEAD is detached and uncommitted changes are discarded.",
+  "action.branch.deleteAll.confirm": "Delete everything",
+  "action.branch.deleteAll.op": "Delete branch, worktree and changes",
+  "action.branch.deleteAll.done": "{name} deleted along with its worktree and changes",
 
   "action.tag.new": "New tag",
   "action.tag.new.at": "Creates a tag at {ref}.",

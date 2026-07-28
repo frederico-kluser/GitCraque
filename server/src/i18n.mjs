@@ -82,6 +82,8 @@ const MESSAGES = {
     "error.worktreeGoneDetail": "{path} does not exist (run worktree prune)",
     "error.removeCurrentWorktree": "cannot remove the worktree the server is in",
     "error.removeCurrentWorktreeDetail": "switch worktrees before removing this one",
+    "error.noMainWorktree": "no main worktree to fall back to",
+    "error.noMainWorktreeDetail": "the server is in the worktree being removed and has nowhere to go",
 
     "error.squashNeedsTwo": "commits needs at least 2 hashes",
     "error.squashNeedsTwoDetail": "squashing a single commit does nothing",
@@ -156,6 +158,8 @@ const MESSAGES = {
     "error.worktreeGoneDetail": "{path} não existe (rode worktree prune)",
     "error.removeCurrentWorktree": "não dá para remover a worktree em que o servidor está",
     "error.removeCurrentWorktreeDetail": "troque de worktree antes de remover esta",
+    "error.noMainWorktree": "não há worktree principal para onde voltar",
+    "error.noMainWorktreeDetail": "o servidor está na worktree que seria removida e não tem para onde ir",
 
     "error.squashNeedsTwo": "commits precisa de pelo menos 2 hashes",
     "error.squashNeedsTwoDetail": "squash de um commit só não faz nada",
@@ -231,6 +235,8 @@ const MESSAGES = {
     "error.worktreeGoneDetail": "{path} no existe (ejecuta worktree prune)",
     "error.removeCurrentWorktree": "no se puede quitar el worktree en el que está el servidor",
     "error.removeCurrentWorktreeDetail": "cambia de worktree antes de quitar este",
+    "error.noMainWorktree": "no hay worktree principal a la que volver",
+    "error.noMainWorktreeDetail": "el servidor está en el worktree que se quitaría y no tiene adónde ir",
 
     "error.squashNeedsTwo": "commits necesita al menos 2 hashes",
     "error.squashNeedsTwoDetail": "hacer squash de un solo commit no hace nada",
@@ -306,6 +312,8 @@ const MESSAGES = {
     "error.worktreeGoneDetail": "{path} 不存在（请运行 worktree prune）",
     "error.removeCurrentWorktree": "无法移除服务器当前所在的工作树",
     "error.removeCurrentWorktreeDetail": "请先切换工作树，再移除这一个",
+    "error.noMainWorktree": "没有可退回的主工作树",
+    "error.noMainWorktreeDetail": "服务器正处于将被移除的工作树中，无处可去",
 
     "error.squashNeedsTwo": "commits 至少需要 2 个哈希",
     "error.squashNeedsTwoDetail": "只压缩一个提交没有任何效果",

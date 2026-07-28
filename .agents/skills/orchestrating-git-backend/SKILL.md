@@ -94,9 +94,25 @@ parser takes **four fields from the left and two from the right**; whatever
 remains in the middle is the subject (`server/src/git/log.mjs:17-51`). A plain
 `split("|")` desynchronises on the first commit with a pipe in its message.
 
-**Tests: one server per file.** `runtime` is a process-wide singleton and
-`createServer()` overwrites it, so a second server in the same file silently
-hijacks the first one's hub, watcher and vault (`server/src/runtime.mjs:8-14`).
+**A watcher without an `error` listener kills the server.** The Linux recursive
+`fs.watch` walks the tree itself and emits `error` when a directory vanishes
+between the event and the scandir — an ENOENT on `refs/remotes/<remote>` right
+after a `push --delete`, for instance. An `error` with no listener becomes an
+`uncaughtException`, and the process that dies is the one running git on the
+user's machine. Every `fs.watch` handle goes through `Watcher.#keep`, which
+attaches a swallowing handler (`server/src/watcher.mjs:120-131`); a directory
+that evaporates is the daily life of a git-dir, not an incident.
+
+**Tests: one server per file, and a port no other file uses.** `runtime` is a
+process-wide singleton and `createServer()` overwrites it, so a second server in
+the same file silently hijacks the first one's hub, watcher and vault
+(`server/src/runtime.mjs:8-14`). The port rule is separate and easier to trip:
+`node --test` runs the files **in parallel**, and `listen` walks forward up to
+`PORT_FALLBACK_TRIES` (10) on `EADDRINUSE` (`server/src/server.mjs:159-184`). So
+a duplicated port does not fail — it silently lands the server on the next free
+one, possibly the port another file is asserting against, and the failure
+surfaces in that innocent file. Grep `bootServer(.*port` before choosing one;
+`5393` is already claimed twice, by `ai-routes` and `empty-repo`.
 Helpers: `server/test/helpers/repo.mjs` (`makeFixtureRepo()` builds a real repo
 in `os.tmpdir()` with global/system git config neutralised, and deliberately
 includes a pipe-subject commit, a merge, tags and a second worktree) and
@@ -105,7 +121,7 @@ includes a pipe-subject commit, a merge, tags and a second worktree) and
 
 **Blind spot to hold in mind:** `server/**` has no tsconfig at all. `npm run
 typecheck` never touches the backend, so a typo here is a runtime error only.
-The 223 tests are the entire safety net.
+The tests are the entire safety net.
 
 ## Procedure
 

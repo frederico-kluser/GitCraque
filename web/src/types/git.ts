@@ -304,6 +304,17 @@ export interface GitCommandResult {
   error?: string;
   /** quando o comando deixou o repo em estado pendente (conflito) */
   pending?: PendingOperation | null;
+  /**
+   * O lado remoto foi PULADO porque nao havia branch correspondente. Nao e
+   * falha: apagar so o local ainda foi o que a pessoa pediu.
+   */
+  skippedRemote?: boolean;
+  /**
+   * A operacao mudou o `process.cwd()` do servidor — hoje so o delete-all, ao
+   * remover a worktree em que o servidor estava. O refresh de verdade vem do
+   * `cwd:changed`; este campo existe para a UI poder DIZER o que aconteceu.
+   */
+  cwdChanged?: string;
 }
 
 /** Envelope de erro de qualquer rota REST */

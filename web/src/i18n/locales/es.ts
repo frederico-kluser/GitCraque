@@ -207,6 +207,9 @@ export const es: Messages = {
   "rail.branches.tagHere": "Crear etiqueta aquí",
   "rail.branches.push": "Push de esta rama",
   "rail.branches.deleteLocal": "Borrar rama (local)",
+  "rail.branches.deleteBoth": "Borrar rama (local y {remote})",
+  "rail.branches.deleteAll": "Borrar todo (worktree, cambios, local y remoto)",
+  "rail.branches.deleteBoth.noRemote": "no hay rama correspondiente en el remoto",
   "rail.branches.ahead": "{count} commits por delante del upstream",
   "rail.branches.behind": "{count} commits por detrás del upstream",
   "rail.branches.empty.title": "Ninguna rama local",
@@ -495,6 +498,26 @@ export const es: Messages = {
   "action.branch.deleteRemote.confirm": "Borrar en {remote}",
   "action.branch.deleteRemote.op": "Borrar rama remota",
   "action.branch.deleteRemote.done": "{remote}/{name} borrada",
+
+  "action.branch.deleteBoth.title": "Borrar rama (local y {remote})",
+  "action.branch.deleteBoth.description":
+    "Borra {name} aquí y en {remote}, en una sola operación. Si no hay nada en {remote}, solo se borra el lado local.",
+  "action.branch.deleteBoth.confirm": "Borrar en los dos lados",
+  "action.branch.deleteBoth.op": "Borrar rama local y remota",
+  "action.branch.deleteBoth.done": "{name} borrada aquí y en {remote}",
+  "action.branch.deleteBoth.doneLocalOnly": "{name} borrada — no había nada en {remote}",
+
+  "action.branch.deleteAll.title": "Borrar todo de {name}",
+  "action.branch.deleteAll.description":
+    "Quita el worktree que retiene {name}, tira su código sin confirmar y borra la rama local.",
+  "action.branch.deleteAll.description.withRemote":
+    "Quita el worktree que retiene {name}, tira su código sin confirmar y borra la rama local y en {remote}.",
+  "action.branch.deleteAll.pinned": "El worktree {worktree} será eliminado del disco.",
+  "action.branch.deleteAll.pinnedMain":
+    "La rama está en el worktree principal: no se puede quitar, así que se suelta el HEAD y se descartan los cambios sin confirmar.",
+  "action.branch.deleteAll.confirm": "Borrar todo",
+  "action.branch.deleteAll.op": "Borrar rama, worktree y cambios",
+  "action.branch.deleteAll.done": "{name} borrada junto con su worktree y sus cambios",
 
   "action.tag.new": "Nueva etiqueta",
   "action.tag.new.at": "Crea una etiqueta en {ref}.",
