@@ -98,6 +98,13 @@
  * @typedef {object} FavoritesPayload
  * @property {FavoriteRepo[]} entries
  * @property {string} file
+ *
+ * @typedef {object} UndoStatePayload
+ * @property {boolean} canUndo
+ * @property {boolean} canRedo
+ * @property {string|null} undoLabel  acao que o desfazer vai desfazer
+ * @property {string|null} redoLabel
+ * @property {"empty"|"pending"|null} blocked
  */
 
 export {};

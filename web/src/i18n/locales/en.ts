@@ -59,72 +59,12 @@ export const en: Messages = {
   "app.reconnecting": "Reconnecting to the server…",
 
   /* ---------------------------------------------------------------- */
-  /* Command palette                                                   */
+  /* Leftovers from the command palette, still used elsewhere        */
   /* ---------------------------------------------------------------- */
-  "palette.trigger": "Search commands…",
-  "palette.placeholder": "fetch, checkout, worktree, squash…",
-  "palette.inputLabel": "Search GitCraque commands",
-  "palette.dialogLabel": "GitCraque commands",
-  "palette.hint.navigate": "navigate",
-  "palette.hint.run": "run",
-  "palette.hint.close": "close",
-  "palette.empty": "No command matches “{query}”.",
-
-  "commands.group.repository": "Repository",
-  "commands.group.worktrees": "Worktrees",
-  "commands.group.branches": "Branches",
-  "commands.group.network": "Network",
-  "commands.group.history": "History",
-  "commands.group.remotes": "Remotes",
-  "commands.group.appearance": "Appearance",
-
-  "commands.repo.refresh": "Reload the repository",
-  "commands.repo.refresh.keywords": "refresh, reload, update",
-  "commands.repo.open": "Open another repository…",
-  "commands.repo.open.keywords": "open, switch, repository, repo, project, folder",
-  "commands.repo.favorite": "Open {name}",
-  "commands.repo.favorite.missing": "{path} — folder not found",
-  "commands.repo.favorite.keywords": "favorite, project, open, switch",
-  "commands.repo.favorite.gone": "{name} is no longer on disk",
-  "commands.worktree.switch": "Switch to worktree {label}",
-  "commands.worktree.keywords": "worktree, chdir",
-  "commands.worktree.list": "Show worktrees in the rail",
-  "commands.worktree.list.hint_one": "{count} registered",
-  "commands.worktree.list.hint_other": "{count} registered",
-  "commands.branch.create": "Create branch",
-  "commands.branch.create.keywords": "branch, new",
-  "commands.branch.checkout": "Checkout {name}",
   "commands.branch.checkout.pinned": "held by {worktree}",
-  "commands.branch.checkout.keywords": "checkout",
-  "commands.branch.inUse": "{name} is already in use",
-  "commands.branch.inUse.detail":
-    "The branch is checked out in {worktree}. Switch worktrees instead of checking out.",
-  "commands.net.fetch": "Fetch --all --prune",
-  "commands.net.fetch.keywords": "fetch",
-  "commands.net.pull": "Pull",
-  "commands.net.pull.keywords": "pull",
-  "commands.net.pullRebase": "Pull --rebase",
-  "commands.net.pullRebase.keywords": "pull, rebase",
-  "commands.net.push": "Push…",
-  "commands.net.push.keywords": "push, send",
-  "commands.stash.push": "Stash changes",
-  "commands.stash.push.keywords": "stash, save",
-  "commands.tag.create": "Create tag",
-  "commands.tag.create.keywords": "tag",
-  "commands.stash.applyLatest": "Apply {ref}",
-  "commands.stash.apply.keywords": "stash, apply",
-  "commands.history.squash": "Squash the {count} selected commits",
-  "commands.history.squash.needs": "Squash the selection (pick 2 or more)",
-  "commands.history.squash.keywords": "squash, rebase, join",
   "commands.remote.add": "Add Origin",
-  "commands.remote.add.keywords": "remote, origin, add",
-  "commands.remote.browse": "Open {name} in the browser",
-  "commands.remote.browse.keywords": "remote, open, browser",
   "commands.theme.light": "Light theme",
   "commands.theme.dark": "Dark theme",
-  "commands.theme.keywords": "theme, dark, light",
-  "commands.language.set": "Language: {name}",
-  "commands.language.keywords": "language, locale, translation, i18n",
 
   /* ---------------------------------------------------------------- */
   /* Toolbar                                                           */
@@ -585,6 +525,21 @@ export const en: Messages = {
     "Undoes the running operation and returns the repository to its previous state.",
   "action.abort.confirm": "Abort",
   "action.abort.op": "Abort {kind}",
+
+  /* Undo/redo. {step} comes from the reflog and arrives in English, exactly as
+   * git wrote it — the same rule that lets git's stderr through untouched. */
+  "action.undo": "Undo",
+  "action.redo": "Redo",
+  "action.undo.step": "Undo: {step}",
+  "action.redo.step": "Redo: {step}",
+  "action.undo.nothing": "Nothing to undo",
+  "action.redo.nothing": "Nothing to redo",
+  "action.undo.blocked.pending": "Finish or abort the operation in progress before undoing",
+  "action.undo.blocked.empty": "The repository has no commits yet",
+  "action.undo.op": "Undo",
+  "action.redo.op": "Redo",
+  "action.undo.done": "Undone",
+  "action.redo.done": "Redone",
 
   /* ---------------------------------------------------------------- */
   /* Store                                                             */

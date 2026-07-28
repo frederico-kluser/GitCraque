@@ -16,6 +16,7 @@ import {
 } from "../git/ops.mjs";
 import { squash } from "../git/squash.mjs";
 import { commit, discard, stage, unstage } from "../git/status.mjs";
+import { redo, undo, undoState } from "../git/undo.mjs";
 import { bodyOf, commandResult } from "./_util.mjs";
 
 export function registerOpsRoutes(router) {
@@ -33,6 +34,13 @@ export function registerOpsRoutes(router) {
 
   router.add("POST", "/ops/abort", async (ctx) => commandResult(await abortOp(bodyOf(ctx))));
   router.add("POST", "/ops/continue", async (ctx) => commandResult(await continueOp(bodyOf(ctx))));
+
+  // Desfazer/refazer: o corpo nao carrega nada — o passo sai do cursor sobre o
+  // reflog, nunca do cliente. Mandar um sha aqui seria deixar a UI escolher
+  // para onde o `reset --hard` vai.
+  router.add("GET", "/undo/state", async () => undoState());
+  router.add("POST", "/undo", async () => commandResult(await undo()));
+  router.add("POST", "/redo", async () => commandResult(await redo()));
 
   router.add("POST", "/stage", async (ctx) => commandResult(await stage(bodyOf(ctx))));
   router.add("POST", "/unstage", async (ctx) => commandResult(await unstage(bodyOf(ctx))));

@@ -64,7 +64,7 @@ import {
   openRepoPicker,
   openStashPush,
 } from "@/app/actions";
-import { CommandBar } from "@/app/CommandBar";
+import { UndoRedo } from "./UndoRedo";
 import { LOCALE_OPTIONS, Rich, chooseLocale, t, useLocale } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { ConnectionState } from "@/lib/ws";
@@ -676,8 +676,10 @@ export function Toolbar({ className }: PanelProps) {
 
         <div className="flex-1" />
 
-        {/* --- paleta de comandos: a barra E o gatilho do ⌘K --- */}
-        <CommandBar className="hidden max-w-[15rem] min-w-[9rem] flex-1 lg:block" />
+        {/* --- desfazer / refazer --- */}
+        <UndoRedo className="hidden md:block" />
+        {/* Some junto com os botoes: separador solto no md- seria um risco no ar. */}
+        <div className="hidden h-7 w-px bg-border md:block" />
 
         {/* --- rede --- */}
         <div className="flex items-center gap-1.5">

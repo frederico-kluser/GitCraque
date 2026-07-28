@@ -44,7 +44,7 @@ import type { MenuItemSpec } from "@/hooks";
 import { t } from "@/i18n";
 import type { ViewerMode } from "@/viewer";
 import { clearSelection, getState, openFile, selectRef } from "@/state/store";
-import { short } from "@/lib/utils";
+import { browseUrl, short } from "@/lib/utils";
 import type {
   Branch,
   CommitFileChange,
@@ -88,7 +88,6 @@ import {
   openStashDrop,
   openStashPop,
 } from "./actions";
-import { browseUrl } from "./commands";
 
 /* ------------------------------------------------------------------ */
 /* Contexto do repositorio no instante do clique                       */

@@ -28,8 +28,6 @@ export {
   applyTheme,
   setTheme,
   toggleTheme,
-  setPaletteOpen,
-  togglePalette,
   setRailWidth,
   setDetailWidth,
   openChanges,

@@ -61,6 +61,10 @@ export const ROUTES = [
   ["POST", "/ops/abort"],
   ["POST", "/ops/continue"],
 
+  ["GET", "/undo/state"],
+  ["POST", "/undo"],
+  ["POST", "/redo"],
+
   ["POST", "/stage"],
   ["POST", "/unstage"],
   ["POST", "/discard"],

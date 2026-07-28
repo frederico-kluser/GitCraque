@@ -952,6 +952,33 @@ function normalizeKind(kind: PendingOperationKind): "rebase" | "merge" | "cherry
 }
 
 /* ------------------------------------------------------------------ */
+/* Desfazer / refazer                                                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Os dois unicos botoes que mexem no HEAD sem `askConfirm`.
+ *
+ * A regra da casa e que acao destrutiva pede pressao continua, e `reset --hard`
+ * e destrutivo — mas aqui o servidor guarda o trabalho pendente num stash
+ * amarrado ao passo antes de resetar, e o refazer devolve tudo. Como o passo e
+ * reversivel por construcao, exigir o hold seria cobrar por um risco que nao
+ * existe. Se essa garantia cair no backend, o gate volta junto.
+ *
+ * Nenhum sha viaja daqui: o passo sai do cursor do servidor sobre o reflog.
+ */
+export const doUndo = () =>
+  runOperation(t("action.undo.op"), () => api.undo(), {
+    refresh: "all",
+    successMessage: t("action.undo.done"),
+  });
+
+export const doRedo = () =>
+  runOperation(t("action.redo.op"), () => api.redo(), {
+    refresh: "all",
+    successMessage: t("action.redo.done"),
+  });
+
+/* ------------------------------------------------------------------ */
 /* Diversos                                                            */
 /* ------------------------------------------------------------------ */
 

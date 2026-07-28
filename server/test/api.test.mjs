@@ -51,6 +51,19 @@ test("GET /api/repo devolve o RepoPayload do contrato", async () => {
   assert.deepEqual(json.remotes, []);
 });
 
+/* So a LEITURA passa pela porta aqui: desfazer de verdade mexeria no HEAD do
+ * fixture e os testes seguintes deste arquivo contam com o historico intacto.
+ * O comportamento do cursor esta em `undo.test.mjs`, contra repo proprio. */
+test("GET /api/undo/state devolve o UndoStatePayload do contrato", async () => {
+  const { status, json } = await api.get("/api/undo/state");
+  assert.equal(status, 200);
+  assert.equal(json.canUndo, true, "o fixture tem historico: da para desfazer");
+  assert.equal(json.canRedo, false, "nada foi desfeito ainda");
+  assert.equal(json.blocked, null);
+  assert.equal(typeof json.undoLabel, "string", "o rotulo vem do reflog");
+  assert.equal(json.redoLabel, null);
+});
+
 test("GET /api/log traz o commit com | com o assunto INTEIRO", async () => {
   const { status, json } = await api.get("/api/log");
   assert.equal(status, 200);

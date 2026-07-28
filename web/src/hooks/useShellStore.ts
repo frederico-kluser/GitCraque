@@ -101,7 +101,6 @@ export interface CommitDraft {
 
 export interface ShellState {
   theme: ThemeMode;
-  paletteOpen: boolean;
   /** larguras em px das colunas laterais do grid principal */
   railWidth: number;
   detailWidth: number;
@@ -125,7 +124,6 @@ const EMPTY_DRAFT: CommitDraft = { message: "", amend: false, signoff: false };
 
 const DEFAULTS: ShellState = {
   theme: "dark",
-  paletteOpen: false,
   railWidth: 264,
   // O sidebar direito passou a abrigar TAMBEM o visualizador de arquivo, entao
   // ele nasce bem mais largo do que quando so tinha os metadados do commit.
@@ -175,7 +173,6 @@ const INITIAL: ShellState = {
   ...stored,
   theme: initialTheme(stored),
   // nunca restaura estado efemero
-  paletteOpen: false,
   changesOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
@@ -230,9 +227,6 @@ export function setTheme(theme: ThemeMode) {
 }
 
 export const toggleTheme = () => setTheme(state.theme === "dark" ? "light" : "dark");
-
-export const setPaletteOpen = (paletteOpen: boolean) => set({ paletteOpen });
-export const togglePalette = () => set((s) => ({ paletteOpen: !s.paletteOpen }));
 
 /** Limites para as colunas nao sumirem nem engolirem o grafo. */
 export const RAIL_RANGE = { min: 200, max: 460 } as const;
