@@ -20,6 +20,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test, { after, before } from "node:test";
+import { translate } from "../src/i18n.mjs";
 
 const CONFIG_TMP = fs.mkdtempSync(path.join(os.tmpdir(), "gitcraque-config-"));
 process.env.XDG_CONFIG_HOME = CONFIG_TMP;
@@ -235,7 +236,7 @@ test("abrir por uma SUBPASTA entra pela raiz da worktree, nao pela subpasta", as
 test("openRepository RECUSA pasta que nao e repositorio git", async () => {
   await assert.rejects(
     () => openRepository(path.join(LAB, "so-uma-pasta")),
-    (err) => err.status === 400 && /nao e um repositorio git/.test(err.message),
+    (err) => err.status === 400 && err.message === "error.notARepository",
   );
 });
 

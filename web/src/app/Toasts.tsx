@@ -11,6 +11,7 @@ import { Confetti, type ConfettiHandle } from "@/components/motion-ui/confetti";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Toast, ToastStack, useToast } from "@/components/motion-ui/toast-stack";
 import { dismissToast, useAppState, type AppToast, type ToastTone } from "@/state/store";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 const TONE: Record<ToastTone, { icon: typeof Info; className: string; accent: string }> = {
@@ -51,8 +52,8 @@ function ToastCard({ toast }: { toast: AppToast }) {
             <CopyButton
               variant="icon"
               value={`git ${toast.argv.join(" ")}`}
-              label="Copiar o comando"
-              copiedLabel="Comando copiado"
+              label={t("toast.copyCommand")}
+              copiedLabel={t("toast.commandCopied")}
               className="shrink-0"
             />
           </div>
@@ -60,7 +61,7 @@ function ToastCard({ toast }: { toast: AppToast }) {
       </div>
       <button
         type="button"
-        aria-label="Dispensar"
+        aria-label={t("common.dismiss")}
         tabIndex={isVisible ? undefined : -1}
         onClick={() => dismissToast(toast.id)}
         className="size-5 shrink-0 rounded-sm text-muted-foreground hover:bg-accent hover:text-foreground"

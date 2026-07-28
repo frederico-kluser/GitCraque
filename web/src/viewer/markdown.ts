@@ -19,6 +19,10 @@
  * A tabela de classes esta em `prose.ts`.
  */
 import { Marked, type RendererObject, type Tokens } from "marked";
+/* `../i18n/store.ts` e nao `@/i18n`: estes dois modulos sao carregados pelo
+ * `node --test` SEM bundler (ver `__tests__/sanitize.test.mjs`), e ali o alias
+ * `@/` nao resolve. O `store` nao depende de React nem de alias — cabe. */
+import { t } from "../i18n/store.ts";
 import { PROSE } from "./prose.ts";
 import { classifyUrl, escapeHtml } from "./url-policy.ts";
 
@@ -156,8 +160,8 @@ const renderer: RendererObject = {
     }
     const motivo =
       url.kind === "blocked"
-        ? `link recusado (esquema ${url.scheme ?? "desconhecido"})`
-        : `caminho relativo ao repositorio — nao resolvido: ${href}`;
+        ? t("markdown.linkRefused", { scheme: url.scheme ?? t("markdown.unknownScheme") })
+        : t("markdown.relativeLink", { href });
     return `<span class="${PROSE.deadLink}" title="${escapeHtml(motivo)}">${label}</span>`;
   },
 
@@ -174,8 +178,8 @@ const renderer: RendererObject = {
     if (url.kind === "external") {
       return `<img class="${PROSE.img}" src="${escapeHtml(url.href)}" alt="${escapeHtml(alt)}" loading="lazy" referrerpolicy="no-referrer"${titleAttr(title)}>`;
     }
-    const rotulo = alt.trim() || "imagem";
-    return `<span class="${PROSE.imagePlaceholder}" title="${escapeHtml(href)}"><span class="${PROSE.imagePlaceholderAlt}">${escapeHtml(rotulo)}</span><span class="${PROSE.imagePlaceholderNote}">· imagem nao resolvida</span></span>`;
+    const rotulo = alt.trim() || t("markdown.image");
+    return `<span class="${PROSE.imagePlaceholder}" title="${escapeHtml(href)}"><span class="${PROSE.imagePlaceholderAlt}">${escapeHtml(rotulo)}</span><span class="${PROSE.imagePlaceholderNote}">${escapeHtml(t("markdown.imageUnresolved"))}</span></span>`;
   },
 
   /** Definicao de link de referencia nao imprime nada. */

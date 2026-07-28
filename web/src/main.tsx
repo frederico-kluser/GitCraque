@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { MotionUIThemeProvider } from "@/components/motion-ui/ui-theme";
 import motionTheme from "../motion.theme";
+import { LocaleBoundary } from "@/i18n";
 import { App } from "@/app/App";
 import "@/styles/theme.css";
 
@@ -23,7 +24,12 @@ createRoot(root).render(
   <StrictMode>
     {/* Montado UMA vez na raiz: sem ele toda secao Motion UI cai nos defaults. */}
     <MotionUIThemeProvider theme={motionTheme}>
-      <App />
+      {/* Trocar de idioma remonta a arvore: metade do texto do app nasce fora
+          de componente (acoes, toasts, motor de DND) e nao re-renderizaria
+          sozinho. Ver `i18n/store.ts`. */}
+      <LocaleBoundary>
+        <App />
+      </LocaleBoundary>
     </MotionUIThemeProvider>
   </StrictMode>,
 );

@@ -20,17 +20,11 @@ import { openFile, selectCommit, selectCommits, useAppState } from "@/state/stor
 import { contextMenuFor, useCommitDetail } from "@/hooks";
 import { openSquash } from "@/app/actions";
 import { commitFileMenu, commitMenu } from "@/app/menus";
-import { cn, plural, short } from "@/lib/utils";
+import { Rich, formatDateTime, formatGitRelativeDate, t } from "@/i18n";
+import { cn, short } from "@/lib/utils";
 import type { CommitDetail } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
 import { Chip, DiffStat, EmptyState, FilePath, FOCUS_RING, SectionLabel, StatusGlyph, ToolButton } from "./parts";
-
-const DATE_FORMAT = new Intl.DateTimeFormat("pt-BR", { dateStyle: "medium", timeStyle: "short" });
-
-function absoluteDate(raw: string): string {
-  const date = new Date(raw);
-  return Number.isNaN(date.getTime()) ? raw : DATE_FORMAT.format(date);
-}
 
 /* ------------------------------------------------------------------ */
 /* Esqueleto                                                           */
@@ -70,21 +64,21 @@ function SelectionSummary({ selected }: { selected: string[] }) {
     <div className="flex min-h-0 flex-1 flex-col">
       <header className="flex items-center gap-2 border-b border-border px-3 py-2">
         <Layers className="size-4 text-primary" />
-        <SectionLabel className="text-foreground">Selecao</SectionLabel>
-        <Chip tone="primary">{selected.length} commits</Chip>
+        <SectionLabel className="text-foreground">{t("selection.title")}</SectionLabel>
+        <Chip tone="primary">{t("selection.count", { count: selected.length })}</Chip>
       </header>
 
       <div className="flex flex-col gap-3 p-3">
         <div className="rounded-md border border-border bg-card p-3">
-          <SectionLabel>Alcance</SectionLabel>
+          <SectionLabel>{t("selection.range")}</SectionLabel>
           <div className="mt-2 flex flex-col gap-1.5 font-mono text-[11px]">
             <div className="flex items-center gap-2">
-              <Chip tone="neutral">mais novo</Chip>
+              <Chip tone="neutral">{t("selection.newest")}</Chip>
               <span className="text-primary">{short(newest?.hash ?? "")}</span>
               <span className="min-w-0 flex-1 truncate text-foreground">{newest?.subject}</span>
             </div>
             <div className="flex items-center gap-2">
-              <Chip tone="neutral">mais antigo</Chip>
+              <Chip tone="neutral">{t("selection.oldest")}</Chip>
               <span className="text-primary">{short(oldest?.hash ?? "")}</span>
               <span className="min-w-0 flex-1 truncate text-foreground">{oldest?.subject}</span>
             </div>
@@ -92,13 +86,22 @@ function SelectionSummary({ selected }: { selected: string[] }) {
         </div>
 
         <div className="rounded-md border border-border bg-card p-3">
-          <SectionLabel>Squash</SectionLabel>
+          <SectionLabel>{t("selection.squash")}</SectionLabel>
           <p className="mt-2 text-[11px] leading-relaxed text-muted-foreground">
-            Junta os {selected.length} commits num so com{" "}
-            <span className="font-mono text-foreground">git rebase -i {short(oldest?.hash ?? "")}^</span>, via{" "}
-            <span className="font-mono text-foreground">GIT_SEQUENCE_EDITOR</span>. O mais antigo continua{" "}
-            <span className="font-mono text-foreground">pick</span>; os demais viram{" "}
-            <span className="font-mono text-foreground">squash</span>.
+            <Rich
+              k="selection.squash.body"
+              params={{ count: selected.length }}
+              nodes={{
+                command: (
+                  <span className="font-mono text-foreground">
+                    git rebase -i {short(oldest?.hash ?? "")}^
+                  </span>
+                ),
+                editor: <span className="font-mono text-foreground">GIT_SEQUENCE_EDITOR</span>,
+                pick: <span className="font-mono text-foreground">pick</span>,
+                squash: <span className="font-mono text-foreground">squash</span>,
+              }}
+            />
           </p>
           <div className="mt-2.5">
             <ToolButton
@@ -106,7 +109,7 @@ function SelectionSummary({ selected }: { selected: string[] }) {
               icon={<GitMerge className="size-3.5" />}
               onClick={() => openSquash(chosen.map((c) => c.hash))}
             >
-              Squash de {selected.length} commits
+              {t("selection.squash.button", { count: selected.length })}
             </ToolButton>
           </div>
         </div>
@@ -122,7 +125,9 @@ function SelectionSummary({ selected }: { selected: string[] }) {
             >
               <span className="shrink-0 font-mono text-[10px] text-primary">{short(commit.hash)}</span>
               <span className="min-w-0 flex-1 truncate text-[11px] text-foreground">{commit.subject}</span>
-              <span className="shrink-0 text-[10px] text-muted-foreground">{commit.relativeDate}</span>
+              <span className="shrink-0 text-[10px] text-muted-foreground">
+                {formatGitRelativeDate(commit.relativeDate)}
+              </span>
             </button>
           ))}
         </div>
@@ -163,40 +168,47 @@ function CommitHeader({ detail }: { detail: CommitDetail }) {
 
       <div className="flex items-center gap-1.5">
         <span className="font-mono text-[11px] break-all text-muted-foreground">{detail.hash}</span>
-        <CopyButton variant="icon" value={detail.hash} label="Copiar o hash completo" copiedLabel="Hash copiado" />
+        <CopyButton
+          variant="icon"
+          value={detail.hash}
+          label={t("detail.copyHash")}
+          copiedLabel={t("detail.hashCopied")}
+        />
       </div>
 
       <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 gap-y-1 text-[11px]">
         <dt className="flex items-center gap-1 text-muted-foreground">
-          <User className="size-3" /> autor
+          <User className="size-3" /> {t("detail.author")}
         </dt>
         <dd className="min-w-0 text-foreground">
           <span className="font-medium">{detail.authorName}</span>{" "}
           <span className="text-muted-foreground">&lt;{detail.authorEmail}&gt;</span>
           <br />
-          <span className="text-muted-foreground">{absoluteDate(detail.authorDate)}</span>
+          <span className="text-muted-foreground">{formatDateTime(detail.authorDate)}</span>
         </dd>
 
         <dt className="flex items-center gap-1 text-muted-foreground">
-          <GitCommitHorizontal className="size-3" /> committer
+          <GitCommitHorizontal className="size-3" /> {t("detail.committer")}
         </dt>
         <dd className="min-w-0 text-foreground">
           <span className="font-medium">{detail.committerName}</span>{" "}
           <span className="text-muted-foreground">&lt;{detail.committerEmail}&gt;</span>
           <br />
-          <span className="text-muted-foreground">{absoluteDate(detail.committerDate)}</span>
+          <span className="text-muted-foreground">{formatDateTime(detail.committerDate)}</span>
         </dd>
 
         {detail.parents.length > 0 && (
           <>
-            <dt className="text-muted-foreground">{detail.parents.length > 1 ? "pais" : "pai"}</dt>
+            <dt className="text-muted-foreground">
+              {detail.parents.length > 1 ? t("detail.parents") : t("detail.parent")}
+            </dt>
             <dd className="flex flex-wrap gap-1">
               {detail.parents.map((parent) => (
                 <button
                   key={parent}
                   type="button"
                   onClick={() => selectCommit(parent)}
-                  title={`Ir para ${parent}`}
+                  title={t("detail.goTo", { hash: parent })}
                   className="rounded-sm bg-muted px-1.5 py-px font-mono text-[10px] text-primary hover:bg-accent"
                 >
                   {short(parent)}
@@ -208,7 +220,7 @@ function CommitHeader({ detail }: { detail: CommitDetail }) {
       </dl>
 
       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
-        <span>{plural(detail.stats.filesChanged, "arquivo", "arquivos")}</span>
+        <span>{t("detail.fileCount", { count: detail.stats.filesChanged })}</span>
         <DiffStat insertions={detail.stats.insertions} deletions={detail.stats.deletions} />
       </div>
     </header>
@@ -223,15 +235,15 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
     <div className="flex flex-col">
       {/* `sticky`: a lista pode ser longa, e a coluna inteira rola de uma vez. */}
       <header className="sticky top-0 z-10 flex items-center gap-2 bg-card/95 px-3 py-2 backdrop-blur-sm">
-        <SectionLabel className="text-foreground">Arquivos</SectionLabel>
+        <SectionLabel className="text-foreground">{t("detail.files")}</SectionLabel>
         <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{detail.files.length}</span>
         <span className="flex-1" />
-        <span className="text-[10px] text-muted-foreground">clique para ver o diff embaixo</span>
+        <span className="text-[10px] text-muted-foreground">{t("detail.files.hint")}</span>
       </header>
 
       <div className="flex flex-col gap-0.5 px-2 pb-3">
         {detail.files.length === 0 ? (
-          <EmptyState title="Nenhum arquivo" description="O commit nao alterou arquivos." />
+          <EmptyState title={t("detail.files.empty.title")} description={t("detail.files.empty.body")} />
         ) : (
           detail.files.map((file) => {
             const isOpen =
@@ -241,7 +253,7 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                 key={file.path}
                 type="button"
                 aria-current={isOpen ? "true" : undefined}
-                title={`Ver ${file.path} no visualizador`}
+                title={t("detail.viewFile", { path: file.path })}
                 onClick={() => openFile(file.path, detail.hash)}
                 onContextMenu={contextMenuFor(file.path, () => commitFileMenu(file, detail.hash))}
                 className={cn(
@@ -259,7 +271,7 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                   </span>
                 )}
                 {file.binary ? (
-                  <Chip tone="neutral">bin</Chip>
+                  <Chip tone="neutral">{t("common.binaryShort")}</Chip>
                 ) : (
                   <DiffStat insertions={file.insertions} deletions={file.deletions} />
                 )}
@@ -288,7 +300,7 @@ function DrawerBar({ extra }: { extra?: ReactNode }) {
   return (
     <div className="flex shrink-0 items-center gap-2 border-b border-border bg-surface-rail px-3 py-1.5">
       <span className="min-w-0 flex-1 truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        Detalhe
+        {t("side.drawer.detail")}
       </span>
       {extra}
     </div>
@@ -302,7 +314,7 @@ export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
 
   if (selected.length > 1) {
     return (
-      <section className={cn("flex flex-col", className)} aria-label="Resumo da selecao">
+      <section className={cn("flex flex-col", className)} aria-label={t("detail.selectionLabel")}>
         <DrawerBar extra={headerExtra} />
         <SelectionSummary selected={selected} />
       </section>
@@ -311,17 +323,17 @@ export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
 
   if (!primary) {
     return (
-      <section className={cn("flex flex-col", className)} aria-label="Detalhe do commit">
+      <section className={cn("flex flex-col", className)} aria-label={t("detail.label")}>
         <DrawerBar extra={headerExtra} />
         <StaggerReveal className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
           <StaggerRevealItem>
             <GitCommitHorizontal className="size-6 text-muted-foreground" />
           </StaggerRevealItem>
           <StaggerRevealHeadline as="h3" className="font-heading text-sm font-medium text-foreground">
-            Nenhum commit selecionado
+            {t("detail.empty.title")}
           </StaggerRevealHeadline>
           <StaggerRevealItem as="p" className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-            Clique num commit da View Tree. Segure ⇧ para marcar um intervalo e liberar o squash.
+            {t("detail.empty.body")}
           </StaggerRevealItem>
         </StaggerReveal>
       </section>
@@ -329,12 +341,10 @@ export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
   }
 
   return (
-    <section className={cn("flex flex-col", className)} aria-label="Detalhe do commit">
+    <section className={cn("flex flex-col", className)} aria-label={t("detail.label")}>
       <DrawerBar extra={headerExtra} />
       {detail.loading && <DetailSkeleton />}
-      {detail.error && (
-        <EmptyState title="Nao foi possivel ler o commit" description={detail.error} />
-      )}
+      {detail.error && <EmptyState title={t("detail.error.title")} description={detail.error} />}
       {detail.data && (
         // O cabecalho rola junto com a lista: num painel estreito, prender os
         // metadados no topo comeria a metade util da coluna.

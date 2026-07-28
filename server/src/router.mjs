@@ -88,11 +88,17 @@ function safeDecode(value) {
  * Corpo da requisicao
  * ------------------------------------------------------------------ */
 
+/**
+ * `message` e `detail` sao CHAVES de `i18n.mjs` quando o texto nasce aqui, e
+ * texto cru quando vem do git. Quem resolve e `sendError`, com o idioma da
+ * requisicao — chave desconhecida passa intacta, que e o caso do stderr do git.
+ */
 export class HttpError extends Error {
-  constructor(status, message, detail) {
+  constructor(status, message, detail, params) {
     super(message);
     this.status = status;
     if (detail) this.detail = detail;
+    if (params) this.params = params;
   }
 }
 
@@ -105,7 +111,7 @@ export function readJsonBody(req) {
   return new Promise((resolve, reject) => {
     const declared = Number.parseInt(req.headers["content-length"] ?? "", 10);
     if (Number.isFinite(declared) && declared > MAX_BODY_BYTES) {
-      reject(new HttpError(413, "corpo grande demais", `limite de ${MAX_BODY_BYTES} bytes`));
+      reject(new HttpError(413, "error.bodyTooLarge", "error.bodyLimit", { bytes: MAX_BODY_BYTES }));
       req.resume();
       return;
     }
@@ -120,7 +126,7 @@ export function readJsonBody(req) {
       size += chunk.length;
       if (size > MAX_BODY_BYTES) {
         aborted = true;
-        reject(new HttpError(413, "corpo grande demais", `limite de ${MAX_BODY_BYTES} bytes`));
+        reject(new HttpError(413, "error.bodyTooLarge", "error.bodyLimit", { bytes: MAX_BODY_BYTES }));
         req.destroy();
         return;
       }
@@ -128,7 +134,7 @@ export function readJsonBody(req) {
     });
 
     req.on("error", (err) => {
-      if (!aborted) reject(new HttpError(400, "falha lendo o corpo", err.message));
+      if (!aborted) reject(new HttpError(400, "error.bodyRead", err.message));
     });
 
     req.on("end", () => {
@@ -141,14 +147,14 @@ export function readJsonBody(req) {
       const contentType = String(req.headers["content-type"] ?? "");
       if (!/^application\/json\b/i.test(contentType)) {
         reject(
-          new HttpError(415, "content-type nao suportado", "as rotas de /api so aceitam application/json"),
+          new HttpError(415, "error.contentType", "error.contentTypeDetail"),
         );
         return;
       }
       try {
         resolve(JSON.parse(raw));
       } catch (err) {
-        reject(new HttpError(400, "json invalido", err.message));
+        reject(new HttpError(400, "error.invalidJson", err.message));
       }
     });
   });

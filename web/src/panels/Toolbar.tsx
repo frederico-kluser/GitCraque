@@ -21,6 +21,7 @@ import {
   GitBranch,
   FolderGit2,
   GitBranchPlus,
+  Languages,
   Loader2,
   Moon,
   Plug,
@@ -53,8 +54,10 @@ import {
   openStashPush,
 } from "@/app/actions";
 import { CommandBar } from "@/app/CommandBar";
+import { LOCALE_OPTIONS, Rich, chooseLocale, t, useLocale } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { ConnectionState } from "@/lib/ws";
+import type { MessageKey } from "@/i18n";
 import type { PanelProps } from "@/types/modules";
 import { Chip, FOCUS_RING, SectionLabel, ToolButton } from "./parts";
 
@@ -107,7 +110,7 @@ function NetButton({
       announce={`${label}: ${state}`}
       aria-label={label}
     >
-      {state === "ok" ? "ok" : state === "error" ? "erro" : label}
+      {state === "ok" ? t("common.ok") : state === "error" ? t("common.error") : label}
     </MultiStateButton>
   );
 }
@@ -116,21 +119,21 @@ function NetButton({
 /* Conexao do WebSocket                                                */
 /* ------------------------------------------------------------------ */
 
-const CONNECTION_META: Record<ConnectionState, { label: string; tone: string; pulse: boolean }> = {
-  open: { label: "conectado", tone: "text-success", pulse: false },
-  connecting: { label: "conectando", tone: "text-warning", pulse: true },
-  reconnecting: { label: "reconectando", tone: "text-warning", pulse: true },
-  closed: { label: "sem conexao", tone: "text-destructive", pulse: false },
+const CONNECTION_META: Record<ConnectionState, { key: MessageKey; tone: string; pulse: boolean }> = {
+  open: { key: "toolbar.connection.open", tone: "text-success", pulse: false },
+  connecting: { key: "toolbar.connection.connecting", tone: "text-warning", pulse: true },
+  reconnecting: { key: "toolbar.connection.reconnecting", tone: "text-warning", pulse: true },
+  closed: { key: "toolbar.connection.closed", tone: "text-destructive", pulse: false },
 };
 
 function ConnectionBadge({ connection }: { connection: ConnectionState }) {
-  const meta = CONNECTION_META[connection];
+  const meta = { ...CONNECTION_META[connection], label: t(CONNECTION_META[connection].key) };
   const ambient = useMotionUITransition("ambient");
   const Icon = connection === "open" ? Plug : PlugZap;
 
   return (
     <span
-      title={`WebSocket ${meta.label}`}
+      title={t("toolbar.connection.title", { state: meta.label })}
       className={cn("inline-flex items-center gap-1.5 text-[11px] font-medium", meta.tone)}
     >
       <motion.span
@@ -192,8 +195,8 @@ function ProjectRow({
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
           <span className="truncate text-xs font-medium">{title}</span>
-          {current && <Chip tone="success">aberto</Chip>}
-          {missing && <Chip tone="danger">sumiu do disco</Chip>}
+          {current && <Chip tone="success">{t("common.opened")}</Chip>}
+          {missing && <Chip tone="danger">{t("common.missingFromDisk")}</Chip>}
           {branch && !current && <Chip tone="primary">{branch}</Chip>}
         </span>
         <span className="block truncate font-mono text-[10px] text-muted-foreground">{path}</span>
@@ -216,7 +219,7 @@ function ProjectSelector() {
   return (
     <Menu.Root onOpenChange={(open) => open && void loadProjects()}>
       <Menu.Trigger
-        title="Trocar de projeto — favoritos, recentes ou abrir outra pasta"
+        title={t("toolbar.project.trigger")}
         className={cn(
           "flex max-w-[18rem] min-w-0 items-center gap-2.5 rounded-lg border border-transparent px-2 py-1 text-left",
           "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
@@ -232,7 +235,9 @@ function ProjectSelector() {
           <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
             <GitBranch className="size-3 shrink-0" />
             <span className="truncate font-mono">
-              {head?.detached ? `detached em ${head.hash?.slice(0, 7) ?? "?"}` : (head?.branch ?? "—")}
+              {head?.detached
+                ? t("toolbar.head.detached", { hash: head.hash?.slice(0, 7) ?? "?" })
+                : (head?.branch ?? "—")}
             </span>
           </span>
         </span>
@@ -243,11 +248,12 @@ function ProjectSelector() {
         <Menu.Positioner sideOffset={8} align="start" className="z-50 outline-none">
           <Menu.Popup className="max-h-[70vh] w-[26rem] max-w-[90vw] overflow-y-auto rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-2xl">
             <div className="px-2.5 pt-2 pb-1.5">
-              <SectionLabel>Projetos</SectionLabel>
+              <SectionLabel>{t("toolbar.project.section")}</SectionLabel>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                Abrir outro projeto tambem e{" "}
-                <span className="font-mono text-foreground">process.chdir()</span> no servidor: a View Tree
-                inteira e recarregada do zero.
+                <Rich
+                  k="toolbar.project.note"
+                  nodes={{ chdir: <span className="font-mono text-foreground">process.chdir()</span> }}
+                />
               </p>
             </div>
 
@@ -255,7 +261,7 @@ function ProjectSelector() {
               <>
                 <Menu.Separator className="my-1 h-px bg-border" />
                 <div className="px-2.5 py-1">
-                  <SectionLabel>Favoritos</SectionLabel>
+                  <SectionLabel>{t("toolbar.project.favorites")}</SectionLabel>
                 </div>
                 {favorites.map((fav) => (
                   <ProjectRow
@@ -276,7 +282,7 @@ function ProjectSelector() {
               <>
                 <Menu.Separator className="my-1 h-px bg-border" />
                 <div className="px-2.5 py-1">
-                  <SectionLabel>Recentes</SectionLabel>
+                  <SectionLabel>{t("toolbar.project.recents")}</SectionLabel>
                 </div>
                 {outros.map((recent) => (
                   <ProjectRow
@@ -295,9 +301,7 @@ function ProjectSelector() {
 
             {vazio && (
               <p className="px-2.5 py-3 text-[11px] leading-relaxed text-muted-foreground">
-                {loading || !loaded
-                  ? "Lendo favoritos e recentes…"
-                  : "Nenhum favorito nem recente ainda. Abra uma pasta pelo seletor abaixo e ela aparece aqui na proxima vez."}
+                {loading || !loaded ? t("toolbar.project.loading") : t("toolbar.project.empty")}
               </p>
             )}
 
@@ -310,7 +314,7 @@ function ProjectSelector() {
               )}
             >
               <FolderGit2 className="size-3.5 shrink-0 text-muted-foreground" />
-              Abrir outro…
+              {t("toolbar.project.openOther")}
             </Menu.Item>
           </Menu.Popup>
         </Menu.Positioner>
@@ -333,7 +337,7 @@ function WorktreeSelector() {
       {/* A worktree ativa e marcada por uma borda ESTATICA em primary — sem
           efeito animado correndo pela borda. */}
       <Menu.Trigger
-        title="Trocar de worktree — o servidor faz process.chdir, sem checkout"
+        title={t("toolbar.worktree.trigger")}
         className={cn(
           "flex max-w-[22rem] min-w-0 items-center gap-2.5 rounded-lg border bg-card px-3 py-1.5 text-left",
           "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
@@ -346,7 +350,7 @@ function WorktreeSelector() {
         <span className="min-w-0 flex-1">
           <span className="flex items-center gap-1.5">
             <span className="truncate text-xs font-semibold text-foreground">
-              {active?.label ?? "sem worktree"}
+              {active?.label ?? t("toolbar.worktree.none")}
             </span>
             {active?.branch && <Chip tone="primary">{active.branch}</Chip>}
           </span>
@@ -362,15 +366,20 @@ function WorktreeSelector() {
         <Menu.Positioner sideOffset={8} align="start" className="z-50 outline-none">
           <Menu.Popup className="w-[26rem] max-w-[90vw] overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-2xl">
             <div className="px-2.5 pt-2 pb-1.5">
-              <SectionLabel>Worktrees</SectionLabel>
+              <SectionLabel>{t("rail.worktrees.title")}</SectionLabel>
               <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">
-                Trocar de worktree executa <span className="font-mono text-foreground">process.chdir()</span> no
-                servidor. Nenhum <span className="font-mono text-foreground">git checkout</span> acontece.
+                <Rich
+                  k="toolbar.worktree.note"
+                  nodes={{
+                    chdir: <span className="font-mono text-foreground">process.chdir()</span>,
+                    checkout: <span className="font-mono text-foreground">git checkout</span>,
+                  }}
+                />
               </p>
             </div>
             <Menu.Separator className="my-1 h-px bg-border" />
             {worktrees.length === 0 && (
-              <p className="px-2.5 py-3 text-xs text-muted-foreground">Nenhuma worktree listada.</p>
+              <p className="px-2.5 py-3 text-xs text-muted-foreground">{t("toolbar.worktree.emptyList")}</p>
             )}
             {worktrees.map((wt) => (
               <Menu.Item
@@ -385,11 +394,79 @@ function WorktreeSelector() {
               >
                 <span className="flex items-center gap-1.5">
                   <span className="truncate text-xs font-medium">{wt.label}</span>
-                  {wt.isActive && <Chip tone="success">ativa</Chip>}
-                  {wt.isMain && <Chip tone="neutral">principal</Chip>}
-                  {wt.branch ? <Chip tone="primary">{wt.branch}</Chip> : <Chip tone="warning">detached</Chip>}
+                  {wt.isActive && <Chip tone="success">{t("rail.chip.active")}</Chip>}
+                  {wt.isMain && <Chip tone="neutral">{t("rail.chip.main")}</Chip>}
+                  {wt.branch ? (
+                    <Chip tone="primary">{wt.branch}</Chip>
+                  ) : (
+                    <Chip tone="warning">{t("rail.chip.detached")}</Chip>
+                  )}
                 </span>
                 <span className="truncate font-mono text-[10px] text-muted-foreground">{wt.path}</span>
+              </Menu.Item>
+            ))}
+          </Menu.Popup>
+        </Menu.Positioner>
+      </Menu.Portal>
+    </Menu.Root>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Seletor de idioma                                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Os quatro idiomas, cada um escrito NO PROPRIO idioma — quem abre este menu
+ * pode nao ler o idioma corrente, e "Portugues" traduzido para chines nao
+ * ajudaria ninguem a encontrar o proprio.
+ *
+ * CASCATA: mesma escolha dos dois seletores acima — o catalogo do Motion UI nao
+ * tem menu ancorado, entao a semantica vem do `Menu` do Base UI.
+ */
+function LanguageSelector() {
+  const locale = useLocale();
+  const current = LOCALE_OPTIONS.find((o) => o.value === locale);
+
+  return (
+    <Menu.Root>
+      <Menu.Trigger
+        aria-label={t("language.change")}
+        title={`${t("language.label")}: ${current?.label ?? locale}`}
+        className={cn(
+          "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 text-xs font-medium text-muted-foreground",
+          "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+          "hover:bg-accent hover:text-accent-foreground data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground",
+          FOCUS_RING,
+        )}
+      >
+        <Languages className="size-3.5" />
+        <span className="uppercase">{locale}</span>
+      </Menu.Trigger>
+
+      <Menu.Portal>
+        <Menu.Positioner sideOffset={8} align="end" className="z-50 outline-none">
+          <Menu.Popup className="min-w-52 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-2xl">
+            <div className="px-2.5 pt-2 pb-1.5">
+              <SectionLabel>{t("language.label")}</SectionLabel>
+            </div>
+            {LOCALE_OPTIONS.map((option) => (
+              <Menu.Item
+                key={option.value}
+                onClick={() => chooseLocale(option.value)}
+                className={cn(
+                  "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-xs outline-none select-none",
+                  "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
+                )}
+              >
+                <Check
+                  className={cn(
+                    "size-3.5 shrink-0",
+                    option.value === locale ? "text-primary" : "opacity-0",
+                  )}
+                />
+                <span className="flex-1 font-medium">{option.label}</span>
+                <span className="font-mono text-[10px] text-muted-foreground">{option.tag}</span>
               </Menu.Item>
             ))}
           </Menu.Popup>
@@ -409,7 +486,9 @@ function PendingBanner() {
   if (!pending) return null;
 
   const step =
-    pending.step != null && pending.total != null ? `${pending.step} de ${pending.total}` : "em andamento";
+    pending.step != null && pending.total != null
+      ? t("toolbar.pending.step", { step: pending.step, total: pending.total })
+      : t("toolbar.pending.inProgress");
 
   return (
     <motion.div
@@ -422,22 +501,20 @@ function PendingBanner() {
     >
       <TriangleAlert className="size-3.5 shrink-0 text-warning" />
       <span className="text-xs font-medium text-foreground">
-        {pending.kind} em andamento, {step}
+        {t("toolbar.pending.banner", { kind: pending.kind, step })}
       </span>
       {pending.current && (
         <span className="font-mono text-[11px] text-muted-foreground">{pending.current.slice(0, 7)}</span>
       )}
       {pending.conflicts.length > 0 && (
-        <Chip tone="danger">
-          {pending.conflicts.length} {pending.conflicts.length === 1 ? "conflito" : "conflitos"}
-        </Chip>
+        <Chip tone="danger">{t("toolbar.pending.conflicts", { count: pending.conflicts.length })}</Chip>
       )}
       <span className="flex-1" />
       <ToolButton size="sm" icon={<Check className="size-3" />} onClick={() => void doContinue(pending.kind)}>
-        Continuar
+        {t("toolbar.pending.continue")}
       </ToolButton>
       <ToolButton size="sm" tone="danger" icon={<X className="size-3" />} onClick={() => openAbort(pending.kind)}>
-        Abortar
+        {t("toolbar.pending.abort")}
       </ToolButton>
     </motion.div>
   );
@@ -505,11 +582,15 @@ export function Toolbar({ className }: PanelProps) {
                   // e o morph do componente parte de um `d` ainda nao pintado.
                   motionAllowed={false}
                   className="h-7 w-[7.5rem]"
-                  label={`Atividade: ${activity.windowTotal} commits nas ultimas ${activity.weeks} semanas`}
+                  label={t("toolbar.activity.label", {
+                    count: activity.windowTotal,
+                    weeks: activity.weeks,
+                  })}
                 />
                 <span className="text-[10px] leading-tight text-muted-foreground">
                   {activity.windowTotal}
-                  <br />/{activity.weeks} sem
+                  <br />
+                  {t("toolbar.activity.weeks", { weeks: activity.weeks })}
                 </span>
               </>
             )}
@@ -529,21 +610,21 @@ export function Toolbar({ className }: PanelProps) {
         {/* --- rede --- */}
         <div className="flex items-center gap-1.5">
           <NetButton
-            label="Fetch"
+            label={t("action.fetch")}
             icon={<ArrowDownToLine className="size-3.5" />}
             state={stateOf("fetch")}
             busy={busy}
             onClick={() => runNet("fetch", doFetch)}
           />
           <NetButton
-            label="Pull"
+            label={t("action.pull")}
             icon={<ArrowDownToLine className="size-3.5" />}
             state={stateOf("pull")}
             busy={busy}
             onClick={() => runNet("pull", () => doPull())}
           />
           <NetButton
-            label="Push"
+            label={t("action.push.title")}
             icon={<ArrowUpFromLine className="size-3.5" />}
             state={stateOf("push")}
             busy={busy}
@@ -558,27 +639,28 @@ export function Toolbar({ className }: PanelProps) {
           <ToolButton
             icon={<FolderGit2 className="size-3.5" />}
             onClick={openRepoPicker}
-            title="Abrir outro repositorio da maquina (process.chdir, sem checkout)"
+            title={t("toolbar.action.open.title")}
           >
-            Abrir
+            {t("toolbar.action.open")}
           </ToolButton>
           <ToolButton icon={<GitBranchPlus className="size-3.5" />} onClick={() => openCreateBranch()}>
-            Branch
+            {t("toolbar.action.branch")}
           </ToolButton>
           <ToolButton icon={<Archive className="size-3.5" />} onClick={openStashPush}>
-            Stash
+            {t("toolbar.action.stash")}
           </ToolButton>
           <ToolButton
             tone="ghost"
-            aria-label="Recarregar"
-            title="Recarregar (⌘R)"
+            aria-label={t("toolbar.action.refresh")}
+            title={t("toolbar.action.refresh.title")}
             icon={<RefreshCw className="size-3.5" />}
             onClick={() => void doRefresh()}
           />
+          <LanguageSelector />
           <ToolButton
             tone="ghost"
-            aria-label={theme === "dark" ? "Tema claro" : "Tema escuro"}
-            title={theme === "dark" ? "Tema claro" : "Tema escuro"}
+            aria-label={theme === "dark" ? t("commands.theme.light") : t("commands.theme.dark")}
+            title={theme === "dark" ? t("commands.theme.light") : t("commands.theme.dark")}
             icon={theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
             onClick={toggleTheme}
           />
@@ -597,11 +679,11 @@ export function Toolbar({ className }: PanelProps) {
               size="sm"
               highlight
               progressbar
-              aria-label={operationLabel ?? "Operacao em curso"}
+              aria-label={operationLabel ?? t("toolbar.progress.label")}
               label={
                 <span className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
                   <Loader2 className="size-3 animate-spin" />
-                  {operationLabel ?? "Executando comando git"}
+                  {operationLabel ?? t("toolbar.progress.running")}
                 </span>
               }
               className="gap-1"
@@ -619,9 +701,7 @@ export function Toolbar({ className }: PanelProps) {
       {connection !== "open" && (
         <div className="flex items-center gap-2 border-t border-border bg-surface-inset px-4 py-1.5 text-[11px] text-muted-foreground">
           <CircleAlert className="size-3.5 shrink-0 text-warning" />
-          {connection === "closed"
-            ? "WebSocket fechado — o app nao esta recebendo eventos do repositorio."
-            : "Restabelecendo a conexao com o servidor…"}
+          {connection === "closed" ? t("toolbar.ws.closed") : t("toolbar.ws.reconnecting")}
         </div>
       )}
     </header>

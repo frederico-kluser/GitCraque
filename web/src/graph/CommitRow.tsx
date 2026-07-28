@@ -16,6 +16,7 @@ import { areEqual } from "react-window";
 import type { ListChildComponentProps } from "react-window";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { useDraggableEntity } from "@/dnd/bindings";
+import { formatGitRelativeDate } from "@/i18n";
 import { cn, laneVar, short } from "@/lib/utils";
 import { toast } from "@/state/store";
 import { clipEdgePath, laneX } from "./bezier.ts";
@@ -221,8 +222,10 @@ export const CommitRow = memo(function CommitRow({
       >
         {commit.authorName}
       </div>
-      <div role="gridcell" className="truncate pr-3 text-xs text-muted-foreground">
-        {commit.relativeDate}
+      <div role="gridcell" className="truncate pr-3 text-xs text-muted-foreground" title={commit.relativeDate}>
+        {/* O `%ar` do git chega sempre em ingles (LC_ALL=C): a exibicao muda de
+            idioma, o payload nao — `useCommitActivity` depende do original. */}
+        {formatGitRelativeDate(commit.relativeDate)}
       </div>
       {/* O `copy-button` do catalogo nao serve aqui: ele traz botao e glifo
           proprios, e o alvo do clique tem de ser o proprio hash da coluna. */}

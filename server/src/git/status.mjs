@@ -362,12 +362,12 @@ function nullDevice() {
 
 function requirePaths(paths) {
   if (!Array.isArray(paths) || paths.length === 0) {
-    const error = new Error("paths e obrigatorio e nao pode ser vazio");
+    const error = new Error("error.pathsNotEmpty");
     error.status = 400;
     throw error;
   }
   if (paths.some((p) => typeof p !== "string" || !p.length)) {
-    const error = new Error("paths so aceita strings nao vazias");
+    const error = new Error("error.pathsStrings");
     error.status = 400;
     throw error;
   }
@@ -406,7 +406,7 @@ export async function discard({ paths } = {}) {
 
 export function commit({ message, amend, signoff } = {}) {
   if (!amend && (typeof message !== "string" || !message.trim())) {
-    const error = new Error("message e obrigatorio");
+    const error = new Error("error.messageRequired");
     error.status = 400;
     throw error;
   }

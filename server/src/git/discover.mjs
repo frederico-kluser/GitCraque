@@ -193,13 +193,13 @@ export async function listDirectory(target) {
   try {
     stat = await fsp.stat(dir);
   } catch (err) {
-    const error = new Error("caminho nao existe ou nao pode ser lido");
+    const error = new Error("error.pathUnreadable");
     error.status = 404;
     error.detail = `${dir}: ${err.code ?? err.message}`;
     throw error;
   }
   if (!stat.isDirectory()) {
-    const error = new Error("o caminho nao e um diretorio");
+    const error = new Error("error.notADirectory");
     error.status = 400;
     error.detail = dir;
     throw error;
@@ -209,7 +209,7 @@ export async function listDirectory(target) {
   try {
     dirents = await fsp.readdir(dir, { withFileTypes: true });
   } catch (err) {
-    const error = new Error("sem permissao para listar este diretorio");
+    const error = new Error("error.dirNoPermission");
     error.status = 403;
     error.detail = `${dir}: ${err.code ?? err.message}`;
     throw error;
@@ -453,7 +453,7 @@ export async function rememberRepo(dir) {
 /** POST /api/repos/recent/remove */
 export async function forgetRepo(dir) {
   if (typeof dir !== "string" || !dir.trim()) {
-    const error = new Error("path e obrigatorio");
+    const error = new Error("error.pathRequired");
     error.status = 400;
     throw error;
   }
@@ -480,7 +480,7 @@ export async function forgetRepo(dir) {
  */
 export async function resolveRepoDir(target) {
   if (typeof target !== "string" || !target.trim()) {
-    const error = new Error("path e obrigatorio");
+    const error = new Error("error.pathRequired");
     error.status = 400;
     throw error;
   }
@@ -491,13 +491,13 @@ export async function resolveRepoDir(target) {
   try {
     stat = await fsp.stat(dir);
   } catch (err) {
-    const error = new Error("caminho nao existe");
+    const error = new Error("error.pathMissing");
     error.status = 404;
     error.detail = `${dir}: ${err.code ?? err.message}`;
     throw error;
   }
   if (!stat.isDirectory()) {
-    const error = new Error("o caminho nao e um diretorio");
+    const error = new Error("error.notADirectory");
     error.status = 400;
     error.detail = dir;
     throw error;
@@ -512,7 +512,7 @@ export async function resolveRepoDir(target) {
     gitDir = "";
   }
   if (!gitDir) {
-    const error = new Error("o diretorio nao e um repositorio git");
+    const error = new Error("error.notARepository");
     error.status = 400;
     error.detail = `${dir} nao tem .git — escolha outra pasta ou inicialize um repositorio nela`;
     throw error;
@@ -558,14 +558,14 @@ export async function openRepository(target) {
  */
 export async function initRepository(target, { bare = false, initialBranch } = {}) {
   if (typeof target !== "string" || !target.trim()) {
-    const error = new Error("path e obrigatorio");
+    const error = new Error("error.pathRequired");
     error.status = 400;
     throw error;
   }
   const dir = expandUserPath(target);
 
   if (detectRepoKind(dir).isRepo) {
-    const error = new Error("ja existe um repositorio git nesta pasta");
+    const error = new Error("error.alreadyRepository");
     error.status = 409;
     error.detail = dir;
     throw error;

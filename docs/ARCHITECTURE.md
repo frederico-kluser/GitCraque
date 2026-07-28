@@ -26,6 +26,8 @@ terminal ──► server/bin/gitcraque.mjs
    `GIT_SEQUENCE_EDITOR="node proxy-editor.mjs" git rebase -i <base>`.
 6. **Push/fetch nunca travam pedindo senha.** Trampolim `GIT_ASKPASS`.
 7. **UI vem do Motion UI antes de qualquer CSS proprio** (ver `docs/UI.md`).
+8. **Nenhum texto de interface cravado no codigo.** Quatro idiomas
+   (en, pt, es, zh), catalogo em `web/src/i18n` e `server/src/i18n.mjs`.
 
 ## Modulos e donos
 
@@ -391,6 +393,65 @@ Nada executa a partir do menu: todo item cai em `app/actions.ts`, que confirma
 por `askConfirm` antes de tocar o repositorio, com `HoldToConfirmButton` no que
 for destrutivo. Teclado tem a mesma porta: `ContextMenu`/`Shift+F10` sobre a
 linha focada da View Tree abre o mesmo menu.
+
+## 5. Idioma — `web/src/i18n/`, `server/src/i18n.mjs`
+
+Quatro idiomas: **ingles (padrao), portugues, espanhol e chines**. O idioma sai
+do navegador (`navigator.languages`, primeira subtag reconhecida); nao
+reconhecendo nenhum, ingles. A escolha manual do seletor ganha da deteccao e
+mora no `localStorage`.
+
+### Um catalogo mestre, tres obrigados a acompanhar
+
+`locales/pt.ts` e o unico arquivo que DEFINE chave: `MessageKey` sai dele, e
+`en`/`es`/`zh` sao tipados como `Messages`. Esquecer uma chave nao compila —
+nao ha catalogo envelhecendo em silencio. Plural e o par `_one`/`_other`,
+escolhido por `count`; chines repete o mesmo texto nos dois de proposito.
+
+### `t` e singleton de modulo, nao contexto React
+
+Metade do texto do app nasce FORA de componente: `app/actions.ts` monta os
+dialogos, `state/store.ts` emite os toasts, `dialogs/executors.ts` reporta o
+resultado. Um `useTranslation()` obrigaria a passar `t` por parametro em toda
+essa cadeia. Com o singleton, qualquer modulo faz `t("chave")`.
+
+O preco disso e que um componente que so chama `t()` nao sabe quando
+re-renderizar. O `<LocaleBoundary>` de `main.tsx` resolve pelo bruto: troca a
+`key` da arvore e remonta tudo. Trocar de idioma e raro e deliberado — garantir
+que NADA fica com texto velho vale mais que preservar estado local. O estado do
+repositorio nao se perde: ele mora em modulo, fora do React.
+
+### O motor de DND recebe o tradutor pelo contexto
+
+`dnd/intents.ts` nao tem um unico import de runtime — e o que o torna carregavel
+pelo `node --test` com type stripping, sem bundler. Um `import { t }` ali
+quebraria isso, entao o tradutor entra em `DragIntentContext.t` e o provider
+passa. Mesmo motivo em `viewer/markdown.ts` e `viewer/sanitize.ts`, que sao
+carregados pelo `node --test` sem alias: os dois importam
+`../i18n/store.ts` por caminho relativo, com extensao explicita.
+
+### O backend traduz por REQUISICAO
+
+O erro carrega uma CHAVE (`error.pathRequired`) e a traducao acontece so na
+borda, em `sendError`, com o idioma daquela requisicao — `x-gitcraque-lang`
+(a escolha do seletor) e, na falta dele, `accept-language`.
+
+Duas consequencias que valem o desenho:
+
+- **a saida do proprio git passa intacta.** `commandResult` lanca com
+  `result.error`, que nao casa com chave nenhuma; `translate` devolve
+  `undefined` e a borda usa a string como veio. A regra "mensagem do git fica em
+  ingles, como o git a emite" continua valendo de graca;
+- **o servidor nao guarda idioma.** E um processo local que pode ter varias abas
+  abertas, cada uma na sua lingua.
+
+### O que NAO e traduzido
+
+Nome de comando git, flag (`--force-with-lease`), `HEAD`, `origin`, saida do
+git e o `%ar` do log — que chega sempre em ingles porque o backend fixa
+`LC_ALL=C`, e e disso que `useCommitActivity` depende para montar o sparkline.
+O `%ar` e reescrito **so na exibicao**, por `formatGitRelativeDate`; o payload
+continua intacto.
 
 ## Fluxo de eventos
 

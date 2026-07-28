@@ -21,7 +21,10 @@
  *
  * Este arquivo nao importa NADA em tempo de execucao (so `import type`), o que
  * o torna carregavel direto pelo `node --test` com type-stripping, sem bundler.
- * E por isso que `shortHash` esta duplicado de `@/lib/utils` aqui embaixo.
+ * E por isso que `shortHash` esta duplicado de `@/lib/utils` aqui embaixo — e
+ * tambem por que o TRADUTOR chega pelo contexto em vez de ser importado: um
+ * `import { t } from "@/i18n"` aqui e um import de runtime com alias, e os dois
+ * quebram o carregamento direto pelo node.
  */
 import type {
   Branch,
@@ -31,6 +34,7 @@ import type {
   DropPayload,
   RefsPayload,
 } from "@/types/git";
+import type { Translate } from "@/i18n/types";
 import type { ResolveDragIntent } from "@/types/modules";
 
 /* ------------------------------------------------------------------ */
@@ -55,10 +59,15 @@ export const INTENT_ENDPOINTS = {
   deleteBranchRemote: "/branch/delete-remote",
 } as const;
 
-/** O contexto que o provider passa: as refs carregadas e o ramo do HEAD. */
+/**
+ * O contexto que o provider passa: as refs carregadas, o ramo do HEAD e o
+ * tradutor. `t` e obrigatorio de proposito — sem ele o motor teria de carregar
+ * um catalogo, e a pureza do modulo (ver cabecalho) iria junto.
+ */
 export interface DragIntentContext {
   refs: RefsPayload | null;
   headBranch: string | null;
+  t: Translate;
 }
 
 /* ------------------------------------------------------------------ */
@@ -118,16 +127,16 @@ function upstreamNote(ctx: DragIntentContext, name: string): string {
   if (!branch?.upstream) return "";
   const gap =
     branch.ahead || branch.behind
-      ? ` (${branch.ahead} a frente, ${branch.behind} atras)`
+      ? ctx.t("intent.rebase.upstreamGap", { ahead: branch.ahead, behind: branch.behind })
       : "";
-  return ` ${name} acompanha ${branch.upstream}${gap}: depois do rebase o push vai exigir --force-with-lease.`;
+  return ctx.t("intent.rebase.upstreamNote", { name, upstream: branch.upstream, gap });
 }
 
 function invalid(
   source: DragPayload,
   target: DropPayload,
   reason: string,
-  title = "Movimento nao permitido",
+  title: string,
 ): DragIntent {
   return {
     kind: "invalid",
@@ -150,13 +159,15 @@ export function resolveDragIntent(
   target: DropPayload,
   context: DragIntentContext,
 ): DragIntent {
+  const t = context.t;
+
   // Soltar em si mesmo nunca e operacao — vale para qualquer tipo.
   if (source.type === target.type && source.key === target.key) {
     return invalid(
       source,
       target,
-      `Origem e destino sao a mesma referencia (${source.label}).`,
-      "Mesma referencia",
+      t("intent.sameRef", { label: source.label }),
+      t("intent.sameRef.title"),
     );
   }
 
@@ -171,16 +182,18 @@ export function resolveDragIntent(
       return invalid(
         source,
         target,
-        `Tags nao se movem por arrasto: mover a tag ${source.label} exigiria recria-la. Use o dialogo de tags.`,
+        t("intent.tag.noDrag", { label: source.label }),
+        t("intent.invalid.title"),
       );
     case "stash":
       return invalid(
         source,
         target,
-        `Stash nao se aplica por arrasto. Use aplicar ou descartar em ${source.label} no rail.`,
+        t("intent.stash.noDrag", { label: source.label }),
+        t("intent.invalid.title"),
       );
     default:
-      return invalid(source, target, "Tipo de origem desconhecido para o motor de intencoes.");
+      return invalid(source, target, t("intent.unknownSource"), t("intent.invalid.title"));
   }
 }
 
@@ -197,35 +210,22 @@ function fromCommit(
   target: DropPayload,
   ctx: DragIntentContext,
 ): DragIntent {
+  const t = ctx.t;
+  const title = t("intent.invalid.title");
+
   switch (target.type) {
     case "branch":
       return cherryPick(source, target, ctx);
     case "commit":
-      return invalid(
-        source,
-        target,
-        "Dois commits nao formam operacao. Arraste o commit para um ramo para fazer cherry-pick.",
-      );
+      return invalid(source, target, t("intent.commit.toCommit"), title);
     case "remoteBranch":
-      return invalid(
-        source,
-        target,
-        `Nao se aplica commit direto num ramo remoto. Faca cherry-pick no ramo local e depois push para ${target.label}.`,
-      );
+      return invalid(source, target, t("intent.commit.toRemote", { label: target.label }), title);
     case "tag":
-      return invalid(
-        source,
-        target,
-        "Uma tag aponta para um commit, ela nao recebe commits. Crie uma tag nova pelo dialogo de tags.",
-      );
+      return invalid(source, target, t("intent.commit.toTag"), title);
     case "trash":
-      return invalid(
-        source,
-        target,
-        "Commit nao se apaga por arrasto. Use reset ou revert pelo menu do commit.",
-      );
+      return invalid(source, target, t("intent.commit.toTrash"), title);
     default:
-      return invalid(source, target, "Alvo desconhecido para um commit.");
+      return invalid(source, target, t("intent.unknownTarget.commit"), title);
   }
 }
 
@@ -234,6 +234,7 @@ function cherryPick(
   target: DropPayload,
   ctx: DragIntentContext,
 ): DragIntent {
+  const t = ctx.t;
   const branch = target.key;
 
   const held = heldByOtherWorktree(ctx, branch);
@@ -241,8 +242,8 @@ function cherryPick(
     return invalid(
       source,
       target,
-      `O ramo ${branch} esta checado na worktree ${held}. O cherry-pick precisa faze-lo virar HEAD; troque de worktree antes.`,
-      "Ramo ocupado em outra worktree",
+      t("intent.cherryPick.busy", { branch, worktree: held }),
+      t("intent.branchBusy.title"),
     );
   }
 
@@ -250,12 +251,12 @@ function cherryPick(
   const subject = source.detail ? ` (${source.detail})` : "";
   const onHead = isHeadBranch(ctx, branch);
   const description = onHead
-    ? `Aplica o commit ${abbrev}${subject} sobre ${branch}, que e o ramo atual. Cria um commit NOVO; nada e reescrito.`
-    : `Aplica o commit ${abbrev}${subject} sobre ${branch}. Como ${branch} nao e o ramo atual, o backend faz o checkout antes — e para isso que vai o campo "onto". Cria um commit NOVO; nada e reescrito.`;
+    ? t("intent.cherryPick.onHead", { hash: abbrev, subject, branch })
+    : t("intent.cherryPick.offHead", { hash: abbrev, subject, branch });
 
   const option: DragIntentOption = {
     id: "cherry-pick",
-    label: `Cherry-pick em ${branch}`,
+    label: t("intent.cherryPick.label", { branch }),
     description,
     preview: ["cherry-pick", abbrev],
     endpoint: INTENT_ENDPOINTS.cherryPick,
@@ -267,7 +268,7 @@ function cherryPick(
     kind: "cherry-pick",
     source,
     target,
-    title: `Cherry-pick em ${branch}`,
+    title: t("intent.cherryPick.title", { branch }),
     description,
     options: [option],
     allowed: true,
@@ -283,31 +284,22 @@ function fromBranch(
   target: DropPayload,
   ctx: DragIntentContext,
 ): DragIntent {
+  const t = ctx.t;
+  const title = t("intent.invalid.title");
+
   switch (target.type) {
     case "branch":
       return integrate(source, target, ctx);
     case "trash":
       return deleteLocalBranch(source, target, ctx);
     case "remoteBranch":
-      return invalid(
-        source,
-        target,
-        `Arrastar um ramo local para um remoto seria um push, que precisa de remoto, upstream e force-with-lease. Use o dialogo de Push para enviar ${source.label}.`,
-      );
+      return invalid(source, target, t("intent.branch.toRemote", { label: source.label }), title);
     case "commit":
-      return invalid(
-        source,
-        target,
-        `Mover ${source.label} para outro commit e git reset, que descarta trabalho. Faca pelo menu do commit, nao por arrasto.`,
-      );
+      return invalid(source, target, t("intent.branch.toCommit", { label: source.label }), title);
     case "tag":
-      return invalid(
-        source,
-        target,
-        "Um ramo nao vira tag por arrasto. Crie a tag pelo dialogo de tags.",
-      );
+      return invalid(source, target, t("intent.branch.toTag"), title);
     default:
-      return invalid(source, target, "Alvo desconhecido para um ramo.");
+      return invalid(source, target, t("intent.unknownTarget.branch"), title);
   }
 }
 
@@ -328,6 +320,7 @@ function integrate(
   target: DropPayload,
   ctx: DragIntentContext,
 ): DragIntent {
+  const t = ctx.t;
   const from = refName(source);
   const into = target.key;
 
@@ -336,20 +329,18 @@ function integrate(
     return invalid(
       source,
       target,
-      `O ramo ${into} esta checado na worktree ${heldTarget}. Merge e rebase precisam dele como HEAD; troque de worktree antes.`,
-      "Ramo ocupado em outra worktree",
+      t("intent.integrate.busy", { branch: into, worktree: heldTarget }),
+      t("intent.branchBusy.title"),
     );
   }
 
   const intoIsHead = isHeadBranch(ctx, into);
-  const checkoutNote = intoIsHead
-    ? ""
-    : ` Como ${into} nao e o ramo atual, o backend faz o checkout antes — e para isso que vai o campo "into".`;
+  const checkoutNote = intoIsHead ? "" : t("intent.integrate.checkoutNote", { into });
 
   const merge: DragIntentOption = {
     id: "merge",
-    label: `Merge de ${from} em ${into}`,
-    description: `Traz os commits de ${from} para ${into}, criando um commit de merge. NENHUM historico e reescrito.${checkoutNote}`,
+    label: t("intent.merge.label", { from, into }),
+    description: t("intent.merge.description", { from, into, checkoutNote }),
     preview: ["merge", from],
     endpoint: INTENT_ENDPOINTS.merge,
     body: { source: from, into },
@@ -365,8 +356,12 @@ function integrate(
   if (rebasable && !heldSource) {
     options.push({
       id: "rebase",
-      label: `Rebase de ${from} em cima de ${into}`,
-      description: `REESCREVE ${from}: os commits de ${from} que ainda nao estao em ${into} sao reaplicados um a um em cima de ${into}. ${into} nao muda e nao recebe nada.${upstreamNote(ctx, from)}`,
+      label: t("intent.rebase.label", { from, into }),
+      description: t("intent.rebase.description", {
+        from,
+        into,
+        upstreamNote: upstreamNote(ctx, from),
+      }),
       preview: ["rebase", into, from],
       endpoint: INTENT_ENDPOINTS.rebase,
       body: { source: from, onto: into },
@@ -375,17 +370,17 @@ function integrate(
   }
 
   const tail = !rebasable
-    ? ` Rebase nao entra na lista: ${from} e um ramo remoto e nao pode ser reescrito daqui — para reescrever ${into} em cima dele, use Pull com rebase.`
+    ? t("intent.integrate.noRebaseRemote", { from, into })
     : heldSource
-      ? ` Rebase nao entra na lista: ${from} esta checado na worktree ${heldSource} e teria de virar HEAD.`
+      ? t("intent.integrate.noRebaseBusy", { from, worktree: heldSource })
       : "";
 
   return {
     kind: "merge",
     source,
     target,
-    title: `${from} para ${into}`,
-    description: `Escolha como integrar ${from} em ${into}. Merge preserva o historico dos dois; rebase reescreve ${from}.${tail}`,
+    title: t("intent.integrate.title", { from, into }),
+    description: t("intent.integrate.description", { from, into, tail }),
     options,
     allowed: true,
   };
@@ -396,14 +391,15 @@ function deleteLocalBranch(
   target: DropPayload,
   ctx: DragIntentContext,
 ): DragIntent {
+  const t = ctx.t;
   const name = source.key;
 
   if (isHeadBranch(ctx, name)) {
     return invalid(
       source,
       target,
-      `${name} e o ramo atual e o git nao apaga o ramo em que voce esta. Troque de ramo antes.`,
-      "Ramo atual",
+      t("intent.delete.currentBranch", { name }),
+      t("intent.delete.currentBranch.title"),
     );
   }
 
@@ -412,23 +408,23 @@ function deleteLocalBranch(
     return invalid(
       source,
       target,
-      `${name} esta checado na worktree ${held}. O git nao apaga um ramo checado em nenhuma worktree.`,
-      "Ramo ocupado em outra worktree",
+      t("intent.delete.busy", { name, worktree: held }),
+      t("intent.branchBusy.title"),
     );
   }
 
-  const description = `Remove o ramo LOCAL ${name}. Commits que so existiam nele ficam inalcancaveis. O remoto nao e tocado.`;
+  const description = t("intent.delete.local.description", { name });
 
   return {
     kind: "delete-branch",
     source,
     target,
-    title: `Apagar o ramo ${name}`,
+    title: t("intent.delete.local.title", { name }),
     description,
     options: [
       {
         id: "delete-local",
-        label: `Apagar ${name}`,
+        label: t("intent.delete.local.label", { name }),
         description,
         preview: ["branch", "-d", name],
         endpoint: INTENT_ENDPOINTS.deleteBranchLocal,
@@ -449,57 +445,54 @@ function fromRemoteBranch(
   target: DropPayload,
   ctx: DragIntentContext,
 ): DragIntent {
+  const t = ctx.t;
+  const title = t("intent.invalid.title");
+
   switch (target.type) {
     case "branch":
       return integrate(source, target, ctx);
     case "trash":
-      return deleteRemoteBranch(source, target);
+      return deleteRemoteBranch(source, target, ctx);
     case "remoteBranch":
-      return invalid(
-        source,
-        target,
-        "Dois ramos remotos nao formam operacao local. Traga um deles para um ramo local primeiro.",
-      );
+      return invalid(source, target, t("intent.remote.toRemote"), title);
     case "commit":
-      return invalid(
-        source,
-        target,
-        "Ramo remoto nao se move para um commit daqui: quem move um ref no servidor e o push.",
-      );
+      return invalid(source, target, t("intent.remote.toCommit"), title);
     case "tag":
-      return invalid(
-        source,
-        target,
-        "Um ramo remoto nao vira tag por arrasto. Crie a tag pelo dialogo de tags.",
-      );
+      return invalid(source, target, t("intent.remote.toTag"), title);
     default:
-      return invalid(source, target, "Alvo desconhecido para um ramo remoto.");
+      return invalid(source, target, t("intent.unknownTarget.remoteBranch"), title);
   }
 }
 
-function deleteRemoteBranch(source: DragPayload, target: DropPayload): DragIntent {
+function deleteRemoteBranch(
+  source: DragPayload,
+  target: DropPayload,
+  ctx: DragIntentContext,
+): DragIntent {
+  const t = ctx.t;
   const remote = remoteOf(source);
   if (!remote) {
     return invalid(
       source,
       target,
-      `Nao da para descobrir o remoto de ${source.label}. Apague pelo dialogo de ramos remotos.`,
+      t("intent.remote.noRemote", { label: source.label }),
+      t("intent.invalid.title"),
     );
   }
 
   const name = bareName(source);
-  const description = `Apaga o ramo ${name} NO SERVIDOR ${remote}. Todo mundo que usa esse remoto perde a referencia; isso nao se desfaz com um comando local.`;
+  const description = t("intent.delete.remote.description", { name, remote });
 
   return {
     kind: "delete-branch",
     source,
     target,
-    title: `Apagar ${remote}/${name} no servidor`,
+    title: t("intent.delete.remote.title", { remote, name }),
     description,
     options: [
       {
         id: "delete-remote",
-        label: `Apagar ${remote}/${name}`,
+        label: t("intent.delete.remote.label", { remote, name }),
         description,
         preview: ["push", remote, "--delete", name],
         endpoint: INTENT_ENDPOINTS.deleteBranchRemote,

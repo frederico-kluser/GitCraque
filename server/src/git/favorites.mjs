@@ -139,7 +139,7 @@ async function persist(entries) {
  */
 export async function addFavorite(body = {}) {
   if (body.label !== undefined && typeof body.label !== "string") {
-    const error = new Error("label tem de ser texto");
+    const error = new Error("error.labelText");
     error.status = 400;
     throw error;
   }
@@ -177,7 +177,7 @@ export async function addFavorite(body = {}) {
  */
 export async function removeFavorite(target) {
   if (typeof target !== "string" || !target.trim()) {
-    const error = new Error("path e obrigatorio");
+    const error = new Error("error.pathRequired");
     error.status = 400;
     throw error;
   }
@@ -197,7 +197,7 @@ export async function removeFavorite(target) {
  */
 export async function reorderFavorites(paths) {
   if (!Array.isArray(paths) || paths.some((p) => typeof p !== "string")) {
-    const error = new Error("paths e obrigatorio e so aceita strings");
+    const error = new Error("error.pathsRequired");
     error.status = 400;
     throw error;
   }

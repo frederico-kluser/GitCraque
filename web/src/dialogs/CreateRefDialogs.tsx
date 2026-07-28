@@ -4,6 +4,7 @@
  */
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { t } from "@/i18n";
 import { short } from "@/lib/utils";
 import { runOperation, selectHead, useAppState } from "@/state/store";
 import {
@@ -22,7 +23,8 @@ import {
   isValidRefName,
 } from "./requests";
 
-const START_HINT = "Vazio usa o HEAD atual. Aceita hash, ramo ou tag.";
+/* Funcao, nao constante: o modulo carrega uma vez, o idioma pode trocar depois. */
+const startHint = () => t("createRef.startHint");
 
 /* ------------------------------------------------------------------ */
 /* Ramo                                                                */
@@ -49,7 +51,7 @@ export function CreateBranchDialog({
     setCheckout(false);
   }, [open, initialStart]);
 
-  const error = name.trim() && !isValidRefName(name) ? "Nome de ref invalido." : undefined;
+  const error = name.trim() && !isValidRefName(name) ? t("createBranch.name.invalid") : undefined;
   const ready = Boolean(name.trim()) && !error;
   const options = {
     name: name.trim(),
@@ -60,9 +62,9 @@ export function CreateBranchDialog({
   const run = () => {
     if (!ready) return;
     onClose();
-    void runOperation("Criar ramo", () => api.createBranch(createBranchBody(options)), {
+    void runOperation(t("createBranch.op"), () => api.createBranch(createBranchBody(options)), {
       refresh: checkout ? "head" : "refs",
-      successMessage: `Ramo ${options.name} criado`,
+      successMessage: t("createBranch.done", { name: options.name }),
     });
   };
 
@@ -70,44 +72,44 @@ export function CreateBranchDialog({
     <DialogShell
       open={open}
       onClose={onClose}
-      title="Criar ramo"
-      description="Cria uma referencia local nova apontando para o ponto de partida."
+      title={t("createBranch.title")}
+      description={t("createBranch.description")}
       size="sm"
       onEnter={run}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" onClick={run} disabled={!ready}>
-            Criar
+            {t("common.create")}
           </Button>
         </>
       }
     >
       <TextField
-        label="Nome do ramo"
+        label={t("createBranch.name")}
         value={name}
         onChange={setName}
-        placeholder="feature/nome-curto"
+        placeholder={t("createBranch.name.placeholder")}
         autoFocus
         error={error}
       />
 
       <TextField
-        label="Ponto de partida (opcional)"
+        label={t("createBranch.start")}
         value={startPoint}
         onChange={setStartPoint}
         placeholder={head?.hash ? short(head.hash) : "HEAD"}
         mono
-        hint={START_HINT}
+        hint={startHint()}
       />
 
       <CheckboxField
-        label="Trocar para o ramo novo"
+        label={t("createBranch.checkout")}
         checked={checkout}
         onChange={setCheckout}
-        hint="Faz checkout depois de criar. Nao confundir com troca de worktree, que e process.chdir."
+        hint={t("createBranch.checkout.hint")}
       />
 
       {ready ? <CommandPreview argv={createBranchPreview(options)} /> : null}
@@ -142,7 +144,7 @@ export function CreateTagDialog({
     setMessage("");
   }, [open, initialRef]);
 
-  const error = name.trim() && !isValidRefName(name) ? "Nome de tag invalido." : undefined;
+  const error = name.trim() && !isValidRefName(name) ? t("createTag.name.invalid") : undefined;
   const ready = Boolean(name.trim()) && !error;
   const options = {
     name: name.trim(),
@@ -153,9 +155,9 @@ export function CreateTagDialog({
   const run = () => {
     if (!ready) return;
     onClose();
-    void runOperation("Criar tag", () => api.createTag(createTagBody(options)), {
+    void runOperation(t("createTag.op"), () => api.createTag(createTagBody(options)), {
       refresh: "refs",
-      successMessage: `Tag ${options.name} criada`,
+      successMessage: t("createTag.done", { name: options.name }),
     });
   };
 
@@ -163,23 +165,23 @@ export function CreateTagDialog({
     <DialogShell
       open={open}
       onClose={onClose}
-      title="Criar tag"
-      description="Marca um commit com um nome fixo."
+      title={t("createTag.title")}
+      description={t("createTag.description")}
       size="sm"
       onEnter={run}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" onClick={run} disabled={!ready}>
-            Criar
+            {t("common.create")}
           </Button>
         </>
       }
     >
       <TextField
-        label="Nome da tag"
+        label={t("createTag.name")}
         value={name}
         onChange={setName}
         placeholder="v1.0.0"
@@ -188,27 +190,23 @@ export function CreateTagDialog({
       />
 
       <TextField
-        label="Commit (opcional)"
+        label={t("createTag.commit")}
         value={target}
         onChange={setTarget}
         placeholder={head?.hash ? short(head.hash) : "HEAD"}
         mono
-        hint={START_HINT}
+        hint={startHint()}
       />
 
       <TextField
-        label="Mensagem (opcional)"
+        label={t("createTag.message")}
         value={message}
         onChange={setMessage}
-        placeholder="Versao 1.0.0"
-        hint="Com mensagem a tag e anotada (-a -m); sem mensagem e leve."
+        placeholder={t("createTag.message.placeholder")}
+        hint={t("createTag.message.hint")}
       />
 
-      {message.trim() ? (
-        <Callout tone="info">
-          Tag anotada guarda autor, data e mensagem como objeto proprio no repositorio.
-        </Callout>
-      ) : null}
+      {message.trim() ? <Callout tone="info">{t("createTag.annotated")}</Callout> : null}
 
       {ready ? <CommandPreview argv={createTagPreview(options)} /> : null}
     </DialogShell>

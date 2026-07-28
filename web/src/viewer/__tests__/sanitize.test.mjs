@@ -37,6 +37,9 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { markdownToSafeHtml } from "../markdown.ts";
+/* O texto vem do catalogo, nao cravado: o renderer e traduzido, e o que o
+ * teste prova e o COMPORTAMENTO (degrada para texto), nao o idioma. */
+import { t } from "../../i18n/store.ts";
 import { classifyUrl, escapeHtml, normalizeUrl, SAFE_URI_REGEXP } from "../url-policy.ts";
 import {
   ALLOWED_ATTR,
@@ -259,13 +262,13 @@ test("link relativo degrada para texto, sem virar ancora quebrada", () => {
   const html = render("[outro](./docs/OUTRO.md)");
   assert.equal(scanTags(html).filter((t) => t.name === "a").length, 0);
   assert.ok(html.includes(">outro<"), html);
-  assert.ok(html.includes("nao resolvido"), html);
+  assert.ok(html.includes(t("markdown.relativeLink", { href: "./docs/OUTRO.md" })), html);
 });
 
 test("imagem relativa vira placeholder discreto; imagem https carrega", () => {
   const relativa = render("![diagrama](./docs/x.png)");
   assert.equal(scanTags(relativa).filter((t) => t.name === "img").length, 0);
-  assert.ok(relativa.includes("imagem nao resolvida"), relativa);
+  assert.ok(relativa.includes(t("markdown.imageUnresolved")), relativa);
   assert.ok(relativa.includes("diagrama"), relativa);
 
   const remota = render("![badge](https://exemplo.test/b.svg)");

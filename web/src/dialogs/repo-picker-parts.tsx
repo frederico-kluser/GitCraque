@@ -8,6 +8,7 @@
  * O que veio do catalogo: `Skeleton`. O resto sao formatadores puros.
  */
 import { Skeleton } from "@/components/motion-ui/skeleton";
+import { formatRelativeTime } from "@/i18n";
 
 /** `/home/ana/code/x` -> `~/code/x`, que e como a pessoa pensa no caminho. */
 export function encurtar(caminho: string, home: string) {
@@ -20,16 +21,9 @@ export function encurtar(caminho: string, home: string) {
 export const basename = (caminho: string) =>
   caminho.split(/[\\/]/).filter(Boolean).pop() ?? caminho;
 
-export const relativo = (ms: number) => {
-  const s = Math.max(1, Math.round((Date.now() - ms) / 1000));
-  if (s < 60) return "agora";
-  const m = Math.round(s / 60);
-  if (m < 60) return `${m} min atras`;
-  const h = Math.round(m / 60);
-  if (h < 24) return `${h} h atras`;
-  const d = Math.round(h / 24);
-  return d === 1 ? "ontem" : `${d} dias atras`;
-};
+/* O calculo mudou de casa para `@/i18n/format`: o texto ("agora", "ontem") sai
+ * do catalogo. Este continua sendo o nome que o seletor importa. */
+export const relativo = formatRelativeTime;
 
 export function ListaVazia({ children }: { children: React.ReactNode }) {
   return (

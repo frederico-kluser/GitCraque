@@ -20,6 +20,7 @@ import test, { after, before } from "node:test";
 
 import { git, makeFixtureRepo } from "./helpers/repo.mjs";
 import { bootServer } from "./helpers/server.mjs";
+import { translate } from "../src/i18n.mjs";
 
 const {
   FILE_MAX_BYTES,
@@ -292,7 +293,7 @@ test("arquivo inexistente naquele commit e 404 com mensagem clara", async () => 
 test("arquivo inexistente na working tree e 404", async () => {
   const { status, json } = await api.get("/api/file?path=nem-isso.txt");
   assert.equal(status, 404);
-  assert.match(json.error, /nao existe na working tree/);
+  assert.match(json.error, new RegExp(translate("pt", "error.fileMissing", { path: "nem-isso.txt" })));
 });
 
 test("commit inexistente e 404, nao 500", async () => {

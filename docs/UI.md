@@ -81,5 +81,31 @@ Instalar mais, se realmente faltar:
 
 ## Idioma
 
-Textos de interface em **portugues do Brasil**. Nomes de comandos git,
-argumentos e mensagens do proprio git ficam em ingles, como o git os emite.
+A interface fala **ingles, portugues, espanhol e chines**. O idioma sai do
+navegador; sem nenhum dos quatro, ingles. O seletor da toolbar (e o grupo
+*Idioma* do ⌘K) sobrepoe a deteccao e a escolha fica no `localStorage`.
+
+**Nenhuma string de interface no meio do JSX.** Todo texto vem do catalogo:
+
+```tsx
+import { t } from "@/i18n";
+
+<h2>{t("rail.branches.title")}</h2>
+{t("changes.filesChanged", { count: n })}   // plural por `_one` / `_other`
+```
+
+Texto com marcacao no meio usa `<Rich>`, nunca concatenacao — a ordem das
+palavras muda de idioma para idioma:
+
+```tsx
+<Rich k="app.emptyRepo.body" nodes={{ command: <code>git log</code> }} />
+```
+
+Numero, data e tamanho saem de `@/i18n` (`formatDateTime`, `formatNumber`,
+`formatBytes`), nunca de `Intl` com locale cravado.
+
+Texto novo entra em `web/src/i18n/locales/pt.ts` — ele e o catalogo MESTRE, e o
+`tsc` aponta os outros tres que faltam preencher.
+
+Nomes de comandos git, argumentos (`--force-with-lease`) e mensagens do proprio
+git ficam em ingles, como o git os emite.

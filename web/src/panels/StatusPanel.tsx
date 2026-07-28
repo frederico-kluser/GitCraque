@@ -27,7 +27,9 @@ import {
 } from "@/hooks";
 import { doCommit, doDiscard, doStage, doUnstage } from "@/app/actions";
 import { changeFileMenu } from "@/app/menus";
-import { cn, plural } from "@/lib/utils";
+import { t } from "@/i18n";
+import type { MessageKey } from "@/i18n";
+import { cn } from "@/lib/utils";
 import type { ChangeStatus, StatusEntry } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
 import { Chip, DiffStat, FilePath, FOCUS_RING, SectionLabel, StatusGlyph, ToolButton } from "./parts";
@@ -43,11 +45,11 @@ const ROW_HEIGHT = 40;
 
 type GroupKey = "conflicted" | "staged" | "untracked" | "modified";
 
-const GROUP_TITLE: Record<GroupKey, string> = {
-  conflicted: "Conflitos",
-  staged: "Preparados",
-  untracked: "Nao rastreados",
-  modified: "Modificados",
+const GROUP_TITLE: Record<GroupKey, MessageKey> = {
+  conflicted: "changes.group.conflicted",
+  staged: "changes.group.staged",
+  untracked: "changes.group.untracked",
+  modified: "changes.group.modified",
 };
 
 function groupOf(entry: StatusEntry): GroupKey {
@@ -126,8 +128,8 @@ function FileRow({
             side="left"
             primary
             icon={<Minus className="size-3.5" />}
-            label="Despreparar"
-            ariaLabel={`Despreparar ${entry.path}`}
+            label={t("changes.unstage")}
+            ariaLabel={t("changes.unstageFile", { path: entry.path })}
             fillClassName="bg-muted text-foreground"
             onActivate={unstage}
           />
@@ -136,8 +138,8 @@ function FileRow({
             side="left"
             primary
             icon={<Plus className="size-3.5" />}
-            label="Preparar"
-            ariaLabel={`Preparar ${entry.path}`}
+            label={t("changes.stage")}
+            ariaLabel={t("changes.stageFile", { path: entry.path })}
             fillClassName="bg-success text-success-foreground"
             onActivate={stage}
           />
@@ -148,8 +150,8 @@ function FileRow({
           side="right"
           primary
           icon={<Trash2 className="size-3.5" />}
-          label="Descartar"
-          ariaLabel={`Descartar ${entry.path}`}
+          label={t("changes.discard")}
+          ariaLabel={t("changes.discardFile", { path: entry.path })}
           fillClassName="bg-destructive text-destructive-foreground"
           onActivate={() => setArming(true)}
         />
@@ -161,7 +163,7 @@ function FileRow({
         role="button"
         tabIndex={0}
         aria-current={open ? "true" : undefined}
-        title={`Ver ${entry.path} no visualizador`}
+        title={t("changes.viewFile", { path: entry.path })}
         onPointerDown={rememberPress}
         onClick={onRowClick}
         /* O swipe e um atalho de gesto; o botao direito e o atalho de quem usa
@@ -188,7 +190,7 @@ function FileRow({
         )}
         <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{entry.code}</span>
         {delta && !delta.binary && <DiffStat insertions={delta.insertions} deletions={delta.deletions} />}
-        {delta?.binary && <Chip tone="neutral">bin</Chip>}
+        {delta?.binary && <Chip tone="neutral">{t("common.binaryShort")}</Chip>}
 
         {/* Confirmacao por hold: descartar apaga trabalho que o git nao guarda. */}
         {arming ? (
@@ -204,7 +206,7 @@ function FileRow({
             className="h-6! w-20! shrink-0 gap-1 rounded-sm! px-0! text-[10px]!"
           >
             <Trash2 className="size-3" />
-            segure
+            {t("changes.hold")}
           </HoldToConfirmButton>
         ) : (
           <span className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100">
@@ -212,8 +214,8 @@ function FileRow({
               <ToolButton
                 tone="ghost"
                 size="sm"
-                aria-label={`Despreparar ${entry.path}`}
-                title="Despreparar"
+                aria-label={t("changes.unstageFile", { path: entry.path })}
+                title={t("changes.unstage")}
                 icon={<Minus className="size-3" />}
                 onClick={unstage}
               />
@@ -221,8 +223,8 @@ function FileRow({
               <ToolButton
                 tone="ghost"
                 size="sm"
-                aria-label={`Preparar ${entry.path}`}
-                title="Preparar"
+                aria-label={t("changes.stageFile", { path: entry.path })}
+                title={t("changes.stage")}
                 icon={<Plus className="size-3" />}
                 onClick={stage}
               />
@@ -230,8 +232,8 @@ function FileRow({
             <ToolButton
               tone="danger"
               size="sm"
-              aria-label={`Descartar ${entry.path}`}
-              title="Descartar"
+              aria-label={t("changes.discardFile", { path: entry.path })}
+              title={t("changes.discard")}
               icon={<Trash2 className="size-3" />}
               onClick={() => setArming(true)}
             />
@@ -265,7 +267,7 @@ function Group({
     <section>
       <header className="flex items-center gap-2 px-2 py-1.5">
         <SectionLabel className={group === "conflicted" ? "text-destructive" : undefined}>
-          {GROUP_TITLE[group]}
+          {t(GROUP_TITLE[group])}
         </SectionLabel>
         <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{entries.length}</span>
         <span className="flex-1" />
@@ -276,7 +278,7 @@ function Group({
             icon={<Minus className="size-3" />}
             onClick={() => void doUnstage(paths)}
           >
-            Despreparar tudo
+            {t("changes.unstageAll")}
           </ToolButton>
         ) : (
           <ToolButton
@@ -285,7 +287,7 @@ function Group({
             icon={<Plus className="size-3" />}
             onClick={() => void doStage(paths)}
           >
-            Preparar tudo
+            {t("changes.stageAll")}
           </ToolButton>
         )}
       </header>
@@ -344,7 +346,7 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
         <textarea
           value={message}
           rows={3}
-          placeholder={amend ? "Nova mensagem (vazio mantem a original)" : "Mensagem do commit"}
+          placeholder={amend ? t("commit.placeholder.amend") : t("commit.placeholder")}
           onChange={(e) => setCommitDraft({ message: e.target.value })}
           onKeyDown={(e) => {
             if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
@@ -363,7 +365,7 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
             "pointer-events-none absolute right-2 bottom-1.5 font-mono text-[10px] tabular-nums",
             overLimit ? "text-warning" : "text-muted-foreground",
           )}
-          title={`Primeira linha: ${firstLine.length} de ${SUBJECT_LIMIT} caracteres recomendados`}
+          title={t("commit.subjectCounter", { length: firstLine.length, limit: SUBJECT_LIMIT })}
         >
           {firstLine.length}/{SUBJECT_LIMIT}
         </span>
@@ -372,7 +374,7 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
       {overLimit && (
         <p className="flex items-center gap-1.5 text-[11px] text-warning">
           <AlertTriangle className="size-3" />
-          A primeira linha passou de {SUBJECT_LIMIT} caracteres — ela e o assunto do commit.
+          {t("commit.subjectTooLong", { limit: SUBJECT_LIMIT })}
         </p>
       )}
 
@@ -396,8 +398,8 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
         <span className="flex-1" />
         <span className="text-[11px] text-muted-foreground">
           {conflicts > 0
-            ? `${plural(conflicts, "conflito", "conflitos")} por resolver`
-            : plural(stagedCount, "arquivo preparado", "arquivos preparados")}
+            ? t("changes.conflictsLeft", { count: conflicts })
+            : t("changes.staged", { count: stagedCount })}
         </span>
         <MultiStateButton
           state={state}
@@ -412,10 +414,16 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
                 : "bg-primary text-primary-foreground"
           }
           pillClassName="rounded-md px-3 py-1.5 text-xs font-medium"
-          announce={`Commit: ${state}`}
-          aria-label="Criar commit"
+          announce={`${t("commit.button")}: ${state}`}
+          aria-label={t("commit.button.label")}
         >
-          {state === "loading" ? "Commitando…" : state === "ok" ? "Commitado" : state === "error" ? "Falhou" : "Commit"}
+          {state === "loading"
+            ? t("commit.button.loading")
+            : state === "ok"
+              ? t("commit.button.ok")
+              : state === "error"
+                ? t("commit.button.error")
+                : t("commit.button")}
         </MultiStateButton>
       </div>
     </div>
@@ -441,7 +449,7 @@ export function StatusPanel({ className }: PanelProps) {
   const clean = !status || status.clean || (status.entries.length === 0 && !loading);
 
   return (
-    <section className={cn("flex flex-col", className)} aria-label="Alteracoes da arvore de trabalho">
+    <section className={cn("flex flex-col", className)} aria-label={t("changes.label")}>
       {/* Sem rotulo "Alteracoes": quem nomeia este painel agora e a aba do
           rodape. Aqui fica so o que a aba nao tem — a branch e o upstream. */}
       <header className="flex items-center gap-2 border-b border-border px-3 py-1.5">
@@ -458,7 +466,7 @@ export function StatusPanel({ className }: PanelProps) {
           </span>
         )}
         <span className="text-[11px] text-muted-foreground">
-          {plural(status?.entries.length ?? 0, "arquivo alterado", "arquivos alterados")}
+          {t("changes.filesChanged", { count: status?.entries.length ?? 0 })}
         </span>
       </header>
 
@@ -469,10 +477,10 @@ export function StatusPanel({ className }: PanelProps) {
               <Check className="size-6 text-success" />
             </StaggerRevealItem>
             <StaggerRevealHeadline as="h3" className="font-heading text-sm font-medium text-foreground">
-              Arvore de trabalho limpa
+              {t("changes.clean.title")}
             </StaggerRevealHeadline>
             <StaggerRevealItem as="p" className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-              Nada para preparar. Altere um arquivo e ele aparece aqui assim que o watcher do .git avisar.
+              {t("changes.clean.body")}
             </StaggerRevealItem>
           </StaggerReveal>
         ) : (

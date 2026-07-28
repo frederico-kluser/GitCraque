@@ -16,6 +16,7 @@
  * Nao existe caminho neste arquivo que exiba markdown sem passar pelas duas.
  */
 import { useMemo } from "react";
+import { t } from "@/i18n";
 import { markdownToSafeHtml } from "./markdown.ts";
 import { PROSE } from "./prose.ts";
 import { sanitizeHtml } from "./sanitize.ts";
@@ -46,7 +47,7 @@ export function MarkdownView({ source, truncated }: MarkdownViewProps) {
   if (error) {
     return (
       <div className="p-3">
-        <Notice tone="error" title="Nao foi possivel renderizar com seguranca">
+        <Notice tone="error" title={t("markdown.error.title")}>
           {error}
         </Notice>
       </div>
@@ -56,8 +57,8 @@ export function MarkdownView({ source, truncated }: MarkdownViewProps) {
   return (
     <div className="p-4">
       {truncated ? (
-        <Notice tone="warning" title="Documento cortado" className="mb-4">
-          O backend enviou so o inicio do arquivo — o fim do markdown nao esta aqui.
+        <Notice tone="warning" title={t("markdown.truncated.title")} className="mb-4">
+          {t("markdown.truncated.body")}
         </Notice>
       ) : null}
       {source.trim() ? (
@@ -70,7 +71,7 @@ export function MarkdownView({ source, truncated }: MarkdownViewProps) {
           dangerouslySetInnerHTML={{ __html: html ?? "" }}
         />
       ) : (
-        <Notice title="Arquivo vazio">Nada para formatar.</Notice>
+        <Notice title={t("markdown.empty.title")}>{t("markdown.empty.body")}</Notice>
       )}
     </div>
   );

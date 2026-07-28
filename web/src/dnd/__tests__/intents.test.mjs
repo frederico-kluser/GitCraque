@@ -5,6 +5,10 @@
  *
  * `intents.ts` nao tem um unico import de RUNTIME (so `import type`), entao o
  * Node roda o TypeScript direto com type stripping — sem bundler, sem alias.
+ * E por isso que o TRADUTOR chega pelo contexto: o motor nao pode importar o
+ * i18n. O teste monta o dele a partir do catalogo ingles, que tambem e um
+ * modulo sem import de runtime — as assercoes continuam sobre texto de verdade,
+ * nao sobre chaves cruas.
  *
  * A ultima suite e a que mais importa: ela confere, LENDO `web/src/lib/api.ts`,
  * que todo `endpoint` que o motor emite existe de verdade e que todo campo de
@@ -19,6 +23,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { INTENT_ENDPOINTS, resolveDragIntent } from "../intents.ts";
+import { createTranslator } from "../../i18n/translate.ts";
+import { en } from "../../i18n/locales/en.ts";
+
+const translate = createTranslator(en);
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const API_FILE = path.resolve(HERE, "../../lib/api.ts");
@@ -63,6 +71,7 @@ const ctx = (branches = ["main", "feature", "outra"], headBranch = "main") => ({
     stashes: [],
   },
   headBranch,
+  t: translate,
 });
 
 /* ------------------------------------------------------------------ */

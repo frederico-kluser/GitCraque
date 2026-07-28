@@ -27,6 +27,7 @@ import {
   useMotionUITheme,
   useMotionUITransition,
 } from "@/components/motion-ui/ui-theme";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
 /* ------------------------------------------------------------------ */
@@ -162,7 +163,7 @@ export function useLingering<T>(value: T | null): T | null {
 
 export function CommandPreview({
   argv,
-  label = "Comando",
+  label,
   className,
 }: {
   argv: string[];
@@ -173,12 +174,14 @@ export function CommandPreview({
   return (
     <div className={cn("overflow-hidden rounded-md border border-border bg-surface-inset", className)}>
       <div className="flex items-center justify-between gap-2 border-b border-border px-3 py-1.5">
-        <span className="text-[0.7rem] uppercase tracking-wide text-muted-foreground">{label}</span>
+        <span className="text-[0.7rem] uppercase tracking-wide text-muted-foreground">
+          {label ?? t("common.command")}
+        </span>
         <CopyButton
           value={text}
           variant="icon"
-          label="Copiar comando"
-          copiedLabel="Comando copiado"
+          label={t("common.copyCommand")}
+          copiedLabel={t("common.commandCopied")}
           className="h-7 w-7"
         />
       </div>
@@ -447,7 +450,7 @@ export function RefChip({ children, mono }: { children: ReactNode; mono?: boolea
 export function HoldHint({ id, children }: { id: string; children?: ReactNode }) {
   return (
     <p id={id} className="text-xs text-muted-foreground">
-      {children ?? "Segure o botao para confirmar. Solte antes do fim para cancelar."}
+      {children ?? t("common.holdToConfirm")}
     </p>
   );
 }

@@ -23,6 +23,7 @@ import type {
   StatusPayload,
   WorktreesPayload,
 } from "@/types/git";
+import { getLocale } from "@/i18n";
 
 const BASE = "/api";
 
@@ -41,10 +42,21 @@ export class ApiRequestError extends Error {
   }
 }
 
+/**
+ * ACRESCENTADO (aditivo — nenhuma rota mudou): o idioma vai em TODA requisicao.
+ *
+ * O backend tem catalogo proprio de erro (`server/src/i18n.mjs`) e escolhe a
+ * lingua por requisicao. Sem este cabecalho ele cairia no `accept-language` do
+ * navegador, que nao sabe da escolha feita no seletor da interface.
+ */
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
-    headers: init?.body ? { "content-type": "application/json" } : undefined,
     ...init,
+    headers: {
+      ...(init?.body ? { "content-type": "application/json" } : {}),
+      "x-gitcraque-lang": getLocale(),
+      ...init?.headers,
+    },
   });
   const text = await res.text();
   let body: unknown = null;

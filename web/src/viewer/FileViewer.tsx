@@ -20,12 +20,14 @@ import {
   StaggerRevealItem,
 } from "@/components/motion-ui/stagger-reveal";
 import { useMotionUITheme, useMotionUITransition } from "@/components/motion-ui/ui-theme";
+import { formatBytes, t } from "@/i18n";
+import type { MessageKey } from "@/i18n";
 import { cn, short } from "@/lib/utils";
 import { isMarkdownPath, type OpenFile } from "@/state/store";
 import { countChanges, DiffView, pickPatch } from "./DiffView.tsx";
 import { MarkdownView } from "./MarkdownView.tsx";
 import { CloseIcon, CodeSkeleton, IconButton, Meta, Notice } from "./parts.tsx";
-import { formatBytes, RawView, toLines } from "./RawView.tsx";
+import { RawView, toLines } from "./RawView.tsx";
 import { useDiffResource, useFileContentResource } from "./useFileResource.ts";
 
 /* ------------------------------------------------------------------ */
@@ -34,10 +36,10 @@ import { useDiffResource, useFileContentResource } from "./useFileResource.ts";
 
 export type ViewerMode = "diff" | "markdown" | "raw";
 
-const MODE_LABEL: Record<ViewerMode, string> = {
-  diff: "Diff",
-  markdown: "Formatado",
-  raw: "Cru",
+const MODE_LABEL: Record<ViewerMode, MessageKey> = {
+  diff: "viewer.mode.diff",
+  markdown: "viewer.mode.markdown",
+  raw: "viewer.mode.raw",
 };
 
 /** Diff e sempre o padrao; "Formatado" so existe quando o arquivo e markdown. */
@@ -65,7 +67,7 @@ interface HeaderProps {
 
 function Header({ file, mode, modes, onMode, summary, onClose }: HeaderProps) {
   const { dir, base } = splitPath(file.path);
-  const origem = file.hash ? short(file.hash) : "working tree";
+  const origem = file.hash ? short(file.hash) : t("viewer.workingTree");
 
   return (
     <header className="shrink-0 border-b border-border bg-card">
@@ -74,14 +76,14 @@ function Header({ file, mode, modes, onMode, summary, onClose }: HeaderProps) {
           <span className="text-muted-foreground">{dir}</span>
           <span className="font-medium text-foreground">{base}</span>
         </p>
-        <Meta title={file.hash ?? "arquivo da working tree"}>{origem}</Meta>
+        <Meta title={file.hash ?? t("viewer.workingTreeTitle")}>{origem}</Meta>
         <CopyButton
           variant="icon"
           value={file.path}
-          label="Copiar o caminho do arquivo"
-          copiedLabel="Caminho copiado"
+          label={t("viewer.copyPath")}
+          copiedLabel={t("viewer.pathCopied")}
         />
-        <IconButton label="Fechar o visualizador" onClick={onClose}>
+        <IconButton label={t("viewer.close")} onClick={onClose}>
           <CloseIcon />
         </IconButton>
       </div>
@@ -90,12 +92,12 @@ function Header({ file, mode, modes, onMode, summary, onClose }: HeaderProps) {
         <SegmentedToggle
           value={mode}
           onChange={onMode}
-          ariaLabel="Modo de exibicao do arquivo"
+          ariaLabel={t("viewer.mode.aria")}
           className="p-0.5"
         >
           {modes.map((option) => (
             <SegmentedToggleOption key={option} value={option} className="px-3 py-1 text-xs">
-              {MODE_LABEL[option]}
+              {t(MODE_LABEL[option])}
             </SegmentedToggleOption>
           ))}
         </SegmentedToggle>
@@ -115,11 +117,10 @@ function EmptyState() {
   return (
     <StaggerReveal className="flex h-full flex-col items-center justify-center gap-2 p-6 text-center">
       <StaggerRevealHeadline as="h2" className="text-sm font-medium text-foreground">
-        Nenhum arquivo aberto
+        {t("viewer.empty.title")}
       </StaggerRevealHeadline>
       <StaggerRevealItem as="p" className="max-w-sm text-xs text-muted-foreground">
-        Escolha um arquivo no detalhe do commit ou no painel de alteracoes. Ele aparece aqui em
-        diff, formatado (quando for markdown) e cru.
+        {t("viewer.empty.body")}
       </StaggerRevealItem>
     </StaggerReveal>
   );
@@ -192,7 +193,7 @@ export function FileViewer({ file, onClose, onMenu, className }: FileViewerProps
   return (
     <section
       className={cn("flex h-full min-h-0 flex-col bg-card", className)}
-      aria-label={`Visualizador de ${file.path}`}
+      aria-label={t("viewer.label", { path: file.path })}
       /* A selecao e lida NA HORA do clique: o menu precisa saber se ha um trecho
          marcado para oferecer "copiar a selecao" — e o unico uso real que o menu
          do navegador tinha aqui. */
@@ -207,7 +208,7 @@ export function FileViewer({ file, onClose, onMenu, className }: FileViewerProps
                 selection: window.getSelection()?.toString() ?? "",
                 mode: activeMode,
                 modes,
-                modeLabel: (m) => MODE_LABEL[m],
+                modeLabel: (m) => t(MODE_LABEL[m]),
                 onMode: setMode,
               });
             }
@@ -260,7 +261,7 @@ export function FileViewer({ file, onClose, onMenu, className }: FileViewerProps
 /* ------------------------------------------------------------------ */
 
 const errorTitle = (mode: ViewerMode) =>
-  mode === "diff" ? "Nao foi possivel ler o patch" : "Nao foi possivel ler o arquivo";
+  mode === "diff" ? t("viewer.error.patch") : t("viewer.error.file");
 
 /** A linha de metadados ao lado do toggle, dependente do modo. */
 function buildSummary(
@@ -275,5 +276,8 @@ function buildSummary(
   }
   if (!content) return null;
   if (content.binary) return formatBytes(content.size);
-  return `${toLines(content.content).length} linhas · ${formatBytes(content.size)}`;
+  return t("viewer.summary.lines", {
+    count: toLines(content.content).length,
+    size: formatBytes(content.size),
+  });
 }

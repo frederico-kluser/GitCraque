@@ -11,6 +11,10 @@
  *    indicador de operacao, emite o toast com o argv e dispara o refresh.
  *
  * Nenhuma rota e inventada aqui: tudo sai de `@/lib/api`.
+ *
+ * Texto: `t()` e chamado NA HORA de montar cada dialogo, nunca em constante de
+ * modulo — senao o rotulo congelaria no idioma que valia quando o arquivo foi
+ * carregado.
  */
 import { api } from "@/lib/api";
 import {
@@ -25,6 +29,7 @@ import {
 import { openDialog } from "@/dialogs";
 import { askConfirm } from "@/hooks";
 import type { ConfirmField } from "@/hooks";
+import { t } from "@/i18n";
 import type { CommitRef, PendingOperationKind, Remote, Worktree } from "@/types/git";
 import { short, truncate } from "@/lib/utils";
 
@@ -103,9 +108,9 @@ async function writeClipboard(text: string): Promise<boolean> {
 /* ------------------------------------------------------------------ */
 
 export const doFetch = () =>
-  runOperation("Fetch", () => api.fetch({ all: true, prune: true }), {
+  runOperation(t("action.fetch"), () => api.fetch({ all: true, prune: true }), {
     refresh: "refs",
-    successMessage: "Fetch concluido",
+    successMessage: t("action.fetch.done"),
   });
 
 /** Fetch de UM remoto — o menu do remoto no rail. */
@@ -116,8 +121,8 @@ export const doFetchRemote = (remote: string) =>
   });
 
 export const doPull = (rebase = false) =>
-  runOperation(rebase ? "Pull --rebase" : "Pull", () => api.pull({ rebase }), {
-    successMessage: rebase ? "Pull --rebase concluido" : "Pull concluido",
+  runOperation(rebase ? t("action.pullRebase") : t("action.pull"), () => api.pull({ rebase }), {
+    successMessage: rebase ? t("action.pullRebase.done") : t("action.pull.done"),
   });
 
 /**
@@ -131,31 +136,49 @@ export function openPushDialog(preset: { remote?: string; branch?: string } = {}
 
   if (remotes.length === 0) {
     openAddRemote();
-    toast("warning", "Nenhum remoto configurado", "Adicione um origin antes de dar push.");
+    toast("warning", t("action.push.noRemote.title"), t("action.push.noRemote.body"));
     return;
   }
 
   askConfirm({
-    title: "Push",
-    description: `Envia ${branch || "a branch atual"} para o remoto escolhido.`,
+    title: t("action.push.title"),
+    description: t("action.push.description", { branch: branch || t("action.push.currentBranch") }),
     preview: ["git", "push", preset.remote ?? defaultRemote(), branch].filter(Boolean),
-    confirmLabel: "Push",
+    confirmLabel: t("action.push.confirm"),
     fields: [
-      { kind: "select", name: "remote", label: "Remoto", value: preset.remote ?? defaultRemote(), options: remotes },
-      { kind: "text", name: "branch", label: "Branch", value: branch, placeholder: "branch a enviar" },
-      { kind: "toggle", name: "setUpstream", label: "--set-upstream", value: false, hint: "grava o upstream da branch" },
-      { kind: "toggle", name: "tags", label: "--tags", value: false, hint: "envia tambem as tags" },
+      {
+        kind: "select",
+        name: "remote",
+        label: t("action.push.field.remote"),
+        value: preset.remote ?? defaultRemote(),
+        options: remotes,
+      },
+      {
+        kind: "text",
+        name: "branch",
+        label: t("action.push.field.branch"),
+        value: branch,
+        placeholder: t("action.push.field.branch.placeholder"),
+      },
+      {
+        kind: "toggle",
+        name: "setUpstream",
+        label: "--set-upstream",
+        value: false,
+        hint: t("action.push.field.setUpstream.hint"),
+      },
+      { kind: "toggle", name: "tags", label: "--tags", value: false, hint: t("action.push.field.tags.hint") },
       {
         kind: "toggle",
         name: "forceWithLease",
         label: "--force-with-lease",
         value: false,
-        hint: "reescreve o remoto; so use apos rebase/squash",
+        hint: t("action.push.field.force.hint"),
       },
     ],
     run: (values) =>
       runOperation(
-        "Push",
+        t("action.push.title"),
         () =>
           api.push({
             remote: text(values, "remote") || defaultRemote(),
@@ -164,7 +187,7 @@ export function openPushDialog(preset: { remote?: string; branch?: string } = {}
             tags: flag(values, "tags"),
             forceWithLease: flag(values, "forceWithLease"),
           }),
-        { refresh: "refs", successMessage: "Push concluido" },
+        { refresh: "refs", successMessage: t("action.push.done") },
       ),
   });
 }
@@ -187,33 +210,48 @@ export const doOpenRepository = (path: string) => openRepository(path);
 
 export function openCreateBranch(startPoint?: string) {
   askConfirm({
-    title: "Nova branch",
+    title: t("action.branch.new"),
     description: startPoint
-      ? `Cria uma branch a partir de ${short(startPoint)}.`
-      : "Cria uma branch a partir do HEAD atual.",
+      ? t("action.branch.new.from", { ref: short(startPoint) })
+      : t("action.branch.new.fromHead"),
     preview: ["git", "branch", "<nome>", startPoint ?? ""].filter(Boolean),
-    confirmLabel: "Criar",
+    confirmLabel: t("common.create"),
     fields: [
-      { kind: "text", name: "name", label: "Nome", placeholder: "feature/minha-branch", required: true },
-      { kind: "text", name: "startPoint", label: "Ponto de partida", value: startPoint ?? "", placeholder: "HEAD" },
-      { kind: "toggle", name: "checkout", label: "Fazer checkout depois", value: true },
+      {
+        kind: "text",
+        name: "name",
+        label: t("action.branch.field.name"),
+        placeholder: t("action.branch.new.namePlaceholder"),
+        required: true,
+      },
+      {
+        kind: "text",
+        name: "startPoint",
+        label: t("action.branch.field.startPoint"),
+        value: startPoint ?? "",
+        placeholder: "HEAD",
+      },
+      { kind: "toggle", name: "checkout", label: t("action.branch.field.checkout"), value: true },
     ],
     run: (values) =>
       runOperation(
-        "Criar branch",
+        t("action.branch.create"),
         () =>
           api.createBranch({
             name: text(values, "name"),
             startPoint: text(values, "startPoint") || undefined,
             checkout: flag(values, "checkout"),
           }),
-        { refresh: "refs", successMessage: `Branch ${text(values, "name")} criada` },
+        { refresh: "refs", successMessage: t("action.branch.created", { name: text(values, "name") }) },
       ),
   });
 }
 
 export const doCheckout = (ref: string) =>
-  runOperation("Checkout", () => api.checkout({ ref }), { refresh: "head", successMessage: `Em ${ref}` });
+  runOperation(t("action.checkout"), () => api.checkout({ ref }), {
+    refresh: "head",
+    successMessage: t("action.checkout.done", { ref }),
+  });
 
 /**
  * Duplo clique num chip de referencia da View Tree: troca para aquela branch.
@@ -233,14 +271,14 @@ export function doActivateRef(refEntry: CommitRef) {
   if (refEntry.kind === "localBranch") {
     const branch = refs?.branches.find((b) => b.name === refEntry.name);
     if (branch?.isHead) {
-      toast("info", `Voce ja esta em ${refEntry.name}`);
+      toast("info", t("action.checkout.already", { name: refEntry.name }));
       return;
     }
     if (branch?.checkedOutIn) {
       toast(
         "warning",
-        `${refEntry.name} esta em uso`,
-        `A branch esta checada na worktree ${branch.checkedOutIn}. Clique nela em Worktrees para ir ate la — trocar de worktree nao faz checkout.`,
+        t("action.checkout.inUse", { name: refEntry.name }),
+        t("action.checkout.inUse.body", { worktree: branch.checkedOutIn }),
       );
       return;
     }
@@ -258,9 +296,12 @@ export function doActivateRef(refEntry: CommitRef) {
       return;
     }
     void runOperation(
-      "Checkout",
+      t("action.checkout"),
       () => api.checkout({ ref: refEntry.name, createBranch: local }),
-      { refresh: "refs", successMessage: `Em ${local}, rastreando ${refEntry.name}` },
+      {
+        refresh: "refs",
+        successMessage: t("action.checkout.tracking", { branch: local, remote: refEntry.name }),
+      },
     );
   }
 }
@@ -331,13 +372,13 @@ export function openRebaseOnto(onto: string) {
 
 export function openRenameBranch(from: string) {
   askConfirm({
-    title: `Renomear ${from}`,
-    description: "Renomeia a branch local. O upstream continua apontando para o mesmo remoto.",
+    title: t("action.branch.rename.title", { name: from }),
+    description: t("action.branch.rename.description"),
     preview: ["git", "branch", "-m", from, "<novo-nome>"],
-    confirmLabel: "Renomear",
-    fields: [{ kind: "text", name: "to", label: "Novo nome", value: from, required: true }],
+    confirmLabel: t("action.branch.rename.confirm"),
+    fields: [{ kind: "text", name: "to", label: t("action.branch.rename.field"), value: from, required: true }],
     run: (values) =>
-      runOperation("Renomear branch", () => api.renameBranch({ from, to: text(values, "to") }), {
+      runOperation(t("action.branch.rename.op"), () => api.renameBranch({ from, to: text(values, "to") }), {
         refresh: "refs",
       }),
   });
@@ -346,19 +387,25 @@ export function openRenameBranch(from: string) {
 /** Destrutivo: exige hold. */
 export function openDeleteBranchLocal(name: string) {
   askConfirm({
-    title: "Deletar Branch (Local)",
-    description: `Apaga a branch local ${name}. Commits so alcancaveis por ela ficam orfaos.`,
+    title: t("action.branch.deleteLocal.title"),
+    description: t("action.branch.deleteLocal.description", { name }),
     preview: ["git", "branch", "-d", name],
     destructive: true,
-    confirmLabel: "Deletar local",
+    confirmLabel: t("action.branch.deleteLocal.confirm"),
     fields: [
-      { kind: "toggle", name: "force", label: "-D (forcar mesmo sem merge)", value: false, hint: "usa -D em vez de -d" },
+      {
+        kind: "toggle",
+        name: "force",
+        label: t("action.branch.deleteLocal.force"),
+        value: false,
+        hint: t("action.branch.deleteLocal.force.hint"),
+      },
     ],
     run: (values) =>
       runOperation(
-        "Deletar branch local",
+        t("action.branch.deleteLocal.op"),
         () => api.deleteBranchLocal({ name, force: flag(values, "force") }),
-        { refresh: "refs", successMessage: `Branch ${name} apagada` },
+        { refresh: "refs", successMessage: t("action.branch.deleteLocal.done", { name }) },
       ),
   });
 }
@@ -366,15 +413,15 @@ export function openDeleteBranchLocal(name: string) {
 /** Destrutivo: exige hold. */
 export function openDeleteBranchRemote(remote: string, name: string) {
   askConfirm({
-    title: "Deletar Branch (Origin)",
-    description: `Apaga ${name} em ${remote}. A operacao atinge quem mais usa o repositorio.`,
+    title: t("action.branch.deleteRemote.title"),
+    description: t("action.branch.deleteRemote.description", { name, remote }),
     preview: ["git", "push", remote, "--delete", name],
     destructive: true,
-    confirmLabel: `Deletar em ${remote}`,
+    confirmLabel: t("action.branch.deleteRemote.confirm", { remote }),
     run: () =>
-      runOperation("Deletar branch remota", () => api.deleteBranchRemote({ remote, name }), {
+      runOperation(t("action.branch.deleteRemote.op"), () => api.deleteBranchRemote({ remote, name }), {
         refresh: "refs",
-        successMessage: `${remote}/${name} apagada`,
+        successMessage: t("action.branch.deleteRemote.done", { remote, name }),
       }),
   });
 }
@@ -506,18 +553,23 @@ export function openResetTo(hash: string) {
 
 export function openCreateTag(ref?: string) {
   askConfirm({
-    title: "Nova tag",
-    description: ref ? `Cria uma tag em ${short(ref)}.` : "Cria uma tag no HEAD atual.",
+    title: t("action.tag.new"),
+    description: ref ? t("action.tag.new.at", { ref: short(ref) }) : t("action.tag.new.atHead"),
     preview: ["git", "tag", "<nome>", ref ?? ""].filter(Boolean),
-    confirmLabel: "Criar tag",
+    confirmLabel: t("action.tag.confirm"),
     fields: [
-      { kind: "text", name: "name", label: "Nome", placeholder: "v1.0.0", required: true },
-      { kind: "text", name: "ref", label: "Alvo", value: ref ?? "", placeholder: "HEAD" },
-      { kind: "textarea", name: "message", label: "Mensagem (deixa a tag anotada)", placeholder: "opcional" },
+      { kind: "text", name: "name", label: t("action.tag.field.name"), placeholder: "v1.0.0", required: true },
+      { kind: "text", name: "ref", label: t("action.tag.field.target"), value: ref ?? "", placeholder: "HEAD" },
+      {
+        kind: "textarea",
+        name: "message",
+        label: t("action.tag.field.message"),
+        placeholder: t("common.optional"),
+      },
     ],
     run: (values) =>
       runOperation(
-        "Criar tag",
+        t("action.tag.op"),
         () =>
           api.createTag({
             name: text(values, "name"),
@@ -531,26 +583,29 @@ export function openCreateTag(ref?: string) {
 
 export function openDeleteTag(name: string, remotes: string[] = []) {
   askConfirm({
-    title: `Deletar tag ${name}`,
-    description: "Apaga a tag local; opcionalmente tambem no remoto.",
+    title: t("action.tag.delete.title", { name }),
+    description: t("action.tag.delete.description"),
     preview: ["git", "tag", "-d", name],
     destructive: true,
-    confirmLabel: "Deletar tag",
+    confirmLabel: t("action.tag.delete.confirm"),
     fields:
       remotes.length > 0
         ? [
             {
               kind: "select",
               name: "remote",
-              label: "Apagar tambem em",
+              label: t("action.tag.delete.field"),
               value: "",
-              options: [{ value: "", label: "so local" }, ...remotes.map((r) => ({ value: r, label: r }))],
+              options: [
+                { value: "", label: t("action.tag.delete.localOnly") },
+                ...remotes.map((r) => ({ value: r, label: r })),
+              ],
             } satisfies ConfirmField,
           ]
         : undefined,
     run: (values) =>
       runOperation(
-        "Deletar tag",
+        t("action.tag.delete.op"),
         () => api.deleteTag({ name, remote: text(values, "remote") || undefined }),
         { refresh: "refs" },
       ),
@@ -563,23 +618,24 @@ export function openDeleteTag(name: string, remotes: string[] = []) {
 
 export function openAddRemote(name = "origin") {
   askConfirm({
-    title: "Adicionar Origin",
-    description: "Registra um remoto novo. Url https usa o trampolim de credencial (GIT_ASKPASS).",
+    title: t("action.remote.add.title"),
+    description: t("action.remote.add.description"),
     preview: ["git", "remote", "add", name, "<url>"],
-    confirmLabel: "Adicionar",
+    confirmLabel: t("action.remote.add.confirm"),
     fields: [
-      { kind: "text", name: "name", label: "Nome", value: name, required: true },
+      { kind: "text", name: "name", label: t("action.remote.field.name"), value: name, required: true },
       {
         kind: "text",
         name: "url",
-        label: "Url",
-        placeholder: "https://github.com/usuario/repo.git",
+        label: t("action.remote.field.url"),
+        // Exemplo sem palavra de idioma nenhum: `org/repo` serve para os quatro.
+        placeholder: "https://github.com/org/repo.git",
         required: true,
       },
     ],
     run: (values) =>
       runOperation(
-        "Adicionar remoto",
+        t("action.remote.add.op"),
         () => api.addRemote({ name: text(values, "name"), url: text(values, "url") }),
         { refresh: "config" },
       ),
@@ -588,17 +644,17 @@ export function openAddRemote(name = "origin") {
 
 export function openEditRemoteUrl(remote: Remote) {
   askConfirm({
-    title: `Url de ${remote.name}`,
-    description: "Troca a url do remoto. Marque para alterar apenas a url de push.",
+    title: t("action.remote.url.title", { name: remote.name }),
+    description: t("action.remote.url.description"),
     preview: ["git", "remote", "set-url", remote.name, "<url>"],
-    confirmLabel: "Salvar url",
+    confirmLabel: t("action.remote.url.confirm"),
     fields: [
-      { kind: "text", name: "url", label: "Url", value: remote.fetchUrl, required: true },
-      { kind: "toggle", name: "push", label: "--push (so a url de push)", value: false },
+      { kind: "text", name: "url", label: t("action.remote.field.url"), value: remote.fetchUrl, required: true },
+      { kind: "toggle", name: "push", label: t("action.remote.url.pushOnly"), value: false },
     ],
     run: (values) =>
       runOperation(
-        "Alterar url do remoto",
+        t("action.remote.url.op"),
         () => api.setRemoteUrl({ name: remote.name, url: text(values, "url"), push: flag(values, "push") }),
         { refresh: "config" },
       ),
@@ -607,12 +663,12 @@ export function openEditRemoteUrl(remote: Remote) {
 
 export function openRemoveRemote(name: string) {
   askConfirm({
-    title: `Remover remoto ${name}`,
-    description: `Apaga o remoto e todas as refs remotas de ${name} do repositorio local.`,
+    title: t("action.remote.remove.title", { name }),
+    description: t("action.remote.remove.description", { name }),
     preview: ["git", "remote", "remove", name],
     destructive: true,
-    confirmLabel: "Remover remoto",
-    run: () => runOperation("Remover remoto", () => api.removeRemote({ name }), { refresh: "config" }),
+    confirmLabel: t("action.remote.remove.confirm"),
+    run: () => runOperation(t("action.remote.remove.op"), () => api.removeRemote({ name }), { refresh: "config" }),
   });
 }
 
@@ -629,18 +685,29 @@ export const doSwitchWorktree = (wt: Worktree | string) => switchWorktree(wt);
 
 export function openAddWorktree() {
   askConfirm({
-    title: "Adicionar worktree",
-    description: "Cria um diretorio de trabalho novo ligado a este repositorio.",
+    title: t("action.worktree.add.title"),
+    description: t("action.worktree.add.description"),
     preview: ["git", "worktree", "add", "<caminho>"],
-    confirmLabel: "Adicionar",
+    confirmLabel: t("action.worktree.add.confirm"),
     fields: [
-      { kind: "text", name: "path", label: "Caminho", placeholder: "/caminho/para/nova-worktree", required: true },
-      { kind: "text", name: "newBranch", label: "Criar branch (-b)", placeholder: "opcional" },
-      { kind: "text", name: "ref", label: "A partir de", placeholder: "HEAD" },
+      {
+        kind: "text",
+        name: "path",
+        label: t("action.worktree.field.path"),
+        placeholder: t("action.worktree.field.path.placeholder"),
+        required: true,
+      },
+      {
+        kind: "text",
+        name: "newBranch",
+        label: t("action.worktree.field.newBranch"),
+        placeholder: t("common.optional"),
+      },
+      { kind: "text", name: "ref", label: t("action.worktree.field.ref"), placeholder: "HEAD" },
     ],
     run: (values) =>
       runOperation(
-        "Adicionar worktree",
+        t("action.worktree.add.op"),
         () =>
           api.addWorktree({
             path: text(values, "path"),
@@ -654,15 +721,23 @@ export function openAddWorktree() {
 
 export function openRemoveWorktree(wt: Worktree) {
   askConfirm({
-    title: `Remover worktree ${wt.label}`,
-    description: `Desregistra ${wt.path}. O diretorio sai do disco se o git conseguir remove-lo.`,
+    title: t("action.worktree.remove.title", { label: wt.label }),
+    description: t("action.worktree.remove.description", { path: wt.path }),
     preview: ["git", "worktree", "remove", wt.path],
     destructive: true,
-    confirmLabel: "Remover worktree",
-    fields: [{ kind: "toggle", name: "force", label: "--force", value: false, hint: "remove mesmo com alteracoes" }],
+    confirmLabel: t("action.worktree.remove.confirm"),
+    fields: [
+      {
+        kind: "toggle",
+        name: "force",
+        label: "--force",
+        value: false,
+        hint: t("action.worktree.remove.force.hint"),
+      },
+    ],
     run: (values) =>
       runOperation(
-        "Remover worktree",
+        t("action.worktree.remove.op"),
         () => api.removeWorktree({ path: wt.path, force: flag(values, "force") }),
         { refresh: "all" },
       ),
@@ -671,11 +746,11 @@ export function openRemoveWorktree(wt: Worktree) {
 
 export function openPruneWorktrees() {
   askConfirm({
-    title: "Prune de worktrees",
-    description: "Remove o registro das worktrees cujo diretorio nao existe mais.",
+    title: t("action.worktree.prune.title"),
+    description: t("action.worktree.prune.description"),
     preview: ["git", "worktree", "prune"],
-    confirmLabel: "Fazer prune",
-    run: () => runOperation("Prune de worktrees", () => api.pruneWorktrees(), { refresh: "all" }),
+    confirmLabel: t("action.worktree.prune.confirm"),
+    run: () => runOperation(t("action.worktree.prune.op"), () => api.pruneWorktrees(), { refresh: "all" }),
   });
 }
 
@@ -685,17 +760,22 @@ export function openPruneWorktrees() {
 
 export function openStashPush() {
   askConfirm({
-    title: "Stash",
-    description: "Guarda as alteracoes da arvore de trabalho numa pilha.",
+    title: t("action.stash.title"),
+    description: t("action.stash.description"),
     preview: ["git", "stash", "push"],
-    confirmLabel: "Guardar",
+    confirmLabel: t("action.stash.confirm"),
     fields: [
-      { kind: "text", name: "message", label: "Mensagem", placeholder: "opcional" },
-      { kind: "toggle", name: "includeUntracked", label: "-u (incluir nao rastreados)", value: false },
+      {
+        kind: "text",
+        name: "message",
+        label: t("action.stash.field.message"),
+        placeholder: t("common.optional"),
+      },
+      { kind: "toggle", name: "includeUntracked", label: t("action.stash.field.untracked"), value: false },
     ],
     run: (values) =>
       runOperation(
-        "Stash",
+        t("action.stash.title"),
         () =>
           api.stashPush({
             message: text(values, "message") || undefined,
@@ -707,27 +787,27 @@ export function openStashPush() {
 }
 
 export const doStashApply = (ref: string) =>
-  runOperation("Aplicar stash", () => api.stashApply({ ref }), { refresh: "all" });
+  runOperation(t("action.stash.apply.op"), () => api.stashApply({ ref }), { refresh: "all" });
 
 export function openStashPop(ref: string) {
   askConfirm({
-    title: `Pop de ${ref}`,
-    description: "Aplica o stash e o remove da pilha. Se der conflito, o stash some mesmo assim.",
+    title: t("action.stash.pop.title", { ref }),
+    description: t("action.stash.pop.description"),
     preview: ["git", "stash", "pop", ref],
     destructive: true,
-    confirmLabel: "Pop",
-    run: () => runOperation("Pop do stash", () => api.stashApply({ ref, pop: true }), { refresh: "all" }),
+    confirmLabel: t("action.stash.pop.confirm"),
+    run: () => runOperation(t("action.stash.pop.op"), () => api.stashApply({ ref, pop: true }), { refresh: "all" }),
   });
 }
 
 export function openStashDrop(ref: string) {
   askConfirm({
-    title: `Descartar ${ref}`,
-    description: "Apaga o stash. Nao ha desfazer.",
+    title: t("action.stash.drop.title", { ref }),
+    description: t("action.stash.drop.description"),
     preview: ["git", "stash", "drop", ref],
     destructive: true,
-    confirmLabel: "Descartar stash",
-    run: () => runOperation("Descartar stash", () => api.stashDrop({ ref }), { refresh: "all" }),
+    confirmLabel: t("action.stash.drop.confirm"),
+    run: () => runOperation(t("action.stash.drop.op"), () => api.stashDrop({ ref }), { refresh: "all" }),
   });
 }
 
@@ -736,16 +816,22 @@ export function openStashDrop(ref: string) {
 /* ------------------------------------------------------------------ */
 
 export const doStage = (paths: string[]) =>
-  runOperation("Preparar", () => api.stage({ paths }), { refresh: "index", successMessage: "Preparado" });
+  runOperation(t("action.stage.op"), () => api.stage({ paths }), {
+    refresh: "index",
+    successMessage: t("action.stage.done"),
+  });
 
 export const doUnstage = (paths: string[]) =>
-  runOperation("Despreparar", () => api.unstage({ paths }), { refresh: "index", successMessage: "Despreparado" });
+  runOperation(t("action.unstage.op"), () => api.unstage({ paths }), {
+    refresh: "index",
+    successMessage: t("action.unstage.done"),
+  });
 
 /** Sem dialogo: o `HoldToConfirmButton` da propria linha ja e a confirmacao. */
 export const doDiscard = (paths: string[]) =>
-  runOperation("Descartar alteracoes", () => api.discard({ paths }), {
+  runOperation(t("action.discard.op"), () => api.discard({ paths }), {
     refresh: "worktree",
-    successMessage: "Alteracoes descartadas",
+    successMessage: t("action.discard.done"),
   });
 
 /**
@@ -769,7 +855,10 @@ export function openDiscard(paths: string[]) {
 }
 
 export const doCommit = (body: { message: string; amend?: boolean; signoff?: boolean }) =>
-  runOperation("Commit", () => api.doCommit(body), { refresh: "all", successMessage: "Commit criado" });
+  runOperation(t("action.commit.op"), () => api.doCommit(body), {
+    refresh: "all",
+    successMessage: t("action.commit.done"),
+  });
 
 /* ------------------------------------------------------------------ */
 /* Squash — GIT_SEQUENCE_EDITOR + proxy-editor                         */
@@ -777,30 +866,34 @@ export const doCommit = (body: { message: string; amend?: boolean; signoff?: boo
 
 export function openSquash(commits: string[]) {
   if (commits.length < 2) {
-    toast("warning", "Squash precisa de dois ou mais commits", "Selecione um intervalo no grafo.");
+    toast("warning", t("action.squash.needsTwo"), t("action.squash.needsTwo.body"));
     return;
   }
   askConfirm({
-    title: `Squash de ${commits.length} commits`,
-    description:
-      "Reescreve o historico com `git rebase -i` e GIT_SEQUENCE_EDITOR. O commit mais antigo permanece `pick`; os demais viram `squash`.",
+    title: t("action.squash.title", { count: commits.length }),
+    description: t("action.squash.description"),
     preview: ["git", "rebase", "-i", `${short(commits[commits.length - 1])}^`],
     destructive: true,
-    confirmLabel: "Squash",
+    confirmLabel: t("action.squash.confirm"),
     fields: [
-      { kind: "textarea", name: "message", label: "Mensagem final", placeholder: "vazio concatena as originais" },
-      { kind: "toggle", name: "fixup", label: "fixup (descarta as mensagens)", value: false },
+      {
+        kind: "textarea",
+        name: "message",
+        label: t("action.squash.field.message"),
+        placeholder: t("action.squash.field.message.placeholder"),
+      },
+      { kind: "toggle", name: "fixup", label: t("action.squash.field.fixup"), value: false },
     ],
     run: (values) =>
       runOperation(
-        "Squash",
+        t("action.squash.confirm"),
         () =>
           api.squash({
             commits,
             message: text(values, "message") || undefined,
             fixup: flag(values, "fixup"),
           }),
-        { refresh: "all", successMessage: "Squash concluido" },
+        { refresh: "all", successMessage: t("action.squash.done") },
       ),
   });
 }
@@ -810,19 +903,19 @@ export function openSquash(commits: string[]) {
 /* ------------------------------------------------------------------ */
 
 export const doContinue = (kind: PendingOperationKind) =>
-  runOperation(`Continuar ${kind}`, () => api.continueOp({ kind: normalizeKind(kind) }), {
+  runOperation(t("action.continue.op", { kind }), () => api.continueOp({ kind: normalizeKind(kind) }), {
     refresh: "rebase-state",
   });
 
 export function openAbort(kind: PendingOperationKind) {
   askConfirm({
-    title: `Abortar ${kind}`,
-    description: "Desfaz a operacao em curso e volta o repositorio ao estado anterior.",
+    title: t("action.abort.title", { kind }),
+    description: t("action.abort.description"),
     preview: ["git", normalizeKind(kind), "--abort"],
     destructive: true,
-    confirmLabel: "Abortar",
+    confirmLabel: t("action.abort.confirm"),
     run: () =>
-      runOperation(`Abortar ${kind}`, () => api.abort({ kind: normalizeKind(kind) }), {
+      runOperation(t("action.abort.op", { kind }), () => api.abort({ kind: normalizeKind(kind) }), {
         refresh: "rebase-state",
       }),
   });

@@ -43,6 +43,8 @@ import {
   useMotionUITheme,
   useMotionUITransition,
 } from "@/components/motion-ui/ui-theme";
+import { t } from "@/i18n";
+import type { MessageKey } from "@/i18n";
 import { cn, short, truncate } from "@/lib/utils";
 import { getState, toast } from "@/state/store";
 import type {
@@ -148,37 +150,38 @@ function asDropPayload(data: unknown): DropPayload | null {
 }
 
 /* ------------------------------------------------------------------ */
-/* Texto dos anuncios (leitor de tela) — portugues                     */
+/* Texto dos anuncios (leitor de tela)                                 */
 /* ------------------------------------------------------------------ */
 
-const ENTITY_ARTICLE: Record<DragEntityType, string> = {
-  commit: "o commit",
-  branch: "o ramo",
-  remoteBranch: "o ramo remoto",
-  tag: "a tag",
-  stash: "o stash",
+/** O ARTIGO faz parte do texto traduzido: em ingles nao ha, em pt/es ha. */
+const ENTITY_ARTICLE: Record<DragEntityType, MessageKey> = {
+  commit: "dnd.entity.commit",
+  branch: "dnd.entity.branch",
+  remoteBranch: "dnd.entity.remoteBranch",
+  tag: "dnd.entity.tag",
+  stash: "dnd.entity.stash",
 };
 
-const ZONE_ARTICLE: Record<DropZoneType, string> = {
-  branch: "o ramo",
-  remoteBranch: "o ramo remoto",
-  commit: "o commit",
-  tag: "a tag",
-  trash: "a lixeira",
+const ZONE_ARTICLE: Record<DropZoneType, MessageKey> = {
+  branch: "dnd.zone.branch",
+  remoteBranch: "dnd.zone.remoteBranch",
+  commit: "dnd.zone.commit",
+  tag: "dnd.zone.tag",
+  trash: "dnd.zone.trash",
 };
 
 const describeDrag = (p: DragPayload) =>
-  `${ENTITY_ARTICLE[p.type] ?? "o item"} ${p.label}`;
+  `${t(ENTITY_ARTICLE[p.type] ?? "dnd.entity.item")} ${p.label}`;
 
 const describeDrop = (p: DropPayload) =>
-  `${ZONE_ARTICLE[p.type] ?? "o alvo"} ${p.label}`;
+  `${t(ZONE_ARTICLE[p.type] ?? "dnd.zone.target")} ${p.label}`;
 
 const screenReaderInstructions: ScreenReaderInstructions = {
-  draggable:
-    "Para arrastar com o teclado, pressione espaco ou Enter com o item focado. " +
-    "Use as setas para percorrer os alvos; a cada alvo o motor anuncia se a operacao e aceita. " +
-    "Pressione espaco ou Enter de novo para soltar, ou Escape para cancelar. " +
-    "Soltar nao executa nada: um dialogo pede a confirmacao.",
+  get draggable() {
+    // Getter: o @dnd-kit le esta propriedade a cada montagem, entao o texto
+    // acompanha a troca de idioma sem o modulo guardar uma copia velha.
+    return t("dnd.a11y.instructions");
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -206,12 +209,19 @@ export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
     useSensor(KeyboardSensor),
   );
 
-  /** Le o estado do repositorio na hora do evento — nunca uma closure velha. */
+  /**
+   * Le o estado do repositorio na hora do evento — nunca uma closure velha.
+   *
+   * O `t` vai NO CONTEXTO porque `intents.ts` e um modulo puro, sem import de
+   * runtime (e o que o deixa carregavel pelo `node --test`); ele nao pode
+   * importar o i18n sozinho.
+   */
   const resolve = useCallback((source: DragPayload, target: DropPayload) => {
     const s = getState();
     return resolveDragIntent(source, target, {
       refs: s.refs,
       headBranch: s.repo?.head.branch ?? s.refs?.head.branch ?? null,
+      t,
     });
   }, []);
 
@@ -258,31 +268,36 @@ export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
     () => ({
       onDragStart({ active }) {
         const source = asDragPayload(active.data.current);
-        return source ? `Arrastando ${describeDrag(source)}.` : undefined;
+        return source ? t("dnd.a11y.dragging", { what: describeDrag(source) }) : undefined;
       },
       onDragOver({ active, over }) {
         const source = asDragPayload(active.data.current);
         if (!source) return undefined;
         const target = over ? asDropPayload(over.data.current) : null;
-        if (!target) return `${describeDrag(source)} fora de qualquer alvo.`;
+        if (!target) return t("dnd.a11y.outside", { what: describeDrag(source) });
         const intent = resolve(source, target);
         return intent.allowed
-          ? `Sobre ${describeDrop(target)}. Aceita: ${intent.title}.`
-          : `Sobre ${describeDrop(target)}. Recusado: ${intent.reason ?? intent.description}`;
+          ? t("dnd.a11y.overAccepts", { where: describeDrop(target), title: intent.title })
+          : t("dnd.a11y.overRejects", {
+              where: describeDrop(target),
+              reason: intent.reason ?? intent.description,
+            });
       },
       onDragEnd({ active, over }) {
         const source = asDragPayload(active.data.current);
         if (!source) return undefined;
         const target = over ? asDropPayload(over.data.current) : null;
-        if (!target) return `${describeDrag(source)} solto fora de um alvo. Nada foi feito.`;
+        if (!target) return t("dnd.a11y.droppedOutside", { what: describeDrag(source) });
         const intent = resolve(source, target);
         return intent.allowed
-          ? `${describeDrag(source)} solto sobre ${describeDrop(target)}. Confirme a operacao no dialogo.`
-          : `Operacao recusada: ${intent.reason ?? intent.description}`;
+          ? t("dnd.a11y.dropped", { what: describeDrag(source), where: describeDrop(target) })
+          : t("dnd.a11y.refused", { reason: intent.reason ?? intent.description });
       },
       onDragCancel({ active }) {
         const source = asDragPayload(active.data.current);
-        return source ? `Arrasto de ${describeDrag(source)} cancelado.` : "Arrasto cancelado.";
+        return source
+          ? t("dnd.a11y.cancelled", { what: describeDrag(source) })
+          : t("dnd.a11y.cancelledPlain");
       },
     }),
     [resolve],
@@ -358,7 +373,7 @@ function DragChip({ payload, tone }: { payload: DragPayload; tone: DropFeedbackS
       ) : (
         <span className="truncate font-medium">{payload.label}</span>
       )}
-      {tone === "rejects" ? <span aria-hidden="true">nao</span> : null}
+      {tone === "rejects" ? <span aria-hidden="true">{t("dnd.chip.no")}</span> : null}
     </motion.div>
   );
 }

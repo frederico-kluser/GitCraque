@@ -16,6 +16,7 @@ import { GitDndProvider } from "@/dnd";
 import { DialogHost, RepoPicker } from "@/dialogs";
 import { RailPanels, SidePanel, Toolbar } from "@/panels";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
+import { Rich, t } from "@/i18n";
 import {
   bootstrap,
   clearReveal,
@@ -96,11 +97,13 @@ function EmptyRepo() {
         <GitCommitHorizontal className="size-7 text-muted-foreground" />
       </StaggerRevealItem>
       <StaggerRevealHeadline as="h2" className="font-heading text-sm font-medium text-foreground">
-        Repositorio sem commits
+        {t("app.emptyRepo.title")}
       </StaggerRevealHeadline>
       <StaggerRevealItem as="p" className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-        O <span className="font-mono">git log --all --topo-order</span> nao devolveu nada. Prepare arquivos no
-        painel de alteracoes e faca o primeiro commit — a View Tree aparece na hora.
+        <Rich
+          k="app.emptyRepo.body"
+          nodes={{ command: <span className="font-mono">git log --all --topo-order</span> }}
+        />
       </StaggerRevealItem>
     </StaggerReveal>
   );
@@ -163,12 +166,11 @@ export function App() {
     return (
       <BoundaryScreen
         icon={<PlugZap className="size-7 text-destructive" />}
-        title="GitCraque nao conseguiu abrir o repositorio"
+        title={t("app.fatal.title")}
       >
         <p>{fatal}</p>
         <p className="mt-2 text-xs">
-          Confira se o backend esta no ar em <span className="font-mono">:5271</span> e se o diretorio informado
-          existe.
+          <Rich k="app.fatal.hint" nodes={{ port: <span className="font-mono">:5271</span> }} />
         </p>
       </BoundaryScreen>
     );
@@ -187,12 +189,16 @@ export function App() {
             <header className="flex items-start gap-3">
               <FolderX className="mt-0.5 size-6 shrink-0 text-warning" />
               <div className="min-w-0">
-                <h1 className="font-heading text-lg text-foreground">Escolha um repositorio</h1>
+                <h1 className="font-heading text-lg text-foreground">{t("app.picker.title")}</h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  O servidor esta em{" "}
-                  <span className="break-all font-mono text-foreground">{repoCwd ?? "?"}</span>, e ali
-                  nao ha <span className="font-mono">.git</span>. Abra um dos seus repositorios abaixo —
-                  ou crie um novo com <span className="font-mono">git init</span> pela aba Navegar.
+                  <Rich
+                    k="app.picker.body"
+                    nodes={{
+                      cwd: <span className="break-all font-mono text-foreground">{repoCwd ?? "?"}</span>,
+                      dotgit: <span className="font-mono">.git</span>,
+                      init: <span className="font-mono">git init</span>,
+                    }}
+                  />
                 </p>
               </div>
             </header>
@@ -227,7 +233,7 @@ export function App() {
             value={railWidth}
             min={RAIL_RANGE.min}
             max={RAIL_RANGE.max}
-            label="Largura do rail"
+            label={t("app.splitter.rail")}
             onChange={setRailWidth}
           />
 
@@ -260,7 +266,7 @@ export function App() {
             value={detailWidth}
             min={DETAIL_RANGE.min}
             max={DETAIL_RANGE.max}
-            label="Largura do painel de detalhe"
+            label={t("app.splitter.detail")}
             onChange={setDetailWidth}
           />
           <SidePanel className="min-h-0 border-l border-border bg-card" />
@@ -284,7 +290,7 @@ export function App() {
           className="pointer-events-none fixed inset-x-0 top-0 z-[70] flex justify-center p-2"
         >
           <span className="rounded-full border border-warning/50 bg-popover px-3 py-1 text-[11px] text-warning shadow-lg">
-            Reconectando ao servidor…
+            {t("app.reconnecting")}
           </span>
         </div>
       )}

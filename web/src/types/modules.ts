@@ -20,6 +20,7 @@ import type {
   RawCommit,
   RefsPayload,
 } from "./git";
+import type { Translate } from "@/i18n/types";
 
 /* ================================================================== *
  * src/graph — motor do grafo
@@ -186,11 +187,15 @@ export interface GitDndProviderProps {
  *   commit → branch  ⇒ cherry-pick
  *   branch → branch  ⇒ merge | rebase
  * Tudo o mais e `allowed: false` com um motivo legivel.
+ *
+ * ACRESCENTADO (aditivo): `context.t`. O motor e puro e nao pode importar o
+ * i18n (ver o cabecalho de `dnd/intents.ts`), entao o tradutor entra por aqui —
+ * e assim `title`, `description` e `reason` saem no idioma da interface.
  */
 export type ResolveDragIntent = (
   source: DragPayload,
   target: DropPayload,
-  context: { refs: RefsPayload | null; headBranch: string | null },
+  context: { refs: RefsPayload | null; headBranch: string | null; t: Translate },
 ) => DragIntent;
 
 /* ================================================================== *

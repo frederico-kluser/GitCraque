@@ -17,7 +17,7 @@ import { HttpError } from "../router.mjs";
  */
 export function commandResult(result) {
   if (result.ok || isConflict(result)) return result;
-  const error = new HttpError(409, result.error || "o comando git falhou");
+  const error = new HttpError(409, result.error || "error.gitFailed");
   error.command = result;
   throw error;
 }
@@ -40,5 +40,5 @@ export function intParam(value) {
 export function bodyOf(ctx) {
   const body = ctx.body;
   if (body && typeof body === "object" && !Array.isArray(body)) return body;
-  throw new HttpError(400, "o corpo precisa ser um objeto JSON");
+  throw new HttpError(400, "error.bodyMustBeObject");
 }

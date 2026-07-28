@@ -23,9 +23,16 @@ export async function bootServer(repoRoot, options = {}) {
 
   const base = `http://127.0.0.1:${handle.port}`;
 
-  /** fetch com o header Host que a guarda de origem exige. */
+  /**
+   * fetch com o header Host que a guarda de origem exige.
+   *
+   * Manda tambem `x-gitcraque-lang: pt` — as mensagens de erro do backend sao
+   * traduzidas por requisicao (ver `server/src/i18n.mjs`) e a suite checa o
+   * texto em portugues. Sem o cabecalho, o servidor responderia em ingles, que
+   * e o padrao dele.
+   */
   const call = async (method, apiPath, body) => {
-    const init = { method, headers: {} };
+    const init = { method, headers: { "x-gitcraque-lang": "pt" } };
     if (body !== undefined) {
       init.headers["content-type"] = "application/json";
       init.body = JSON.stringify(body);
