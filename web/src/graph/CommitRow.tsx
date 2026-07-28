@@ -17,6 +17,7 @@ import type { ListChildComponentProps } from "react-window";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { useDraggableEntity } from "@/dnd/bindings";
 import { cn, laneVar, short } from "@/lib/utils";
+import { toast } from "@/state/store";
 import { clipEdgePath, laneX } from "./bezier.ts";
 import { RefChips } from "./RefChip.tsx";
 import { ROW_GRID, rowDomId } from "./shell.ts";
@@ -59,6 +60,20 @@ export const CommitRow = memo(function CommitRow({
     if (event.shiftKey) data.onSelect(commit.hash, "range");
     else if (event.ctrlKey || event.metaKey) data.onSelect(commit.hash, "toggle");
     else data.onSelect(commit.hash, "replace");
+  };
+
+  /* Clicar na coluna Hash copia o hash COMPLETO — o curto e so o que cabe na
+     coluna. `stopPropagation` porque copiar nao e selecionar: a linha continua
+     de fora do clique. */
+  const handleCopyHash = async (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation();
+    try {
+      await navigator.clipboard.writeText(commit.hash);
+      toast("success", "Hash copiado", commit.hash);
+    } catch {
+      /* clipboard negado (contexto inseguro, permissao) — nao ha plano B util */
+      toast("error", "Nao deu para copiar o hash", commit.hash);
+    }
   };
 
   const handleContextMenu = (event: MouseEvent<HTMLDivElement>) => {
@@ -198,15 +213,30 @@ export const CommitRow = memo(function CommitRow({
       <div
         role="gridcell"
         className="truncate pr-3 text-xs text-muted-foreground"
-        title={commit.authorEmail}
+        title={`${commit.authorName} <${commit.authorEmail}>`}
       >
         {commit.authorName}
       </div>
       <div role="gridcell" className="truncate pr-3 text-xs text-muted-foreground">
         {commit.relativeDate}
       </div>
-      <div role="gridcell" className="truncate pr-2 font-mono text-xs text-muted-foreground">
-        {short(commit.hash)}
+      {/* O `copy-button` do catalogo nao serve aqui: ele traz botao e glifo
+          proprios, e o alvo do clique tem de ser o proprio hash da coluna. */}
+      <div role="gridcell" className="min-w-0 pr-2">
+        <button
+          type="button"
+          onClick={(event) => void handleCopyHash(event)}
+          title="Copiar o hash completo"
+          aria-label={`Copiar o hash ${commit.hash}`}
+          className={cn(
+            "-mx-1 block max-w-full truncate rounded px-1 font-mono text-xs text-muted-foreground",
+            "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",
+            "ease-[var(--motion-ui-transition-snap)] hover:bg-accent hover:text-foreground",
+            "outline-none focus-visible:ring-1 focus-visible:ring-ring",
+          )}
+        >
+          {short(commit.hash)}
+        </button>
       </div>
     </div>
   );

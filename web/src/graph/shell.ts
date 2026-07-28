@@ -11,9 +11,16 @@ import type { CommitRef } from "@/types/git";
 import type { GraphLayout, GraphMetrics } from "@/types/modules";
 import type { RevealTarget } from "./reveal.ts";
 
-/** Grid compartilhado: Grafo | Descricao | Autor | Data | Hash. */
+/**
+ * Grid compartilhado: Grafo | Descricao | Autor | Data | Hash.
+ *
+ * As tres colunas de metadado sao dimensionadas pelo conteudo REAL que o git
+ * emite (nome de autor, `%ar` e o hash curto de 7), com uma folga pequena — o
+ * que sobra vai todo para o assunto do commit, que e o texto que costuma faltar
+ * espaco.
+ */
 export const ROW_GRID =
-  "grid grid-cols-[var(--graph-col)_minmax(0,1fr)_9rem_7rem_5.5rem] items-center";
+  "grid grid-cols-[var(--graph-col)_minmax(0,1fr)_7rem_6rem_4.5rem] items-center";
 
 /** Linhas acima e abaixo da janela que ficam montadas para o scroll nao piscar. */
 export const OVERSCAN = 6;

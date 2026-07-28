@@ -31,7 +31,7 @@ recurso, nao o primeiro reflexo.
 | `copy-button` | copiar hash, copiar patch, copiar url do remoto |
 | `expand-card` | linha do commit expandindo para o detalhe |
 | `swipe-actions` | linhas de arquivo no staging (stage / descartar) |
-| `border-beam` | destaque da worktree ativa |
+| `border-beam` | sem uso hoje — a worktree ativa e marcada de forma ESTATICA (fundo + borda em `primary`), por pedido de produto. Nao devolva o beam para la |
 | `stagger-reveal` | entrada dos paineis e dos estados vazios |
 | `sparkline` | atividade de commits no cabecalho do repositorio |
 | `confetti` | push bem-sucedido |
