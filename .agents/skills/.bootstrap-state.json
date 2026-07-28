@@ -35,9 +35,10 @@
     {
       "id": 4,
       "name": "Router + verified-evolution mechanism",
-      "done": false,
-      "gate_passed": false,
-      "artifact": ".agents/skills/project-router/SKILL.md"
+      "done": true,
+      "gate_passed": true,
+      "artifact": ".agents/skills/project-router/SKILL.md",
+      "gate_evidence": "9/9 skills lint clean (median 1407 tok); 34/34 evals green; <evolution> in all 6 task skills; write-gate returns exit 2 on an unvalidated SKILL.md edit and security-guard blocks 8/8 dangerous actions; record-validation ran npm test green and wrote a receipt. NOTE: PreToolUse hooks were added to settings.json mid-session, so Claude Code activates them from the next session."
     },
     {
       "id": 5,
@@ -47,5 +48,5 @@
       "artifact": ".agents/validation-report.md"
     }
   ],
-  "updated_by": "phase-3-complete"
+  "updated_by": "phase-4-complete"
 }

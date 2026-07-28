@@ -1,0 +1,161 @@
+{
+  "_comment": [
+    "Two kinds of eval, with very different strength.",
+    "",
+    "ROUTING cases score a query against every skill description by term overlap.",
+    "This is a PROXY for how the model selects a skill, not a reproduction of it:",
+    "it cannot see meaning, and it cannot see Portuguese. What it does prove is",
+    "that a description still carries its trigger vocabulary -- which is the way",
+    "descriptions actually rot. Real multilingual routing is checked live in",
+    "phase 5 by asking a model to choose from catalog.md.",
+    "",
+    "KNOWLEDGE cases are the strong ones. Each asserts that a claim written in a",
+    "skill still matches the repository. When a cited symbol is renamed, the eval",
+    "goes red and the skill is flagged stale instead of quietly lying."
+  ],
+
+  "routing": [
+    { "query": "add a new REST route to the server and run git from node", "expect": "orchestrating-git-backend" },
+    { "query": "the worktree switch endpoint returns the wrong payload", "expect": "orchestrating-git-backend" },
+    { "query": "parse git log output on the backend", "expect": "orchestrating-git-backend" },
+    { "query": "the commit graph lanes overlap and the bezier edges look wrong", "expect": "laying-out-commit-graph" },
+    { "query": "scroll to a commit when clicking a branch, reveal virtualization", "expect": "laying-out-commit-graph" },
+    { "query": "dragging a commit onto a branch should cherry-pick, fix the drag intent", "expect": "resolving-drag-intents" },
+    { "query": "the confirmation dialog for merge and rebase needs hold to confirm", "expect": "resolving-drag-intents" },
+    { "query": "add a button to the toolbar panel and a context menu entry", "expect": "composing-shell-interface" },
+    { "query": "the rail accordion styling and theme tokens need changing", "expect": "composing-shell-interface" },
+    { "query": "add a new label string and translate it to the four languages", "expect": "translating-interface-text" },
+    { "query": "the toast message plural is wrong for spanish and chinese", "expect": "translating-interface-text" },
+    { "query": "run the tests and check the typecheck before finishing", "expect": "verifying-changes" },
+    { "query": "a test suite is flaky and fails to load a module", "expect": "verifying-changes" }
+  ],
+
+  "knowledge": [
+    {
+      "skill": "orchestrating-git-backend",
+      "claim": "the route table is asserted at boot",
+      "file": "server/src/routes/index.mjs",
+      "contains": "assertContract"
+    },
+    {
+      "skill": "orchestrating-git-backend",
+      "claim": "LOG_ARGS still holds the mandatory pretty format",
+      "file": "server/src/contract.mjs",
+      "contains": "%H|%P|%an|%ae|%s|%ar|%d"
+    },
+    {
+      "skill": "orchestrating-git-backend",
+      "claim": "reads go through the silent no-optional-locks helpers",
+      "file": "server/src/git/exec.mjs",
+      "contains": "--no-optional-locks"
+    },
+    {
+      "skill": "orchestrating-git-backend",
+      "claim": "git is spawned, never shelled out",
+      "file": "server/src/git/exec.mjs",
+      "regex": "import \\{ spawn \\} from \"node:child_process\""
+    },
+    {
+      "skill": "orchestrating-git-backend",
+      "claim": "the backend test helpers still exist under server/test/helpers",
+      "file": "server/test/helpers/repo.mjs",
+      "contains": "makeFixtureRepo"
+    },
+    {
+      "skill": "laying-out-commit-graph",
+      "claim": "index.ts is the module door and still exports GraphView",
+      "file": "web/src/graph/index.ts",
+      "contains": "GraphView"
+    },
+    {
+      "skill": "laying-out-commit-graph",
+      "claim": "layout.ts carries no runtime imports",
+      "file": "web/src/graph/layout.ts",
+      "absent": "^import (?!type)"
+    },
+    {
+      "skill": "laying-out-commit-graph",
+      "claim": "the graph runner still rewrites the tracked sample svg",
+      "file": "web/src/graph/__tests__/run.mjs",
+      "contains": "make-sample-svg"
+    },
+    {
+      "skill": "laying-out-commit-graph",
+      "claim": "the linearity assertion the perf flake comes from is still there",
+      "file": "web/src/graph/__tests__/perf.test.ts",
+      "contains": "ratio"
+    },
+    {
+      "skill": "resolving-drag-intents",
+      "claim": "drag ids are scoped, not the bare type:key the architecture doc shows",
+      "file": "web/src/dnd/ids.ts",
+      "contains": "SCOPE_SEP"
+    },
+    {
+      "skill": "resolving-drag-intents",
+      "claim": "intents.ts still has no runtime imports",
+      "file": "web/src/dnd/intents.ts",
+      "absent": "^import (?!type)"
+    },
+    {
+      "skill": "resolving-drag-intents",
+      "claim": "the endpoint allowlist still exists",
+      "file": "web/src/dnd/intents.ts",
+      "contains": "INTENT_ENDPOINTS"
+    },
+    {
+      "skill": "composing-shell-interface",
+      "claim": "the app-specific surface tokens are still defined",
+      "file": "web/src/styles/theme.css",
+      "contains": "--surface-rail"
+    },
+    {
+      "skill": "composing-shell-interface",
+      "claim": "destructive still selects hold-to-confirm",
+      "file": "web/src/app/ConfirmHost.tsx",
+      "contains": "HoldToConfirmButton"
+    },
+    {
+      "skill": "composing-shell-interface",
+      "claim": "context menus are still built at click time by the shell store",
+      "file": "web/src/hooks/useShellStore.ts",
+      "contains": "contextMenuFor"
+    },
+    {
+      "skill": "translating-interface-text",
+      "claim": "pt.ts is still the untyped master that defines the key set",
+      "file": "web/src/i18n/types.ts",
+      "contains": "keyof typeof pt"
+    },
+    {
+      "skill": "translating-interface-text",
+      "claim": "the other locales are still annotated, which is what makes tsc enforce both directions",
+      "file": "web/src/i18n/locales/en.ts",
+      "contains": ": Messages"
+    },
+    {
+      "skill": "translating-interface-text",
+      "claim": "the backend still translates at the edge with a passthrough fallback",
+      "file": "server/src/server.mjs",
+      "contains": "translate("
+    },
+    {
+      "skill": "verifying-changes",
+      "claim": "all five test commands still exist",
+      "file": "package.json",
+      "contains": "test:viewer"
+    },
+    {
+      "skill": "verifying-changes",
+      "claim": "npm test still excludes the e2e suite",
+      "file": "package.json",
+      "regex": "\"test\": \"npm run test:server && npm run test:graph && npm run test:dnd && npm run test:viewer\""
+    },
+    {
+      "skill": "verifying-changes",
+      "claim": "the e2e script is still hermetic against a temp fixture",
+      "file": "scripts/verify-e2e.mjs",
+      "contains": "mkdtempSync"
+    }
+  ]
+}

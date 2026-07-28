@@ -97,6 +97,12 @@ of five suites fail immediately.
 6. On a red result, first ask whether it is the known flake: re-run that suite
    alone before believing it.
 
+**Running one test** rather than a suite, which is what you want while
+iterating: `node --test server/test/api.test.mjs` for a single file, and
+`node --test --test-name-pattern "cherry-pick" web/src/dnd/__tests__/intents.test.mjs`
+for a single case. The graph suite has no equivalent — its runner takes no
+filter, so `npm run test:graph` is all-or-nothing.
+
 **Adding a test** — each harness has its own rules:
 - backend → `server/test/<name>.test.mjs`, use both helpers, **one server per
   file** (`runtime` is a process-wide singleton).
