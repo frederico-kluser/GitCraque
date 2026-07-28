@@ -118,6 +118,7 @@ export function GraphView({
   onSelect,
   onContextMenu,
   onRefActivate,
+  onRefContextMenu,
   reveal,
   onRevealed,
   metrics: metricsProp,
@@ -275,6 +276,26 @@ export function GraphView({
       const current = cursor !== null ? (layout.index.get(cursor) ?? -1) : -1;
       const page = Math.max(1, Math.floor(viewportHeight / metrics.rowHeight) - 1);
 
+      /* A tecla de menu (e o Shift+F10 de quem nao a tem) abre o mesmo menu do
+         botao direito, ancorado na LINHA focada — sem isto, tudo o que o menu
+         oferece ficaria fora do alcance de quem navega por teclado. */
+      if (event.key === "ContextMenu" || (event.key === "F10" && event.shiftKey)) {
+        if (cursor === null || !onContextMenu) return;
+        event.preventDefault();
+        /* Ancora na linha focada; se ela estiver virtualizada para fora (o
+           usuario rolou longe com a roda), o grid serve de ancora — melhor que
+           abrir o menu no canto da tela. */
+        const box =
+          document.getElementById(rowDomId(cursor))?.getBoundingClientRect() ??
+          gridRef.current?.getBoundingClientRect();
+        if (!box) return;
+        onContextMenu(cursor, {
+          x: box.left + Math.min(240, box.width / 3),
+          y: Math.min(box.bottom - 4, box.top + metrics.rowHeight),
+        });
+        return;
+      }
+
       switch (event.key) {
         case "ArrowDown":
           event.preventDefault();
@@ -304,7 +325,7 @@ export function GraphView({
           break;
       }
     },
-    [layout, primary, viewportHeight, metrics.rowHeight, moveTo],
+    [layout, primary, viewportHeight, metrics.rowHeight, moveTo, onContextMenu],
   );
 
   const itemData = useMemo<GraphRowData>(
@@ -319,6 +340,7 @@ export function GraphView({
       onSelect: handleSelect,
       onContextMenu,
       onRefActivate,
+      onRefContextMenu,
       onFocusGrid: focusGrid,
     }),
     [
@@ -332,6 +354,7 @@ export function GraphView({
       handleSelect,
       onContextMenu,
       onRefActivate,
+      onRefContextMenu,
       focusGrid,
     ],
   );

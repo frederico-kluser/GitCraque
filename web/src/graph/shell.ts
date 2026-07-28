@@ -68,4 +68,6 @@ export interface GraphRowData {
   onFocusGrid: () => void;
   /** Duplo clique num chip de branch. Quem decide o que isso faz e o shell. */
   onRefActivate?: (refEntry: CommitRef) => void;
+  /** Botao direito num chip de referencia; o shell decide o que oferecer. */
+  onRefContextMenu?: (refEntry: CommitRef, position: { x: number; y: number }) => void;
 }

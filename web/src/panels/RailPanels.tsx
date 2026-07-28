@@ -13,29 +13,26 @@
  * Cada branch e, ao mesmo tempo, ORIGEM de arrasto e ALVO de soltura, pelos
  * hooks de `@/dnd` — o motor semantico e de outra frente, aqui so se declara a
  * ligacao.
+ *
+ * O botao direito abre O MESMO menu do "⋯" da linha, montado por `@/app/menus`.
+ * O "⋯" continua onde estava: menu de contexto e atalho para quem ja sabe, nunca
+ * a unica porta.
  */
 import { useCallback, useMemo, useState } from "react";
 import {
   Archive,
   ArrowDown,
   ArrowUp,
-  Check,
   Cloud,
   CloudOff,
-  FolderPlus,
   FolderTree,
   GitBranch,
   GitBranchPlus,
   Link2,
   Lock,
-  Pencil,
   PlugZap,
   Plus,
   Tag as TagIcon,
-  Trash2,
-  Undo2,
-  Upload,
-  Wand2,
 } from "lucide-react";
 import {
   Accordion,
@@ -56,26 +53,22 @@ import {
   useAppState,
 } from "@/state/store";
 import {
-  doCheckout,
-  doStashApply,
   doSwitchWorktree,
   openAddRemote,
   openAddWorktree,
   openCreateBranch,
   openCreateTag,
-  openDeleteBranchLocal,
-  openDeleteBranchRemote,
-  openDeleteTag,
-  openEditRemoteUrl,
-  openPruneWorktrees,
-  openPushDialog,
-  openRemoveRemote,
-  openRemoveWorktree,
-  openRenameBranch,
-  openStashDrop,
-  openStashPop,
   openStashPush,
 } from "@/app/actions";
+import {
+  branchMenu,
+  remoteBranchMenu,
+  remoteMenu,
+  stashMenu,
+  tagMenu,
+  worktreeMenu,
+} from "@/app/menus";
+import { contextMenuFor } from "@/hooks";
 import { cn, isHttpsRemote, short } from "@/lib/utils";
 import type { Branch, Remote, RemoteBranch, StashEntry, Tag, Worktree } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
@@ -125,6 +118,7 @@ function RailRow({
   active,
   highlighted,
   onClick,
+  onContextMenu,
   children,
   className,
   innerRef,
@@ -133,6 +127,7 @@ function RailRow({
   active?: boolean;
   highlighted?: boolean;
   onClick?: () => void;
+  onContextMenu?: (event: React.MouseEvent) => void;
   children: React.ReactNode;
   className?: string;
   innerRef?: (node: HTMLElement | null) => void;
@@ -143,6 +138,7 @@ function RailRow({
       ref={innerRef}
       {...dragProps}
       onClick={onClick}
+      onContextMenu={onContextMenu}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
@@ -176,7 +172,11 @@ function RailRow({
 
 function WorktreeRow({ wt }: { wt: Worktree }) {
   return (
-    <RailRow active={wt.isActive} onClick={wt.isActive ? undefined : () => void doSwitchWorktree(wt)}>
+    <RailRow
+      active={wt.isActive}
+      onClick={wt.isActive ? undefined : () => void doSwitchWorktree(wt)}
+      onContextMenu={contextMenuFor(`Worktree ${wt.label}`, () => worktreeMenu(wt))}
+    >
       <FolderTree className={cn("size-3.5 shrink-0", wt.isActive ? "text-primary" : "text-muted-foreground")} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -201,21 +201,7 @@ function WorktreeRow({ wt }: { wt: Worktree }) {
           </div>
         )}
       </div>
-      <ActionMenu
-        label={`Acoes da worktree ${wt.label}`}
-        items={[
-          { label: "Adicionar worktree", icon: FolderPlus, onSelect: openAddWorktree },
-          { label: "Prune (limpar registros)", icon: Wand2, onSelect: openPruneWorktrees },
-          {
-            label: "Remover esta worktree",
-            icon: Trash2,
-            destructive: true,
-            separatorBefore: true,
-            disabled: wt.isMain,
-            onSelect: () => openRemoveWorktree(wt),
-          },
-        ]}
-      />
+      <ActionMenu label={`Acoes da worktree ${wt.label}`} items={worktreeMenu(wt)} />
     </RailRow>
   );
 }
@@ -311,6 +297,7 @@ function BranchRow({ branch, selected }: { branch: Branch; selected: boolean }) 
       active={branch.isHead}
       highlighted={droppable.isOver || selected}
       onClick={() => selectRef(branch.fullName)}
+      onContextMenu={contextMenuFor(`Branch ${branch.name}`, () => branchMenu(branch))}
       className={cn(draggable.isDragging && "opacity-40")}
     >
       <GitBranch
@@ -339,32 +326,7 @@ function BranchRow({ branch, selected }: { branch: Branch; selected: boolean }) 
         )}
       </div>
       <AheadBehind ahead={branch.ahead} behind={branch.behind} />
-      <ActionMenu
-        label={`Acoes da branch ${branch.name}`}
-        items={[
-          {
-            label: locked ? `Presa em ${branch.checkedOutIn}` : "Checkout",
-            icon: Check,
-            disabled: branch.isHead || locked,
-            onSelect: () => void doCheckout(branch.name),
-          },
-          { label: "Renomear", icon: Pencil, onSelect: () => openRenameBranch(branch.name) },
-          { label: "Criar tag aqui", icon: TagIcon, onSelect: () => openCreateTag(branch.name) },
-          {
-            label: "Push desta branch",
-            icon: Upload,
-            onSelect: () => openPushDialog({ branch: branch.name }),
-          },
-          {
-            label: "Deletar Branch (Local)",
-            icon: Trash2,
-            destructive: true,
-            separatorBefore: true,
-            disabled: branch.isHead,
-            onSelect: () => openDeleteBranchLocal(branch.name),
-          },
-        ]}
-      />
+      <ActionMenu label={`Acoes da branch ${branch.name}`} items={branchMenu(branch)} />
     </RailRow>
   );
 }
@@ -414,27 +376,16 @@ function BranchesSection() {
 
 function RemoteBranchRow({ rb, selected }: { rb: RemoteBranch; selected: boolean }) {
   return (
-    <RailRow highlighted={selected} onClick={() => selectRef(rb.fullName)} className="pl-6">
+    <RailRow
+      highlighted={selected}
+      onClick={() => selectRef(rb.fullName)}
+      onContextMenu={contextMenuFor(rb.name, () => remoteBranchMenu(rb))}
+      className="pl-6"
+    >
       <Cloud className="size-3 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground">{rb.shortName}</span>
       <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{short(rb.target)}</span>
-      <ActionMenu
-        label={`Acoes de ${rb.name}`}
-        items={[
-          {
-            label: "Criar branch local daqui",
-            icon: GitBranchPlus,
-            onSelect: () => openCreateBranch(rb.name),
-          },
-          {
-            label: "Deletar Branch (Origin)",
-            icon: Trash2,
-            destructive: true,
-            separatorBefore: true,
-            onSelect: () => openDeleteBranchRemote(rb.remote, rb.shortName),
-          },
-        ]}
-      />
+      <ActionMenu label={`Acoes de ${rb.name}`} items={remoteBranchMenu(rb)} />
     </RailRow>
   );
 }
@@ -453,7 +404,11 @@ function RemoteBlock({
 
   return (
     <div className="rounded-md border border-border bg-card/60">
-      <RailRow onClick={() => setOpen((v) => !v)} className="rounded-b-none">
+      <RailRow
+        onClick={() => setOpen((v) => !v)}
+        onContextMenu={contextMenuFor(`Remoto ${remote.name}`, () => remoteMenu(remote))}
+        className="rounded-b-none"
+      >
         {https ? (
           <PlugZap className="size-3.5 shrink-0 text-primary" />
         ) : (
@@ -480,20 +435,7 @@ function RemoteBlock({
             </div>
           )}
         </div>
-        <ActionMenu
-          label={`Acoes do remoto ${remote.name}`}
-          items={[
-            { label: "Editar url", icon: Pencil, onSelect: () => openEditRemoteUrl(remote) },
-            { label: "Push para este remoto", icon: Upload, onSelect: () => openPushDialog({ remote: remote.name }) },
-            {
-              label: "Remover remoto",
-              icon: Trash2,
-              destructive: true,
-              separatorBefore: true,
-              onSelect: () => openRemoveRemote(remote.name),
-            },
-          ]}
-        />
+        <ActionMenu label={`Acoes do remoto ${remote.name}`} items={remoteMenu(remote)} />
       </RailRow>
 
       {open && (
@@ -572,9 +514,13 @@ function RemotesSection() {
 /* 4. Tags                                                             */
 /* ------------------------------------------------------------------ */
 
-function TagRow({ tag, remotes, selected }: { tag: Tag; remotes: string[]; selected: boolean }) {
+function TagRow({ tag, selected }: { tag: Tag; selected: boolean }) {
   return (
-    <RailRow highlighted={selected} onClick={() => selectRef(tag.fullName)}>
+    <RailRow
+      highlighted={selected}
+      onClick={() => selectRef(tag.fullName)}
+      onContextMenu={contextMenuFor(`Tag ${tag.name}`, () => tagMenu(tag))}
+    >
       <TagIcon className="size-3.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -584,26 +530,14 @@ function TagRow({ tag, remotes, selected }: { tag: Tag; remotes: string[]; selec
         {tag.message && <div className="truncate text-[10px] text-muted-foreground">{tag.message}</div>}
       </div>
       <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{short(tag.target)}</span>
-      <ActionMenu
-        label={`Acoes da tag ${tag.name}`}
-        items={[
-          {
-            label: "Deletar tag",
-            icon: Trash2,
-            destructive: true,
-            onSelect: () => openDeleteTag(tag.name, remotes),
-          },
-        ]}
-      />
+      <ActionMenu label={`Acoes da tag ${tag.name}`} items={tagMenu(tag)} />
     </RailRow>
   );
 }
 
 function TagsSection() {
   const tags = useAppState(selectTags);
-  const remotes = useAppState(selectRemotes);
   const selectedRef = useAppState((s) => s.selection.ref);
-  const remoteNames = useMemo(() => remotes.map((r) => r.name), [remotes]);
 
   return (
     <RailSection
@@ -625,14 +559,7 @@ function TagsSection() {
         {tags.length === 0 ? (
           <EmptyState title="Nenhuma tag" description="Marque uma versao a partir de um commit ou branch." />
         ) : (
-          tags.map((t) => (
-            <TagRow
-              key={t.fullName}
-              tag={t}
-              remotes={remoteNames}
-              selected={selectedRef === t.fullName}
-            />
-          ))
+          tags.map((t) => <TagRow key={t.fullName} tag={t} selected={selectedRef === t.fullName} />)
         )}
       </div>
     </RailSection>
@@ -645,7 +572,7 @@ function TagsSection() {
 
 function StashRow({ stash }: { stash: StashEntry }) {
   return (
-    <RailRow>
+    <RailRow onContextMenu={contextMenuFor(stash.ref, () => stashMenu(stash))}>
       <Archive className="size-3.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
@@ -656,20 +583,7 @@ function StashRow({ stash }: { stash: StashEntry }) {
           {stash.branch} · {stash.relativeDate}
         </div>
       </div>
-      <ActionMenu
-        label={`Acoes de ${stash.ref}`}
-        items={[
-          { label: "Aplicar (mantem na pilha)", icon: Undo2, onSelect: () => void doStashApply(stash.ref) },
-          { label: "Pop (aplica e remove)", icon: Undo2, destructive: true, onSelect: () => openStashPop(stash.ref) },
-          {
-            label: "Descartar",
-            icon: Trash2,
-            destructive: true,
-            separatorBefore: true,
-            onSelect: () => openStashDrop(stash.ref),
-          },
-        ]}
-      />
+      <ActionMenu label={`Acoes de ${stash.ref}`} items={stashMenu(stash)} />
     </RailRow>
   );
 }

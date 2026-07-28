@@ -134,6 +134,16 @@ export interface GraphViewProps {
   /** menu de contexto do botao direito sobre um commit */
   onContextMenu?: (hash: string, position: { x: number; y: number }) => void;
   /**
+   * ACRESCENTADO (aditivo): menu de contexto sobre um CHIP de referencia.
+   *
+   * Irmao de `onRefActivate` e pela mesma razao: o grafo nao sabe o que se pode
+   * fazer com uma branch — ele so avisa em qual chip foi o clique direito. O
+   * chip so consome o evento quando o shell devolve algo; sem handler (ou com
+   * menu vazio, no caso de um chip de stash ou de HEAD solto) o clique CAI para
+   * a linha, e quem responde e o menu do commit.
+   */
+  onRefContextMenu?: (refEntry: CommitRef, position: { x: number; y: number }) => void;
+  /**
    * ACRESCENTADO (aditivo): duplo clique num chip de referencia do grafo.
    *
    * O grafo nao decide o que "ativar uma branch" significa — ele nao pode

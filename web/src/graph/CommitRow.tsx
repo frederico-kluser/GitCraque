@@ -205,7 +205,11 @@ export const CommitRow = memo(function CommitRow({
 
       {/* ---- descricao: refs + assunto --------------------------------- */}
       <div role="gridcell" className="flex min-w-0 items-center gap-1.5 pr-3 pl-2">
-        <RefChips refs={commit.refs} onActivate={data.onRefActivate} />
+        <RefChips
+          refs={commit.refs}
+          onActivate={data.onRefActivate}
+          onContextMenu={data.onRefContextMenu}
+        />
         <span className={cn("truncate", isPrimary && "font-medium")}>{commit.subject}</span>
       </div>
 

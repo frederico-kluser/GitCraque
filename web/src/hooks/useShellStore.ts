@@ -8,6 +8,45 @@
  * faz sentido persistir vai para o localStorage.
  */
 import { useCallback, useSyncExternalStore } from "react";
+import type { ComponentType, MouseEvent as ReactMouseEvent } from "react";
+
+/* ------------------------------------------------------------------ */
+/* Itens de menu — o MESMO item serve ao "⋯" e ao botao direito        */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Uma linha de menu. Descrever a acao em dado (e nao em JSX) e o que permite
+ * que a mesma lista alimente o menu de reticencias da linha e o menu de
+ * contexto: quem escreve as acoes de uma branch escreve UMA vez.
+ */
+export interface MenuItemSpec {
+  label: string;
+  onSelect: () => void;
+  icon?: ComponentType<{ className?: string }>;
+  /** pinta a linha com o tom destrutivo — a confirmacao vem depois, no dialogo */
+  destructive?: boolean;
+  disabled?: boolean;
+  /** insere um separador ANTES desta linha */
+  separatorBefore?: boolean;
+  /** texto discreto a direita: hash, contagem, motivo de estar desabilitado */
+  hint?: string;
+}
+
+/**
+ * Um menu de contexto pedido por um clique com o botao direito.
+ *
+ * As coordenadas sao de VIEWPORT (`clientX`/`clientY`), porque o popup e
+ * ancorado num retangulo virtual de tamanho zero naquele ponto — nao ha
+ * elemento gatilho para ancorar.
+ */
+export interface ContextMenuRequest {
+  id: string;
+  /** rotulo acessivel do menu ("Commit a1b2c3d") */
+  label: string;
+  x: number;
+  y: number;
+  items: MenuItemSpec[];
+}
 
 /* ------------------------------------------------------------------ */
 /* Acoes que exigem confirmacao antes de tocar o repositorio            */
@@ -85,6 +124,8 @@ export interface ShellState {
   sideLayout: SideLayout;
   commitDraft: CommitDraft;
   confirm: ConfirmAction | null;
+  /** menu de contexto aberto agora, com o ponto do clique. */
+  contextMenu: ContextMenuRequest | null;
 }
 
 export type SideLayout = "split" | "detail" | "work";
@@ -104,6 +145,7 @@ const DEFAULTS: ShellState = {
   sideLayout: "split",
   commitDraft: EMPTY_DRAFT,
   confirm: null,
+  contextMenu: null,
 };
 
 /** So o que faz sentido sobreviver ao reload. */
@@ -153,6 +195,7 @@ const INITIAL: ShellState = {
   paletteOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
+  contextMenu: null,
 };
 
 let state: ShellState = INITIAL;
@@ -250,6 +293,49 @@ export const askConfirm = (confirm: Omit<ConfirmAction, "id"> & { id?: string })
 export const closeConfirm = () => set({ confirm: null });
 
 /* ------------------------------------------------------------------ */
+/* Menu de contexto                                                    */
+/* ------------------------------------------------------------------ */
+
+let menuSeq = 0;
+
+/**
+ * Abre o menu de contexto no ponto informado.
+ *
+ * Lista VAZIA nao abre menu nenhum — e assim de proposito: um alvo sem acao
+ * util nao deve mostrar uma caixa vazia nem devolver o menu do navegador.
+ */
+export function openContextMenu(request: Omit<ContextMenuRequest, "id">) {
+  if (request.items.length === 0) {
+    if (state.contextMenu) set({ contextMenu: null });
+    return;
+  }
+  set({ contextMenu: { id: `ctx-${++menuSeq}`, ...request } });
+}
+
+export const closeContextMenu = () => {
+  if (state.contextMenu) set({ contextMenu: null });
+};
+
+/**
+ * Handler pronto para `onContextMenu`. Faz as tres coisas que todo alvo precisa
+ * fazer, e nas quais e facil escorregar:
+ *
+ *  1. `preventDefault` SEMPRE — mesmo quando nao ha item nenhum. E o que garante
+ *     que "sem menu proprio" signifique menu nenhum, e nao o do navegador;
+ *  2. `stopPropagation`, senao um alvo aninhado (o chip de branch dentro da
+ *     linha do commit) abriria os dois menus e o de fora ganharia, por ser o
+ *     ultimo a rodar;
+ *  3. monta a lista SO na hora do clique, para o menu enxergar o estado atual.
+ */
+export function contextMenuFor(label: string, build: () => MenuItemSpec[]) {
+  return (event: ReactMouseEvent) => {
+    event.preventDefault();
+    event.stopPropagation();
+    openContextMenu({ label, x: event.clientX, y: event.clientY, items: build() });
+  };
+}
+
+/* ------------------------------------------------------------------ */
 /* Ponte do ⌘Enter                                                     */
 /* ------------------------------------------------------------------ */
 
@@ -275,3 +361,4 @@ export const requestCommit = () => commitHandler?.();
 export const selectTheme = (s: ShellState) => s.theme;
 export const selectConfirm = (s: ShellState) => s.confirm;
 export const selectCommitDraft = (s: ShellState) => s.commitDraft;
+export const selectContextMenu = (s: ShellState) => s.contextMenu;

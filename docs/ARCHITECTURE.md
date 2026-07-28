@@ -358,6 +358,40 @@ Botoes obrigatorios de remotos: *Deletar Branch (Local)*, *Deletar Branch
 (Origin)*, *Adicionar Origin*, e push com escolha do destino a partir de
 `git remote -v`.
 
+### Menu de contexto — `app/menus.ts` + `app/ContextMenuHost.tsx`
+
+O botao direito e uma porta do produto, nao um acidente do navegador. A regra
+tem duas metades e as duas valem sempre:
+
+1. **Onde ha acao, ha o NOSSO menu.** Commit, chip de ref, linha do rail
+   (worktree, branch, remota, remoto, tag, stash), arquivo do commit, arquivo
+   alterado e visualizador.
+2. **Onde nao ha, nao ha menu nenhum.** Toolbar, rodape, divisorias, fundo do
+   grafo e estados vazios nao devolvem o menu do navegador — ele e barrado por
+   um listener no `window`. A UNICA excecao e campo de texto (`input`,
+   `textarea`, `select`, `contenteditable`), onde o menu nativo faz o que nos
+   nao fazemos: colar, desfazer e corretor ortografico.
+
+Um popup so, no `ContextMenuHost`, ancorado num retangulo VIRTUAL de tamanho
+zero no ponto do clique — a View Tree e virtualizada e um `Menu.Root` por linha
+visivel seria caro a toa. O host tambem guarda uma copia do pedido enquanto o
+menu fecha, senao o popup esvaziaria no meio da animacao de saida.
+
+Cada alvo monta a lista **no clique**, por `app/menus.ts`, e o mesmo
+`MenuItemSpec[]` alimenta o menu de reticencias da linha. Dai duas consequencias
+de projeto:
+
+- as duas portas nunca divergem, e "Checkout" sabe dizer `presa em ../outra`
+  em vez de so falhar;
+- **lista vazia = menu nenhum**. Um chip de HEAD solto ou de stash devolve `[]`,
+  o chip nao consome o clique e quem responde e a linha do commit — que era o
+  alvo real.
+
+Nada executa a partir do menu: todo item cai em `app/actions.ts`, que confirma
+por `askConfirm` antes de tocar o repositorio, com `HoldToConfirmButton` no que
+for destrutivo. Teclado tem a mesma porta: `ContextMenu`/`Shift+F10` sobre a
+linha focada da View Tree abre o mesmo menu.
+
 ## Fluxo de eventos
 
 ```

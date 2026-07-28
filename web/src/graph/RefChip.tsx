@@ -10,6 +10,7 @@
  *   arrastar um commit ATE um chip de branch  → cherry-pick
  *   arrastar um chip de branch ATE outro      → merge ou rebase
  *   duplo clique num chip de branch           → troca para ela
+ *   botao direito num chip                    → menu daquela referencia
  *
  * Por isso ele e ao mesmo tempo origem de arraste (`useDraggableEntity`) e alvo
  * de soltura (`useDroppableTarget`), os dois do `@/dnd`.
@@ -83,13 +84,19 @@ function dropPayloadDe(refEntry: CommitRef): DropPayload {
   };
 }
 
+/** So estes tres tem menu proprio; `head` solto e `stash` devolvem o clique. */
+const temMenu = (kind: RefKind) =>
+  kind === "localBranch" || kind === "remoteBranch" || kind === "tag";
+
 export interface RefChipProps {
   refEntry: CommitRef;
   /** duplo clique: o shell decide o que "ativar uma ref" significa (checkout). */
   onActivate?: (refEntry: CommitRef) => void;
+  /** botao direito: o shell decide o que oferecer para esta referencia. */
+  onContextMenu?: (refEntry: CommitRef, position: { x: number; y: number }) => void;
 }
 
-export function RefChip({ refEntry, onActivate }: RefChipProps) {
+export function RefChip({ refEntry, onActivate, onContextMenu }: RefChipProps) {
   const Icon = ICON[refEntry.kind];
   const podeArrastar = arrastavel(refEntry.kind);
   const podeSoltar = soltavel(refEntry.kind);
@@ -151,6 +158,19 @@ export function RefChip({ refEntry, onActivate }: RefChipProps) {
             }
           : undefined
       }
+      /* Sem `stopPropagation` o clique subiria e a LINHA responderia por cima,
+         trocando o menu da branch pelo menu do commit. Chip sem menu proprio
+         (HEAD solto, stash) nao consome nada de proposito: ali o alvo real e o
+         commit mesmo. */
+      onContextMenu={
+        onContextMenu && temMenu(refEntry.kind)
+          ? (event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onContextMenu(refEntry, { x: event.clientX, y: event.clientY });
+            }
+          : undefined
+      }
       data-drop={podeSoltar ? feedback.state : undefined}
       data-dragging={drag.isDragging || undefined}
       title={
@@ -179,9 +199,11 @@ export function RefChip({ refEntry, onActivate }: RefChipProps) {
 export function RefChips({
   refs,
   onActivate,
+  onContextMenu,
 }: {
   refs: CommitRef[];
   onActivate?: (refEntry: CommitRef) => void;
+  onContextMenu?: (refEntry: CommitRef, position: { x: number; y: number }) => void;
 }) {
   if (refs.length === 0) return null;
 
@@ -192,7 +214,12 @@ export function RefChips({
   return (
     <>
       {shown.map((entry) => (
-        <RefChip key={`${entry.kind}:${entry.name}`} refEntry={entry} onActivate={onActivate} />
+        <RefChip
+          key={`${entry.kind}:${entry.name}`}
+          refEntry={entry}
+          onActivate={onActivate}
+          onContextMenu={onContextMenu}
+        />
       ))}
       {hidden > 0 && (
         <span
