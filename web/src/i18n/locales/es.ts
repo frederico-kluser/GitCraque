@@ -56,7 +56,6 @@ export const es: Messages = {
     "El servidor está en {cwd}, y allí no hay {dotgit}. Abre uno de tus repositorios abajo — o crea uno nuevo con {init} desde la pestaña Explorar.",
   "app.splitter.rail": "Ancho del rail",
   "app.splitter.detail": "Ancho del panel de detalle",
-  "app.splitter.sideSplit": "Alto del detalle del commit",
   "app.reconnecting": "Reconectando con el servidor…",
 
   /* ---------------------------------------------------------------- */
@@ -146,6 +145,8 @@ export const es: Messages = {
     "Aún no hay favoritos ni recientes. Abre una carpeta con el selector de abajo y aparecerá aquí la próxima vez.",
   "toolbar.project.openOther": "Abrir otro…",
   "toolbar.head.detached": "detached en {hash}",
+  "toolbar.commit.label": "Abrir cambios y hacer commit",
+  "toolbar.commit.clean": "Nada que commitear",
   "toolbar.worktree.trigger": "Cambiar de worktree — el servidor hace process.chdir, sin checkout",
   "toolbar.worktree.none": "sin worktree",
   "toolbar.worktree.note":
@@ -258,31 +259,24 @@ export const es: Messages = {
   "status.unknown": "desconocido",
 
   /* ---------------------------------------------------------------- */
-  /* Barra lateral                                                     */
+  /* Columna derecha                                                   */
   /* ---------------------------------------------------------------- */
-  "side.label": "Detalle y trabajo",
-  "side.drawer.detail": "Detalle",
-  "side.drawer.work": "Trabajo",
-  "side.minimize": "Minimizar {name}",
-  "side.maximize": "Maximizar {name}",
-  "side.restore": "Restaurar {name}",
-  "side.expand": "Expandir {name}",
+  "side.label": "Detalle del commit",
 
   /* ---------------------------------------------------------------- */
-  /* Panel de trabajo                                                  */
+  /* Vista del archivo                                                 */
   /* ---------------------------------------------------------------- */
-  "dock.label": "Panel de trabajo",
-  "dock.tab.changes": "Cambios",
-  "dock.tab.viewer": "Visor",
-  "dock.workingTree": "árbol de trabajo",
-  "dock.empty.title": "Ningún archivo abierto",
-  "dock.empty.body":
-    "Haz clic en un archivo del commit seleccionado, o en una fila de los cambios, para ver el contenido aquí.",
+  "view.label": "Archivo abierto",
+  "view.back.detail": "Detalle",
+  "view.back.changes": "Cambios",
 
   /* ---------------------------------------------------------------- */
   /* Cambios y commit                                                  */
   /* ---------------------------------------------------------------- */
   "changes.label": "Cambios del árbol de trabajo",
+  "changes.sheet.label": "Cambios y commit",
+  "changes.sheet.title": "Cambios",
+  "changes.sheet.close": "Cerrar cambios",
   "changes.group.conflicted": "Conflictos",
   "changes.group.staged": "Preparados",
   "changes.group.untracked": "Sin seguimiento",

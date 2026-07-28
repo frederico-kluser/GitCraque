@@ -2,16 +2,15 @@
  * Painel direito — o detalhe do commit focado, ou o resumo da selecao multipla.
  *
  * Um commit: cabecalho (assunto, corpo, autor, committer, hash, pais clicaveis)
- * e a lista de arquivos alterados. Cada arquivo e um botao: clicar abre o
- * conteudo no visualizador do rodape, que tem largura inteira para mostrar o
- * diff — este painel e estreito e fica com os metadados. Dois ou mais commits:
- * o painel vira o resumo do intervalo, com o botao de Squash.
+ * e a lista de arquivos alterados. Cada arquivo e um botao: clicar TROCA esta
+ * tela pela View do arquivo, na mesma coluna, com voltar no cabecalho — o diff
+ * fica com a coluna inteira em vez de meia. Dois ou mais commits: o painel vira
+ * o resumo do intervalo, com o botao de Squash.
  *
  * O carregamento e por hash, com cache e descarte de resposta obsoleta
  * (`useCommitDetail`), e o vazio e coberto por `Skeleton` do Motion UI.
  */
 import { useMemo } from "react";
-import type { ReactNode } from "react";
 import { GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
@@ -227,7 +226,7 @@ function CommitHeader({ detail }: { detail: CommitDetail }) {
   );
 }
 
-/** A lista de arquivos do commit: cada linha abre o arquivo no visualizador. */
+/** A lista de arquivos do commit: cada linha troca a coluna pela View dele. */
 function CommitFiles({ detail }: { detail: CommitDetail }) {
   const opened = useAppState((s) => s.openFile);
 
@@ -286,28 +285,9 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
 
 /* ------------------------------------------------------------------ */
 
-export interface DetailPanelProps extends PanelProps {
-  /**
-   * Controles da gaveta (minimizar/maximizar) montados na barra de titulo.
-   * Vem do `SidePanel`, que e quem conhece o estado do sidebar.
-   */
-  headerExtra?: ReactNode;
-}
+export type DetailPanelProps = PanelProps;
 
-/** Barra de titulo da gaveta. So aparece quando ha controles para hospedar. */
-function DrawerBar({ extra }: { extra?: ReactNode }) {
-  if (!extra) return null;
-  return (
-    <div className="flex shrink-0 items-center gap-2 border-b border-border bg-surface-rail px-3 py-1.5">
-      <span className="min-w-0 flex-1 truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-        {t("side.drawer.detail")}
-      </span>
-      {extra}
-    </div>
-  );
-}
-
-export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
+export function DetailPanel({ className }: DetailPanelProps) {
   const primary = useAppState((s) => s.selection.primary);
   const selected = useAppState((s) => s.selection.commits);
   const detail = useCommitDetail(primary);
@@ -315,7 +295,6 @@ export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
   if (selected.length > 1) {
     return (
       <section className={cn("flex flex-col", className)} aria-label={t("detail.selectionLabel")}>
-        <DrawerBar extra={headerExtra} />
         <SelectionSummary selected={selected} />
       </section>
     );
@@ -324,7 +303,6 @@ export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
   if (!primary) {
     return (
       <section className={cn("flex flex-col", className)} aria-label={t("detail.label")}>
-        <DrawerBar extra={headerExtra} />
         <StaggerReveal className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
           <StaggerRevealItem>
             <GitCommitHorizontal className="size-6 text-muted-foreground" />
@@ -342,7 +320,6 @@ export function DetailPanel({ className, headerExtra }: DetailPanelProps) {
 
   return (
     <section className={cn("flex flex-col", className)} aria-label={t("detail.label")}>
-      <DrawerBar extra={headerExtra} />
       {detail.loading && <DetailSkeleton />}
       {detail.error && <EmptyState title={t("detail.error.title")} description={detail.error} />}
       {detail.data && (

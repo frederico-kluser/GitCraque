@@ -19,6 +19,7 @@ import {
   Clock,
   FolderTree,
   GitBranch,
+  GitCommitHorizontal,
   FolderGit2,
   GitBranchPlus,
   Languages,
@@ -33,13 +34,23 @@ import {
   X,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { BorderBeam } from "@/components/motion-ui/border-beam";
 import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
 import { ProgressBar } from "@/components/motion-ui/progress-bar";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { Sparkline } from "@/components/motion-ui/sparkline";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { selectCommits, selectHead, selectPending, selectWorktrees, useAppState } from "@/state/store";
-import { loadProjects, toggleTheme, useCommitActivity, useProjects, useShellState, useTrickle } from "@/hooks";
+import {
+  loadProjects,
+  selectChangesOpen,
+  toggleChanges,
+  toggleTheme,
+  useCommitActivity,
+  useProjects,
+  useShellState,
+  useTrickle,
+} from "@/hooks";
 import {
   doContinue,
   doFetch,
@@ -324,6 +335,64 @@ function ProjectSelector() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Botao de commit — o que sobrou da aba "Alteracoes"                  */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Abre a gaveta de alteracoes. Fica colado no seletor de projeto de proposito:
+ * "o que ha para commitar" e uma propriedade DESTE repositorio, e ler as duas
+ * coisas juntas evita o passeio ate o outro canto da tela para descobrir se ha
+ * trabalho pendente.
+ *
+ * Sem alteracoes ele nao some — apaga e desabilita. Um botao que aparece e
+ * desaparece faz a fileira inteira dancar a cada `git add`, e a pessoa perde a
+ * mira de todos os outros.
+ *
+ * CASCATA: `BorderBeam` do catalogo resolve a animacao inteira — o feixe corre
+ * a borda enquanto ha o que commitar e para sozinho sob `prefers-reduced-motion`
+ * e fora da tela. O `active` dele e o mesmo booleano que pinta o botao, entao
+ * nao ha dois estados para discordarem.
+ */
+function CommitButton() {
+  const changeCount = useAppState((s) => s.status?.entries.length ?? 0);
+  const open = useShellState(selectChangesOpen);
+  const dirty = changeCount > 0;
+
+  const title = dirty
+    ? t("changes.filesChanged", { count: changeCount })
+    : t("toolbar.commit.clean");
+
+  return (
+    <BorderBeam active={dirty && !open} size={140} duration={5} thickness={2} className="shrink-0">
+      <button
+        type="button"
+        onClick={toggleChanges}
+        disabled={!dirty}
+        aria-label={t("toolbar.commit.label")}
+        aria-expanded={open}
+        title={title}
+        className={cn(
+          "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium",
+          "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+          dirty
+            ? "border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90"
+            : "border-border bg-card text-muted-foreground opacity-60",
+          FOCUS_RING,
+        )}
+      >
+        <GitCommitHorizontal className="size-3.5 shrink-0" />
+        {t("commit.button")}
+        {dirty && (
+          <span className="rounded-sm bg-primary-foreground/20 px-1 font-mono text-[10px] tabular-nums">
+            {changeCount}
+          </span>
+        )}
+      </button>
+    </BorderBeam>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Seletor de worktree                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -561,6 +630,9 @@ export function Toolbar({ className }: PanelProps) {
         {/* --- identidade: e o seletor de projeto --- */}
         <div className="flex min-w-0 items-center gap-3">
           <ProjectSelector />
+
+          {/* O que ha para commitar, colado na identidade do repositorio. */}
+          <CommitButton />
 
           {/* Atividade das ultimas semanas, derivada do %ar de cada commit.
               Espera o log chegar: montar com a serie zerada faria o Motion

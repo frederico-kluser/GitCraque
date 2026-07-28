@@ -88,10 +88,10 @@ export type ThemeMode = "light" | "dark";
 /**
  * Rascunho do commit.
  *
- * Mora aqui, e nao no `StatusPanel`, por um motivo mecanico: o rodape virou
- * `SmoothTabs`, e o componente do catalogo renderiza SO o painel ativo — trocar
- * para o Visualizador desmonta o painel de alteracoes. Com o rascunho local, um
- * clique num arquivo apagaria a mensagem que a pessoa estava escrevendo.
+ * Mora aqui, e nao no `StatusPanel`, por um motivo mecanico: o painel de
+ * alteracoes virou uma gaveta que DESMONTA ao fechar. Com o rascunho local,
+ * fechar a gaveta — ou clicar num arquivo para ve-lo, o que tambem a fecha —
+ * apagaria a mensagem que a pessoa estava escrevendo.
  */
 export interface CommitDraft {
   message: string;
@@ -106,29 +106,18 @@ export interface ShellState {
   railWidth: number;
   detailWidth: number;
   /**
-   * Altura em px da gaveta de CIMA do sidebar direito (o detalhe do commit).
-   * A de baixo — alteracoes e visualizador — fica com o resto.
-   */
-  sideSplit: number;
-  /**
-   * Qual das duas gavetas do sidebar direito esta aberta.
+   * Gaveta de alteracoes (staging + commit) aberta por cima da tela.
    *
-   *   "split"  as duas, divididas por `sideSplit`
-   *   "detail" so o detalhe; a de baixo recolhida ao cabecalho
-   *   "work"   so alteracoes/visualizador; a de cima recolhida ao cabecalho
-   *
-   * Minimizar uma e maximizar a outra sao o MESMO movimento — por isso um
-   * estado so, em vez de dois booleanos que poderiam se contradizer (as duas
-   * recolhidas nao mostraria nada).
+   * Efemera de proposito: nao volta aberta depois de um reload. Antes isto era
+   * uma aba do sidebar direito; virou gaveta quando a coluna passou a mostrar
+   * uma tela por vez, e o gatilho foi para o botao de commit da toolbar.
    */
-  sideLayout: SideLayout;
+  changesOpen: boolean;
   commitDraft: CommitDraft;
   confirm: ConfirmAction | null;
   /** menu de contexto aberto agora, com o ponto do clique. */
   contextMenu: ContextMenuRequest | null;
 }
-
-export type SideLayout = "split" | "detail" | "work";
 
 const STORAGE_KEY = "gitcraque.shell";
 
@@ -141,18 +130,14 @@ const DEFAULTS: ShellState = {
   // O sidebar direito passou a abrigar TAMBEM o visualizador de arquivo, entao
   // ele nasce bem mais largo do que quando so tinha os metadados do commit.
   detailWidth: 560,
-  sideSplit: 340,
-  sideLayout: "split",
+  changesOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
   contextMenu: null,
 };
 
 /** So o que faz sentido sobreviver ao reload. */
-type Persisted = Pick<
-  ShellState,
-  "theme" | "railWidth" | "detailWidth" | "sideSplit" | "sideLayout"
->;
+type Persisted = Pick<ShellState, "theme" | "railWidth" | "detailWidth">;
 
 function readPersisted(): Partial<Persisted> {
   if (typeof localStorage === "undefined") return {};
@@ -170,8 +155,6 @@ function writePersisted(s: ShellState) {
     theme: s.theme,
     railWidth: s.railWidth,
     detailWidth: s.detailWidth,
-    sideSplit: s.sideSplit,
-    sideLayout: s.sideLayout,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slice));
@@ -193,6 +176,7 @@ const INITIAL: ShellState = {
   theme: initialTheme(stored),
   // nunca restaura estado efemero
   paletteOpen: false,
+  changesOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
   contextMenu: null,
@@ -254,35 +238,19 @@ export const togglePalette = () => set((s) => ({ paletteOpen: !s.paletteOpen }))
 export const RAIL_RANGE = { min: 200, max: 460 } as const;
 /** O sidebar direito abriga o visualizador de diff: precisa caber um patch. */
 export const DETAIL_RANGE = { min: 320, max: 980 } as const;
-/** Altura da gaveta de cima. O minimo deixa ver o cabecalho do commit. */
-export const SIDE_RANGE = { min: 140, max: 900 } as const;
 
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 export const setRailWidth = (px: number) => set({ railWidth: clamp(px, RAIL_RANGE.min, RAIL_RANGE.max) });
 export const setDetailWidth = (px: number) => set({ detailWidth: clamp(px, DETAIL_RANGE.min, DETAIL_RANGE.max) });
 
-/**
- * Altura da gaveta de cima. O teto acompanha a janela para a de baixo nunca
- * ficar sem espaco de respiro (~160 px de cabecalho + conteudo minimo).
- */
-export const setSideSplit = (px: number) => {
-  const teto =
-    typeof window === "undefined" ? SIDE_RANGE.max : Math.max(SIDE_RANGE.min, window.innerHeight - 300);
-  set({ sideSplit: clamp(px, SIDE_RANGE.min, Math.min(SIDE_RANGE.max, teto)) });
-};
+/* ------------------------------------------------------------------ */
+/* Gaveta de alteracoes                                                */
+/* ------------------------------------------------------------------ */
 
-export const setSideLayout = (sideLayout: SideLayout) => set({ sideLayout });
-
-/** Recolhe uma gaveta — o que e o mesmo que maximizar a outra. */
-export const minimizeSide = (qual: "detail" | "work") =>
-  set({ sideLayout: qual === "detail" ? "work" : "detail" });
-
-/** Maximiza uma gaveta; clicar de novo volta para a divisao. */
-export const toggleMaximizeSide = (qual: "detail" | "work") =>
-  set((s) => ({ sideLayout: s.sideLayout === qual ? "split" : qual }));
-
-export const restoreSide = () => set({ sideLayout: "split" });
+export const openChanges = () => set({ changesOpen: true });
+export const closeChanges = () => set({ changesOpen: false });
+export const toggleChanges = () => set((s) => ({ changesOpen: !s.changesOpen }));
 
 export const setCommitDraft = (patch: Partial<CommitDraft>) =>
   set((s) => ({ commitDraft: { ...s.commitDraft, ...patch } }));
@@ -352,7 +320,19 @@ export function registerCommitHandler(fn: () => void) {
   };
 }
 
-export const requestCommit = () => commitHandler?.();
+/**
+ * ⌘Enter em dois tempos, porque o painel que sabe commitar so existe enquanto a
+ * gaveta esta aberta: fechada, o atalho ABRE a gaveta; aberta, ele commita. Sem
+ * isso o atalho seria letra morta na maior parte do tempo — que e exatamente o
+ * estado normal da tela.
+ */
+export const requestCommit = () => {
+  if (!state.changesOpen) {
+    openChanges();
+    return;
+  }
+  commitHandler?.();
+};
 
 /* ------------------------------------------------------------------ */
 /* Seletores estaveis                                                  */
@@ -362,3 +342,4 @@ export const selectTheme = (s: ShellState) => s.theme;
 export const selectConfirm = (s: ShellState) => s.confirm;
 export const selectCommitDraft = (s: ShellState) => s.commitDraft;
 export const selectContextMenu = (s: ShellState) => s.contextMenu;
+export const selectChangesOpen = (s: ShellState) => s.changesOpen;

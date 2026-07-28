@@ -34,10 +34,20 @@ Never run `add @motion/motion-theme` — it would overwrite the customised
 `motion.theme.ts`. `<MotionUIThemeProvider>` is already mounted in
 `web/src/main.tsx`; do not mount a second one.
 
-**Four installed components have zero consumers:** `sheet`, `expand-card`,
-`terminal-session`, `border-beam`. `docs/UI.md:21,32,38` claims the first three
-are in use — they are not. Treat that table as a catalogue of what is
-*available*, not what is wired.
+**Three installed components have zero consumers:** `sheet`, `expand-card`,
+`terminal-session`. Treat `docs/UI.md`'s table as a catalogue of what is
+*available*, not proof of what is wired — grep before believing a row.
+`border-beam` is wired: the toolbar's commit button, gated on `active={dirty}`
+(`web/src/panels/Toolbar.tsx`).
+
+**`sheet` is a BOTTOM sheet and cannot be re-anchored.** Its outer positioning
+div is `pointer-events-none fixed inset-x-0 bottom-0 z-50` and takes no
+`className`; only the inner panel does, and the drag-dismiss is downward-only
+(`web/src/components/motion-ui/sheet/index.tsx:409,431,436`). A drawer on the
+right or left edge therefore does **not** come from `sheet` — compose it from
+`overlay` (`Backdrop` + `useFocusTrap` + `useScrollLock`), which is what both
+`dialogs/parts.tsx:98-116` and `panels/ChangesSheet.tsx` do. Editing the vendor
+file to fix this is not an option: the shadcn CLI overwrites it.
 
 **Motion comes from the theme, never from inline numbers.** Use
 `useMotionUITransition("snap" | "ui" | "gentle" | "lively" | "ambient")` and
