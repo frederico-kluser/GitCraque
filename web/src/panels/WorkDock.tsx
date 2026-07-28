@@ -16,6 +16,7 @@
  */
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
+import { motion } from "motion/react";
 import {
   SmoothTabs,
   SmoothTabsList,
@@ -59,19 +60,28 @@ export function WorkDock({ className, controls }: WorkDockProps) {
           arquivo + controles nao cabem lado a lado sem truncar tudo. */}
       <div className="border-b border-border bg-surface-rail">
       <div className="flex items-center gap-2 px-3 py-1.5">
-        <SmoothTabsList ariaLabel="Painel de trabalho" className="shrink-0 gap-0.5 p-0.5">
-          <SmoothTabsTab value="changes" className="flex-none px-3 py-1 text-xs">
-            <span className="flex items-center gap-1.5">
-              Alteracoes
-              {changeCount > 0 && (
-                <span className="font-mono text-[10px] tabular-nums opacity-70">{changeCount}</span>
-              )}
-            </span>
-          </SmoothTabsTab>
-          <SmoothTabsTab value="viewer" className="flex-none px-3 py-1 text-xs">
-            Visualizador
-          </SmoothTabsTab>
-        </SmoothTabsList>
+        {/* CASCATA: a pilula ativa do `SmoothTabs` e um elemento de layout
+            compartilhado, e o Motion recalcula a posicao dela contra a PAGINA a
+            cada render. Como esta gaveta anda junto com a divisoria do sidebar,
+            cada quadro do arrasto disparava uma animacao nova e a pilula vinha
+            deslizando atras da aba. `layoutRoot` (mais o `layout` que ele exige)
+            troca a referencia para esta caixa: mover a caixa inteira nao anima
+            nada, e a troca de aba continua deslizando como antes. */}
+        <motion.div layout layoutRoot className="shrink-0">
+          <SmoothTabsList ariaLabel="Painel de trabalho" className="gap-0.5 p-0.5">
+            <SmoothTabsTab value="changes" className="flex-none px-3 py-1 text-xs">
+              <span className="flex items-center gap-1.5">
+                Alteracoes
+                {changeCount > 0 && (
+                  <span className="font-mono text-[10px] tabular-nums opacity-70">{changeCount}</span>
+                )}
+              </span>
+            </SmoothTabsTab>
+            <SmoothTabsTab value="viewer" className="flex-none px-3 py-1 text-xs">
+              Visualizador
+            </SmoothTabsTab>
+          </SmoothTabsList>
+        </motion.div>
 
         <span className="flex-1" />
         {controls}
