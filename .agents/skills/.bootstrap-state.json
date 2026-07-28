@@ -11,9 +11,10 @@
     {
       "id": 1,
       "name": "Latest-docs analysis + deep project analysis",
-      "done": false,
-      "gate_passed": false,
-      "artifact": ".agents/project-analysis.md"
+      "done": true,
+      "gate_passed": true,
+      "artifact": ".agents/project-analysis.md",
+      "gate_evidence": "typecheck clean; npm test 367/367 serial; check-project-rules clean on HEAD and verified to fire on 9/9 injected violations"
     },
     {
       "id": 2,
@@ -44,5 +45,5 @@
       "artifact": ".agents/validation-report.md"
     }
   ],
-  "updated_by": "phase-1-setup"
+  "updated_by": "phase-1-complete"
 }
