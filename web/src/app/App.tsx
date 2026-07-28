@@ -1,10 +1,12 @@
 /**
  * Shell do GitCraque — o unico lugar que monta os quatro modulos juntos.
  *
- * Layout: toolbar no topo, rail a esquerda, View Tree ao centro e, a direita, o
- * sidebar de duas gavetas (detalhe do commit em cima; alteracoes e visualizador
- * embaixo). Rodape de diagnostico fecha a tela. Tudo em grid; o unico
- * posicionamento absoluto do arquivo e o alvo de arrasto das divisorias.
+ * Layout: toolbar no topo, rail a esquerda, View Tree ao centro e, a direita, a
+ * coluna de detalhe — que mostra UMA tela por vez, o detalhe do commit ou a View
+ * do arquivo aberto. Staging e commit saem de uma gaveta por cima da tela,
+ * chamada pelo botao de commit da toolbar. Rodape de diagnostico fecha a tela.
+ * Tudo em grid; o unico posicionamento absoluto do arquivo e o alvo de arrasto
+ * das divisorias.
  *
  * As larguras das colunas sao arrastaveis e persistidas (ver `Splitter.tsx`,
  * que explica por que ele e escrito a mao).
@@ -14,7 +16,7 @@ import { FolderX, GitCommitHorizontal, PlugZap } from "lucide-react";
 import { GraphView } from "@/graph";
 import { GitDndProvider } from "@/dnd";
 import { DialogHost, RepoPicker } from "@/dialogs";
-import { RailPanels, SidePanel, Toolbar } from "@/panels";
+import { ChangesSheet, RailPanels, SidePanel, Toolbar } from "@/panels";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import { Rich, t } from "@/i18n";
 import {
@@ -142,7 +144,7 @@ export function App() {
 
   // Trocar de projeto ou de worktree e trocar o diretorio do servidor: o
   // rascunho do commit era daquele repositorio, nao deste. Mora aqui, e nao no
-  // painel de alteracoes, porque aquele desmonta ao trocar de aba do rodape.
+  // painel de alteracoes, porque aquele desmonta toda vez que a gaveta fecha.
   const lastCwd = useRef<string | null>(null);
   useEffect(() => {
     if (lastCwd.current && lastCwd.current !== repoCwd) setCommitDraft({ message: "", amend: false });
@@ -213,9 +215,7 @@ export function App() {
 
   return (
     <GitDndProvider onIntent={setPendingIntent}>
-      {/* O rodape saiu: alteracoes e visualizador foram para o sidebar direito,
-          junto com o detalhe do commit. Sobram tres linhas: toolbar, corpo e
-          rodape de diagnostico. */}
+      {/* Tres linhas: toolbar, corpo e rodape de diagnostico. */}
       <div
         className="grid h-full bg-background text-foreground"
         style={{ gridTemplateRows: "auto minmax(0,1fr) auto" }}
@@ -274,6 +274,10 @@ export function App() {
 
         <StatusFooter className="border-t border-border bg-surface-rail" />
       </div>
+
+      {/* Staging e commit: gaveta unica, chamada pelo botao da toolbar. Fica
+          aqui, e nao dentro do sidebar, porque ela cobre a tela inteira. */}
+      <ChangesSheet />
 
       {/* Confirmacoes vindas do DND (outro modulo) e dos paineis (este). */}
       <DialogHost intent={pendingIntent} onClose={() => setPendingIntent(null)} />

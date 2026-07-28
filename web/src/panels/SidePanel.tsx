@@ -1,209 +1,77 @@
 /**
- * Sidebar direito: duas gavetas empilhadas, divididas por uma divisoria
- * arrastavel.
+ * Coluna direita: UMA tela por vez.
  *
- *   Detalhe   → metadados do commit selecionado e a lista de arquivos
- *   Trabalho  → abas Alteracoes (staging) e Visualizador (diff/markdown/cru)
+ *   Detalhe  → metadados do commit selecionado e a lista de arquivos (o padrao)
+ *   View     → o conteudo do arquivo aberto, com voltar no cabecalho
  *
- * Antes o de baixo era uma faixa horizontal no rodape do shell. Passou para ca
- * porque as duas coisas falam do MESMO commit: a lista de arquivos e o conteudo
- * do arquivo escolhido ficavam em cantos opostos da tela, e o olho tinha de
- * atravessar o grafo inteiro a cada clique.
+ * Antes eram duas gavetas empilhadas com divisoria arrastavel, e o painel de
+ * alteracoes era uma aba da de baixo. Nao se sustentou: numa coluna de 560 px,
+ * dividir a altura em duas dava meia tela para cada coisa, e ler um diff em meia
+ * tela e o mesmo que nao ler. Agora o detalhe ocupa a coluna inteira, o arquivo
+ * clicado TOMA a coluna inteira, e as alteracoes viraram uma gaveta chamada pelo
+ * botao de commit da toolbar (`ChangesSheet`).
  *
- * Cada gaveta minimiza e maximiza. Os dois gestos sao o mesmo movimento visto
- * de lados diferentes — minimizar uma E maximizar a outra —, entao o estado e
- * um so (`sideLayout`), e nao dois booleanos que poderiam se contradizer.
+ * Nao ha estado proprio de "qual tela": ela e derivada de `openFile` no store.
+ * Um booleano ao lado poderia discordar do arquivo aberto — e discordaria, na
+ * primeira vez que o store limpasse o arquivo por conta propria (troca de
+ * worktree, refresh).
  *
- * CASCATA: o catalogo do Motion UI nao tem gaveta redimensionavel com
- * minimizar/maximizar (o `accordion` de la e altura automatica por conteudo, sem
- * divisoria nem estado maximizado). O cabecalho, os controles e a mecanica de
- * colapso estao escritos aqui; o que veio do catalogo e o `SmoothTabs` das abas
- * de trabalho e a transicao de tamanho, que sai dos tokens do tema.
+ * CASCATA: o catalogo do Motion UI nao tem troca de tela sem tablist — o
+ * `SmoothTabs`, que servia as abas antigas, exige as abas visiveis, e aqui a
+ * navegacao e o clique num arquivo, nao uma aba. As duas telas ficam na MESMA
+ * celula de um grid e trocam por crossfade com `AnimatePresence`; tempo e curva
+ * saem do tema.
  */
-import type { ReactNode } from "react";
-import { ChevronDown, ChevronUp, Maximize2, Minimize2, Minus } from "lucide-react";
-import {
-  SIDE_RANGE,
-  minimizeSide,
-  restoreSide,
-  setSideSplit,
-  toggleMaximizeSide,
-  useShellState,
-} from "@/hooks";
-import type { SideLayout } from "@/hooks";
-import { Splitter } from "@/app/Splitter";
+import { useEffect, useRef } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { useMotionUITheme, useMotionUITransition } from "@/components/motion-ui/ui-theme";
+import { closeFile, useAppState } from "@/state/store";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { PanelProps } from "@/types/modules";
 import { DetailPanel } from "./DetailPanel";
-import { WorkDock } from "./WorkDock";
-import { FOCUS_RING, ToolButton } from "./parts";
-
-export type SideDrawerId = "detail" | "work";
-
-/* ------------------------------------------------------------------ */
-/* Controles                                                           */
-/* ------------------------------------------------------------------ */
-
-/**
- * Minimizar e maximizar de uma gaveta.
- *
- * Ficam sempre os dois visiveis, mesmo quando um deles e redundante, porque
- * esconder um controle conforme o estado obriga a pessoa a descobrir de novo
- * onde ele foi parar a cada mudanca.
- */
-export function DrawerControls({
-  id,
-  layout,
-  nome,
-}: {
-  id: SideDrawerId;
-  layout: SideLayout;
-  nome: string;
-}) {
-  const colapsada = layout !== "split" && layout !== id;
-  const maximizada = layout === id;
-
-  return (
-    <div className="flex shrink-0 items-center gap-0.5">
-      <ToolButton
-        size="sm"
-        tone="ghost"
-        aria-label={t("side.minimize", { name: nome })}
-        title={t("side.minimize", { name: nome })}
-        disabled={colapsada}
-        onClick={() => minimizeSide(id)}
-        icon={<Minus className="size-3.5" />}
-      />
-      <ToolButton
-        size="sm"
-        tone="ghost"
-        aria-label={maximizada ? t("side.restore", { name: nome }) : t("side.maximize", { name: nome })}
-        title={maximizada ? t("side.restore", { name: nome }) : t("side.maximize", { name: nome })}
-        active={maximizada}
-        onClick={() => toggleMaximizeSide(id)}
-        icon={
-          maximizada ? <Minimize2 className="size-3.5" /> : <Maximize2 className="size-3.5" />
-        }
-      />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Cabecalho de gaveta colapsada                                       */
-/* ------------------------------------------------------------------ */
-
-/**
- * Quando a gaveta esta recolhida, o cabecalho INTEIRO volta a abri-la. Deixar
- * so o botao clicavel transforma uma faixa de 28 px de altura num alvo de 20 px.
- */
-function CollapsedBar({
-  id,
-  nome,
-  badge,
-  posicao,
-  layout,
-}: {
-  id: SideDrawerId;
-  nome: string;
-  badge?: ReactNode;
-  posicao: "topo" | "base";
-  layout: SideLayout;
-}) {
-  const Seta = posicao === "topo" ? ChevronDown : ChevronUp;
-  return (
-    <div
-      className={cn(
-        "flex shrink-0 items-center gap-2 bg-surface-rail px-3 py-1.5",
-        posicao === "topo" ? "border-b border-border" : "border-t border-border",
-      )}
-    >
-      <button
-        type="button"
-        onClick={restoreSide}
-        aria-label={t("side.expand", { name: nome })}
-        title={t("side.expand", { name: nome })}
-        className={cn(
-          "flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 text-left",
-          "hover:text-foreground",
-          FOCUS_RING,
-        )}
-      >
-        <Seta className="size-3.5 shrink-0 text-muted-foreground" />
-        <span className="truncate text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          {nome}
-        </span>
-        {badge}
-      </button>
-      <DrawerControls id={id} layout={layout} nome={nome} />
-    </div>
-  );
-}
-
-/* ------------------------------------------------------------------ */
-/* Sidebar                                                             */
-/* ------------------------------------------------------------------ */
+import { FileViewPanel } from "./FileViewPanel";
 
 export function SidePanel({ className }: PanelProps) {
-  const layout = useShellState((s) => s.sideLayout);
-  const sideSplit = useShellState((s) => s.sideSplit);
-
-  const detalheColapsada = layout === "work";
-  const trabalhoColapsada = layout === "detail";
+  const openFile = useAppState((s) => s.openFile);
+  const primary = useAppState((s) => s.selection.primary);
+  const ui = useMotionUITransition("ui");
+  const { motionMode } = useMotionUITheme();
+  const still = motionMode === "off";
 
   /**
-   * As tres formas do grid. A gaveta colapsada vira `auto` — a altura do proprio
-   * cabecalho — e a divisoria some, porque nao ha o que dividir.
+   * Selecionar outro commit e um pedido para ver AQUELE commit: a View do
+   * arquivo anterior sai de cena sozinha. Guardado por ref porque o efeito nao
+   * pode disparar na montagem — fecharia um arquivo que ninguem mandou fechar.
    */
-  const rows = detalheColapsada
-    ? "auto 0px minmax(0,1fr)"
-    : trabalhoColapsada
-      ? "minmax(0,1fr) 0px auto"
-      : `${sideSplit}px auto minmax(0,1fr)`;
+  const lastPrimary = useRef(primary);
+  useEffect(() => {
+    if (lastPrimary.current !== primary) {
+      lastPrimary.current = primary;
+      closeFile();
+    }
+  }, [primary]);
 
   return (
-    /* Sem transicao no `grid-template-rows`: colapsar troca `1fr` por `auto`, e
-       essas duas unidades nao interpolam — a animacao sairia pela metade, o que
-       e pior que nao ter. O movimento fica no conteudo, nao na caixa. */
-    <aside
-      className={cn("grid min-h-0 min-w-0", className)}
-      style={{ gridTemplateRows: rows }}
-      aria-label={t("side.label")}
-    >
-      {/* --- gaveta de cima: detalhe do commit --- */}
-      {detalheColapsada ? (
-        <CollapsedBar id="detail" nome={t("side.drawer.detail")} posicao="topo" layout={layout} />
-      ) : (
-        <DetailPanel
-          className="min-h-0 bg-card"
-          headerExtra={<DrawerControls id="detail" layout={layout} nome={t("side.drawer.detail")} />}
-        />
-      )}
-
-      {/* --- divisoria: so existe quando as duas estao abertas --- */}
-      {layout === "split" ? (
-        <Splitter
-          axis="y"
-          value={sideSplit}
-          min={SIDE_RANGE.min}
-          max={SIDE_RANGE.max}
-          label={t("app.splitter.sideSplit")}
-          onChange={setSideSplit}
-        />
-      ) : (
-        <div aria-hidden />
-      )}
-
-      {/* --- gaveta de baixo: alteracoes e visualizador --- */}
-      {trabalhoColapsada ? (
-        <CollapsedBar id="work" nome={t("side.drawer.work")} posicao="base" layout={layout} />
-      ) : (
-        <WorkDock
-          className="min-h-0 border-t border-border"
-          controls={<DrawerControls id="work" layout={layout} nome={t("side.drawer.work")} />}
-        />
-      )}
+    <aside className={cn("grid min-h-0 min-w-0", className)} aria-label={t("side.label")}>
+      {/* Uma celula so: as duas telas se sobrepoem enquanto o crossfade corre,
+          sem posicionamento absoluto e sem a coluna pular de altura. */}
+      <AnimatePresence initial={false}>
+        <motion.div
+          key={openFile ? "view" : "detail"}
+          initial={still ? false : { opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={still ? undefined : { opacity: 0 }}
+          transition={{ ...ui }}
+          className="col-start-1 row-start-1 grid min-h-0 min-w-0 bg-card"
+        >
+          {openFile ? (
+            <FileViewPanel className="min-h-0" file={openFile} />
+          ) : (
+            <DetailPanel className="min-h-0" />
+          )}
+        </motion.div>
+      </AnimatePresence>
     </aside>
   );
 }

@@ -58,7 +58,6 @@ export const zh: Messages = {
     "服务器位于 {cwd}，那里没有 {dotgit}。请在下方打开你的某个仓库 —— 或在「浏览」标签页用 {init} 新建一个。",
   "app.splitter.rail": "侧栏宽度",
   "app.splitter.detail": "详情面板宽度",
-  "app.splitter.sideSplit": "提交详情高度",
   "app.reconnecting": "正在重新连接服务器…",
 
   /* ---------------------------------------------------------------- */
@@ -145,6 +144,8 @@ export const zh: Messages = {
   "toolbar.project.empty": "还没有收藏或最近项。用下方的选择器打开一个文件夹，下次它就会出现在这里。",
   "toolbar.project.openOther": "打开其他…",
   "toolbar.head.detached": "在 {hash} 处于 detached",
+  "toolbar.commit.label": "打开更改并提交",
+  "toolbar.commit.clean": "没有可提交的内容",
   "toolbar.worktree.trigger": "切换工作树 —— 服务器执行 process.chdir，不做 checkout",
   "toolbar.worktree.none": "无工作树",
   "toolbar.worktree.note": "切换工作树会在服务器上执行 {chdir}。不会发生任何 {checkout}。",
@@ -257,28 +258,22 @@ export const zh: Messages = {
   /* ---------------------------------------------------------------- */
   /* 右侧栏                                                            */
   /* ---------------------------------------------------------------- */
-  "side.label": "详情与工作区",
-  "side.drawer.detail": "详情",
-  "side.drawer.work": "工作区",
-  "side.minimize": "最小化{name}",
-  "side.maximize": "最大化{name}",
-  "side.restore": "还原{name}",
-  "side.expand": "展开{name}",
+  "side.label": "提交详情",
 
   /* ---------------------------------------------------------------- */
-  /* 工作面板                                                          */
+  /* 文件视图                                                          */
   /* ---------------------------------------------------------------- */
-  "dock.label": "工作面板",
-  "dock.tab.changes": "更改",
-  "dock.tab.viewer": "查看器",
-  "dock.workingTree": "工作区",
-  "dock.empty.title": "没有打开任何文件",
-  "dock.empty.body": "点击所选提交中的文件，或更改列表中的一行，即可在此查看内容。",
+  "view.label": "已打开的文件",
+  "view.back.detail": "详情",
+  "view.back.changes": "更改",
 
   /* ---------------------------------------------------------------- */
   /* 更改与提交                                                        */
   /* ---------------------------------------------------------------- */
   "changes.label": "工作区更改",
+  "changes.sheet.label": "更改与提交",
+  "changes.sheet.title": "更改",
+  "changes.sheet.close": "关闭更改",
   "changes.group.conflicted": "冲突",
   "changes.group.staged": "已暂存",
   "changes.group.untracked": "未跟踪",

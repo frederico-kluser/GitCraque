@@ -56,7 +56,6 @@ export const en: Messages = {
     "The server is at {cwd}, and there is no {dotgit} there. Open one of your repositories below — or create a new one with {init} from the Browse tab.",
   "app.splitter.rail": "Rail width",
   "app.splitter.detail": "Detail panel width",
-  "app.splitter.sideSplit": "Commit detail height",
   "app.reconnecting": "Reconnecting to the server…",
 
   /* ---------------------------------------------------------------- */
@@ -146,6 +145,8 @@ export const en: Messages = {
     "No favorites or recents yet. Open a folder with the picker below and it shows up here next time.",
   "toolbar.project.openOther": "Open another…",
   "toolbar.head.detached": "detached at {hash}",
+  "toolbar.commit.label": "Open changes and commit",
+  "toolbar.commit.clean": "Nothing to commit",
   "toolbar.worktree.trigger": "Switch worktree — the server runs process.chdir, no checkout",
   "toolbar.worktree.none": "no worktree",
   "toolbar.worktree.note":
@@ -258,31 +259,24 @@ export const en: Messages = {
   "status.unknown": "unknown",
 
   /* ---------------------------------------------------------------- */
-  /* Sidebar                                                           */
+  /* Right column                                                      */
   /* ---------------------------------------------------------------- */
-  "side.label": "Detail and work",
-  "side.drawer.detail": "Detail",
-  "side.drawer.work": "Work",
-  "side.minimize": "Minimize {name}",
-  "side.maximize": "Maximize {name}",
-  "side.restore": "Restore {name}",
-  "side.expand": "Expand {name}",
+  "side.label": "Commit detail",
 
   /* ---------------------------------------------------------------- */
-  /* Work dock                                                         */
+  /* File view                                                         */
   /* ---------------------------------------------------------------- */
-  "dock.label": "Work panel",
-  "dock.tab.changes": "Changes",
-  "dock.tab.viewer": "Viewer",
-  "dock.workingTree": "working tree",
-  "dock.empty.title": "No file open",
-  "dock.empty.body":
-    "Click a file in the selected commit, or a row in the changes list, to see its content here.",
+  "view.label": "Open file",
+  "view.back.detail": "Detail",
+  "view.back.changes": "Changes",
 
   /* ---------------------------------------------------------------- */
   /* Changes and commit                                                */
   /* ---------------------------------------------------------------- */
   "changes.label": "Working tree changes",
+  "changes.sheet.label": "Changes and commit",
+  "changes.sheet.title": "Changes",
+  "changes.sheet.close": "Close changes",
   "changes.group.conflicted": "Conflicts",
   "changes.group.staged": "Staged",
   "changes.group.untracked": "Untracked",

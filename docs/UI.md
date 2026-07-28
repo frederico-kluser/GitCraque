@@ -18,10 +18,10 @@ recurso, nao o primeiro reflexo.
 | Componente | Uso no GitCraque |
 |---|---|
 | `overlay` | `useFocusTrap` / `useScrollLock` / `Backdrop` de todo dialogo |
-| `sheet` | painel de detalhe do commit e diffs longos |
+| `sheet` | **sem uso.** E uma gaveta de RODAPE (`fixed inset-x-0 bottom-0`, `max-w-md`, dismiss arrastando para baixo) e a caixa externa dela nao aceita `className`. A gaveta de alteracoes precisava da borda direita e altura cheia, entao foi pelos primitivos de `overlay`, como o `DialogShell` |
 | `toast-stack` | resultado de cada comando git (`useToastStack`, `ToastStack`, `Toast`) |
 | `command-palette` | ⌘K com todos os comandos git (`useCommandK`, `CommandPalette`) |
-| `smooth-tabs` | abas dos paineis (Alteracoes / Historico / Console) |
+| `smooth-tabs` | abas do seletor de repositorios (Favoritos / Recentes / Procurar / Navegar). As abas dos paineis sairam: a coluna direita mostra uma tela por vez e alterna pelo clique num arquivo, nao por tablist |
 | `segmented-toggle` | alternadores (todos os ramos x ramo atual, diff unificado x lado a lado) |
 | `multi-state-button` | fetch / pull / push com idle → loading → ok → erro |
 | `hold-to-confirm` | **obrigatorio** em toda acao destrutiva: deletar branch remota, push --force, reset --hard, squash |
@@ -31,7 +31,7 @@ recurso, nao o primeiro reflexo.
 | `copy-button` | copiar hash, copiar patch, copiar url do remoto |
 | `expand-card` | linha do commit expandindo para o detalhe |
 | `swipe-actions` | linhas de arquivo no staging (stage / descartar) |
-| `border-beam` | sem uso hoje — a worktree ativa e marcada de forma ESTATICA (fundo + borda em `primary`), por pedido de produto. Nao devolva o beam para la |
+| `border-beam` | botao de commit da toolbar, enquanto ha o que commitar (`active={dirty}`). **Nao** na worktree ativa: aquela e marcada de forma ESTATICA (fundo + borda em `primary`), por pedido de produto — nao devolva o beam para la |
 | `stagger-reveal` | entrada dos paineis e dos estados vazios |
 | `sparkline` | atividade de commits no cabecalho do repositorio |
 | `confetti` | push bem-sucedido |
