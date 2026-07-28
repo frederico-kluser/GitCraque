@@ -1,0 +1,15 @@
+{
+  "$comment": "Deterministic enforcement for the knowledge-skill system. Scripts live in .agents/hooks/ so they stay portable across harnesses; this file is only the Claude Code glue. See .agents/README.md.",
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$CLAUDE_PROJECT_DIR/.agents/hooks/bootstrap-stop.mjs\""
+          }
+        ]
+      }
+    ]
+  }
+}

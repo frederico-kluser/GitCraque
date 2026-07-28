@@ -1,0 +1,48 @@
+{
+  "mission": "knowledge-skills-system",
+  "repo": "GitCraque",
+  "baseline": {
+    "head": "98abad9",
+    "typecheck": "clean",
+    "tests": "367 passing (server 223, graph 36, graph-virtualizacao 6, dnd 20, viewer 82)",
+    "note": "npm test must run serially; graph perf assertions are wall-clock sensitive"
+  },
+  "phases": [
+    {
+      "id": 1,
+      "name": "Latest-docs analysis + deep project analysis",
+      "done": false,
+      "gate_passed": false,
+      "artifact": ".agents/project-analysis.md"
+    },
+    {
+      "id": 2,
+      "name": "Skill map",
+      "done": false,
+      "gate_passed": false,
+      "artifact": ".agents/skill-map.md"
+    },
+    {
+      "id": 3,
+      "name": "Generate knowledge and task skills",
+      "done": false,
+      "gate_passed": false,
+      "artifact": ".agents/skills/catalog.md"
+    },
+    {
+      "id": 4,
+      "name": "Router + verified-evolution mechanism",
+      "done": false,
+      "gate_passed": false,
+      "artifact": ".agents/skills/project-router/SKILL.md"
+    },
+    {
+      "id": 5,
+      "name": "Validation",
+      "done": false,
+      "gate_passed": false,
+      "artifact": ".agents/validation-report.md"
+    }
+  ],
+  "updated_by": "phase-1-setup"
+}

@@ -1,0 +1,4 @@
+# Ephemeral gate bookkeeping. The state file itself IS tracked -- it is the
+# mission backbone; only the transient counters and validation receipts are not.
+.stop-guard.json
+skills/.validation/
