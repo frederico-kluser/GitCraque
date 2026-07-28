@@ -422,6 +422,100 @@ export function openDeleteBranchLocal(name: string) {
   });
 }
 
+/**
+ * O remoto de uma branch: o do upstream quando ele existe, senao o padrao.
+ *
+ * `upstream` vem como "origin/main"; o que interessa e so a primeira parte. Uma
+ * branch pode ter upstream num remoto que nao e o `origin`, e apagar no remoto
+ * errado seria pior do que nao apagar.
+ */
+export function remoteOfBranch(name: string): string {
+  const branch = getState().refs?.branches.find((b) => b.name === name);
+  const upstream = branch?.upstream;
+  const dono = upstream?.includes("/") ? upstream.slice(0, upstream.indexOf("/")) : null;
+  return dono ?? defaultRemote();
+}
+
+/** A branch tem lado remoto conhecido por este clone? */
+export function hasRemoteCounterpart(name: string, remote = remoteOfBranch(name)): boolean {
+  const remotas = getState().refs?.remoteBranches ?? [];
+  return remotas.some((rb) => rb.remote === remote && rb.shortName === name);
+}
+
+/**
+ * Os dois lados de uma vez. Destrutivo: exige hold.
+ *
+ * `-D` e nao `-d`: quem pede para apagar tambem no remoto ja decidiu que a
+ * branch acabou, e parar no meio com "not fully merged" deixaria o remoto
+ * apagado e o local vivo — o pior dos dois mundos.
+ */
+export function openDeleteBranchBoth(name: string, remote = remoteOfBranch(name)) {
+  askConfirm({
+    title: t("action.branch.deleteBoth.title", { remote }),
+    description: t("action.branch.deleteBoth.description", { name, remote }),
+    preview: ["git", "branch", "-D", name, "&&", "git", "push", remote, "--delete", name],
+    destructive: true,
+    confirmLabel: t("action.branch.deleteBoth.confirm"),
+    run: async () => {
+      const result = await runOperation(
+        t("action.branch.deleteBoth.op"),
+        () => api.deleteBranchLocal({ name, force: true, remote }),
+        { refresh: "refs" },
+      );
+      // O toast do `runOperation` ja saiu; este segundo existe para a pessoa
+      // saber que o remoto nao tinha o que apagar, em vez de supor que apagou.
+      if (result?.ok && result.skippedRemote) {
+        toast("info", t("action.branch.deleteBoth.doneLocalOnly", { name, remote }));
+      }
+    },
+  });
+}
+
+/**
+ * A saida para a branch que se recusa a morrer. Destrutivo: exige hold.
+ *
+ * `git branch -d` recusa branch checada em worktree, e a worktree recusa sair
+ * com codigo nao commitado. Os dois erros apontam um para o outro e a pessoa
+ * fica presa no meio. Esta acao quebra o ciclo — e por isso a descricao diz,
+ * antes do hold, exatamente o que vai ser destruido.
+ */
+export function openDeleteBranchAll(name: string) {
+  const branch = getState().refs?.branches.find((b) => b.name === name);
+  const worktree = branch?.checkedOutIn ?? null;
+  const remote = remoteOfBranch(name);
+  const comRemoto = hasRemoteCounterpart(name, remote);
+  const naPrincipal = worktree ? worktree === getState().worktrees?.mainRoot : false;
+
+  const descricao = comRemoto
+    ? t("action.branch.deleteAll.description.withRemote", { name, remote })
+    : t("action.branch.deleteAll.description", { name });
+  const aviso = !worktree
+    ? null
+    : naPrincipal
+      ? t("action.branch.deleteAll.pinnedMain")
+      : t("action.branch.deleteAll.pinned", { worktree });
+
+  askConfirm({
+    title: t("action.branch.deleteAll.title", { name }),
+    description: aviso ? `${descricao} ${aviso}` : descricao,
+    preview: worktree
+      ? naPrincipal
+        ? ["git", "checkout", "--detach", "&&", "git", "reset", "--hard", "&&", "git", "clean", "-fd"]
+        : ["git", "worktree", "remove", "--force", worktree, "&&", "git", "branch", "-D", name]
+      : ["git", "branch", "-D", name],
+    destructive: true,
+    confirmLabel: t("action.branch.deleteAll.confirm"),
+    run: () =>
+      runOperation(
+        t("action.branch.deleteAll.op"),
+        () => api.deleteBranchAll({ name, ...(comRemoto ? { remote } : {}) }),
+        // "all": a cascata pode ter mexido em worktree, HEAD, refs e no proprio
+        // diretorio do servidor. Recarregar so as refs mentiria sobre o resto.
+        { refresh: "all", successMessage: t("action.branch.deleteAll.done", { name }) },
+      ),
+  });
+}
+
 /** Destrutivo: exige hold. */
 export function openDeleteBranchRemote(remote: string, name: string) {
   askConfirm({

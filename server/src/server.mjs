@@ -23,7 +23,7 @@ import {
 } from "./contract.mjs";
 import { detectGitVersion } from "./git/exec.mjs";
 import { pickLocale, translate } from "./i18n.mjs";
-import { getGitDir, getWorktreesPayload } from "./git/worktree.mjs";
+import { getGitCommonDir, getGitDir, getWorktreesPayload } from "./git/worktree.mjs";
 import { HttpError, readJsonBody } from "./router.mjs";
 import { buildRouter } from "./routes/index.mjs";
 import { runtime } from "./runtime.mjs";
@@ -64,9 +64,14 @@ export async function createServer(options = {}) {
   let watcher = null;
   const startWatcher = async () => {
     watcher?.close();
-    const gitDir = await getGitDir(process.cwd());
+    // Numa worktree ligada os dois diferem, e as refs so estao no comum.
+    const [gitDir, commonDir] = await Promise.all([
+      getGitDir(process.cwd()),
+      getGitCommonDir(process.cwd()),
+    ]);
     watcher = new Watcher({
       gitDir,
+      commonDir,
       onChange: (reason, paths) => hub.broadcast({ type: "repo:changed", reason, paths }),
     }).start();
     runtime.watcher = watcher;

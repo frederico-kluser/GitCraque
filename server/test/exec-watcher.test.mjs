@@ -17,7 +17,7 @@ import {
   withMutationLock,
 } from "../src/git/exec.mjs";
 import { mostSignificant, reasonForPath, Watcher } from "../src/watcher.mjs";
-import { getGitDir } from "../src/git/worktree.mjs";
+import { getGitCommonDir, getGitDir } from "../src/git/worktree.mjs";
 import { makeFixtureRepo } from "./helpers/repo.mjs";
 
 test("o GitCommandResult tem o formato do contrato", async () => {
@@ -214,6 +214,57 @@ test("o watcher agrupa a rajada num evento so e respeita a supressao", async () 
       fs.writeFileSync(path.join(gitDir, "refs", "heads", "quatro"), `${"d".repeat(40)}\n`);
       await new Promise((r) => setTimeout(r, 400));
       assert.equal(eventos.length, 1);
+    } finally {
+      watcher.close();
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("numa worktree ligada, o watcher ve as refs do git-dir COMUM", async () => {
+  const fixture = makeFixtureRepo("gitcraque-comum-");
+  try {
+    // A fixture ja tem uma worktree ligada. Dentro dela o git-dir e
+    // `<comum>/worktrees/<nome>` e nao contem refs/ nenhuma: quem observasse so
+    // este diretorio nunca saberia que uma branch nasceu ou morreu.
+    const gitDir = await getGitDir(fixture.worktree);
+    const commonDir = await getGitCommonDir(fixture.worktree);
+    assert.notEqual(gitDir, commonDir, "a fixture precisa de uma worktree LIGADA");
+    assert.ok(!fs.existsSync(path.join(gitDir, "refs", "heads")), "as refs nao moram aqui");
+
+    const eventos = [];
+    const watcher = new Watcher({
+      gitDir,
+      commonDir,
+      onChange: (reason) => eventos.push(reason),
+    }).start();
+
+    try {
+      fs.writeFileSync(path.join(commonDir, "refs", "heads", "de-fora"), `${"e".repeat(40)}\n`);
+      await new Promise((r) => setTimeout(r, 400));
+      assert.equal(eventos.length, 1);
+      assert.equal(eventos[0], "refs");
+    } finally {
+      watcher.close();
+    }
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("gitDir igual a commonDir nao observa duas vezes", async () => {
+  const fixture = makeFixtureRepo("gitcraque-dedup-");
+  try {
+    // Na worktree principal os dois caminhos sao o mesmo. Observar duas vezes
+    // seria desperdicio de descritor, nada mais grave — mas o dedup e barato.
+    const gitDir = await getGitDir(fixture.root);
+    const commonDir = await getGitCommonDir(fixture.root);
+    assert.equal(gitDir, commonDir);
+
+    const watcher = new Watcher({ gitDir, commonDir, onChange: () => {} }).start();
+    try {
+      assert.equal(watcher.commonDir, null);
     } finally {
       watcher.close();
     }

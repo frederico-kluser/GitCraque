@@ -205,6 +205,9 @@ export const zh: Messages = {
   "rail.branches.tagHere": "在此创建标签",
   "rail.branches.push": "推送此分支",
   "rail.branches.deleteLocal": "删除分支（本地）",
+  "rail.branches.deleteBoth": "删除分支（本地和 {remote}）",
+  "rail.branches.deleteAll": "全部删除（工作树、改动、本地和远程）",
+  "rail.branches.deleteBoth.noRemote": "远程没有对应的分支",
   "rail.branches.ahead": "领先上游 {count} 个提交",
   "rail.branches.behind": "落后上游 {count} 个提交",
   "rail.branches.empty.title": "没有本地分支",
@@ -477,6 +480,26 @@ export const zh: Messages = {
   "action.branch.deleteRemote.confirm": "在 {remote} 上删除",
   "action.branch.deleteRemote.op": "删除远程分支",
   "action.branch.deleteRemote.done": "{remote}/{name} 已删除",
+
+  "action.branch.deleteBoth.title": "删除分支（本地和 {remote}）",
+  "action.branch.deleteBoth.description":
+    "在同一次操作中删除本地的 {name} 和 {remote} 上的 {name}。如果 {remote} 上没有对应分支，则只删除本地一侧。",
+  "action.branch.deleteBoth.confirm": "两侧都删除",
+  "action.branch.deleteBoth.op": "删除本地和远程分支",
+  "action.branch.deleteBoth.done": "{name} 已在本地和 {remote} 上删除",
+  "action.branch.deleteBoth.doneLocalOnly": "{name} 已删除 —— {remote} 上原本没有对应分支",
+
+  "action.branch.deleteAll.title": "全部删除 {name}",
+  "action.branch.deleteAll.description":
+    "移除占用 {name} 的工作树，丢弃其中未提交的代码，并删除本地分支。",
+  "action.branch.deleteAll.description.withRemote":
+    "移除占用 {name} 的工作树，丢弃其中未提交的代码，并删除本地以及 {remote} 上的分支。",
+  "action.branch.deleteAll.pinned": "工作树 {worktree} 将从磁盘上移除。",
+  "action.branch.deleteAll.pinnedMain":
+    "该分支位于主工作树：主工作树无法移除，因此会分离 HEAD 并丢弃未提交的改动。",
+  "action.branch.deleteAll.confirm": "全部删除",
+  "action.branch.deleteAll.op": "删除分支、工作树和改动",
+  "action.branch.deleteAll.done": "{name} 已连同其工作树和改动一起删除",
 
   "action.tag.new": "新建标签",
   "action.tag.new.at": "在 {ref} 处创建一个标签。",

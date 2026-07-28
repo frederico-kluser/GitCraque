@@ -38,6 +38,7 @@ import {
   setRailWidth,
   togglePalette,
   useHotkeys,
+  useRepoPoll,
   useShellState,
 } from "@/hooks";
 import type { CommitRef } from "@/types/git";
@@ -142,6 +143,9 @@ export function App() {
     onCommit: requestCommit,
     onEscape: clearSelection,
   });
+
+  // O que muda no editor nao toca no `.git` e por isso nao chega pelo watcher.
+  useRepoPoll();
 
   // Trocar de projeto ou de worktree e trocar o diretorio do servidor: o
   // rascunho do commit era daquele repositorio, nao deste. Mora aqui, e nao no

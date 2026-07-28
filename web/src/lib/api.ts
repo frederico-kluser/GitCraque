@@ -122,12 +122,26 @@ export const api = {
   /* ---- branches ---- */
   createBranch: (body: { name: string; startPoint?: string; checkout?: boolean }) =>
     post<GitCommandResult>("/branch/create", body),
-  /** git branch -d / -D */
-  deleteBranchLocal: (body: { name: string; force?: boolean }) =>
+  /**
+   * git branch -d / -D. Com `remote`, o `git push <remote> --delete` vai junto,
+   * sob um lock so; sem branch correspondente no remoto o push e pulado e a
+   * resposta traz `skippedRemote`.
+   */
+  deleteBranchLocal: (body: { name: string; force?: boolean; remote?: string }) =>
     post<GitCommandResult>("/branch/delete-local", body),
   /** git push <remote> --delete <name> */
   deleteBranchRemote: (body: { remote: string; name: string }) =>
     post<GitCommandResult>("/branch/delete-remote", body),
+  /**
+   * Exclusao em cascata: solta a worktree que prende a branch (removendo-a, ou
+   * soltando o HEAD quando e a principal), descarta o codigo nao commitado,
+   * apaga a branch local e, com `remote`, a do remoto.
+   *
+   * Pode mudar o `process.cwd()` do servidor — vem `cwdChanged` na resposta e
+   * `cwd:changed` pelo WebSocket.
+   */
+  deleteBranchAll: (body: { name: string; remote?: string }) =>
+    post<GitCommandResult>("/branch/delete-all", body),
   renameBranch: (body: { from: string; to: string; force?: boolean }) =>
     post<GitCommandResult>("/branch/rename", body),
   checkout: (body: { ref: string; createBranch?: string; force?: boolean }) =>

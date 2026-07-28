@@ -11,9 +11,12 @@
  *     array, injecao de shell e impossivel — mas um ref chamado
  *     `--upload-pack=curl` ainda seria lido como flag pelo git.
  */
+import fs from "node:fs";
+
 import { execGit, readGit, readGitLine, withMutationLock } from "./exec.mjs";
 import { getHeadState } from "./refs.mjs";
 import { gitPush } from "./remotes.mjs";
+import { listWorktrees } from "./worktree.mjs";
 
 /* ------------------------------------------------------------------ *
  * Guardas de entrada
@@ -354,9 +357,56 @@ export async function createBranch({ name, startPoint, checkout } = {}) {
 }
 
 /** POST /api/branch/delete-local */
-export async function deleteBranchLocal({ name, force } = {}) {
+export async function deleteBranchLocal({ name, force, remote } = {}) {
   assertRef(name, "name");
-  return run(["branch", force ? "-D" : "-d", name, "--"]);
+  const args = ["branch", force ? "-D" : "-d", name, "--"];
+  if (!remote) return run(args);
+
+  // Com `remote`, os dois lados morrem sob UM lock so — mesmo desenho de
+  // `deleteTag`. Sem isso, outra mutacao poderia se meter entre o `branch -d` e
+  // o `push --delete` e o repo ficaria com metade da exclusao feita.
+  assertRef(remote, "remote");
+  const result = await tx(async () => {
+    const local = await step(args);
+    if (!local.ok) return local;
+    return withRemoteDelete(local, remote, name);
+  });
+  return withPendingState(result);
+}
+
+/**
+ * A branch existe no remoto, ate onde este clone sabe?
+ *
+ * A pergunta e respondida pela ref de RASTREAMENTO local. Perguntar ao servidor
+ * custaria uma ida a rede — com askpass, possivelmente um prompt de credencial —
+ * so para descobrir que nao ha nada a apagar. O preco e conhecido: se o clone
+ * nunca fez fetch, ou se a ref esta velha, a resposta pode errar. Nos dois casos
+ * o `push --delete` diria a verdade, e e por isso que o erro dele passa inteiro.
+ */
+async function remoteBranchExists(remote, name) {
+  const result = await readGit(["show-ref", "--verify", `refs/remotes/${remote}/${name}`]);
+  return result.ok;
+}
+
+/**
+ * Fecha uma exclusao apagando o lado remoto — quando ele existe.
+ *
+ * Nao existir NAO e falha: apagar a branch local ainda foi o que a pessoa pediu.
+ * O passo e pulado e marcado em `skippedRemote`, para a UI poder dizer que so
+ * um dos lados tinha o que apagar.
+ *
+ * Chamada de DENTRO de uma transacao: usa `step`, nunca `gitPush` (que pegaria o
+ * lock de novo e travaria a fila).
+ */
+async function withRemoteDelete(local, remote, name) {
+  if (!(await remoteBranchExists(remote, name))) return { ...local, skippedRemote: true };
+  const pushed = await step(["push", "--progress", remote, "--delete", name]);
+  return {
+    ...pushed,
+    ok: local.ok && pushed.ok,
+    stdout: `${local.stdout}${pushed.stdout}`,
+    stderr: `${local.stderr}${pushed.stderr}`,
+  };
 }
 
 /** POST /api/branch/delete-remote — `git push <remote> --delete <name>`. */
@@ -365,6 +415,94 @@ export async function deleteBranchRemote({ remote, name } = {}) {
   assertRef(name, "name");
   const result = await gitPush({ remote, branch: name, deleteRef: true });
   return withPendingState(result);
+}
+
+/* ------------------------------------------------------------------ *
+ * Exclusao em cascata
+ * ------------------------------------------------------------------ */
+
+/**
+ * Solta a branch que esta checada na worktree PRINCIPAL.
+ *
+ * A principal nao pode ser removida — `git worktree remove` recusa, e com razao:
+ * ela e o repositorio. Entao a cascata faz o unico movimento que libera a branch
+ * sem destruir o diretorio: solta o HEAD e joga fora o que nao foi commitado.
+ * O `reset` mata modificacao em arquivo rastreado, o `clean` mata o resto.
+ */
+async function detachMainWorktree(main) {
+  const detached = await step(["checkout", "--detach"], { cwd: main.path });
+  if (!detached.ok) return detached;
+  const reset = await step(["reset", "--hard"], { cwd: main.path });
+  if (!reset.ok) return reset;
+  return step(["clean", "-fd"], { cwd: main.path });
+}
+
+/**
+ * Remove a worktree ligada que prende a branch, com o codigo nao commitado
+ * junto — e o que `--force` faz aqui: sem ele o git recusa arvore suja.
+ *
+ * O caso delicado e a worktree ser a ATIVA: o servidor esta com o `process.cwd()`
+ * dentro do diretorio que vai deixar de existir. Sair ANTES e obrigatorio; um
+ * processo cujo cwd sumiu nao consegue nem rodar o proximo comando. Quem chama
+ * compara o cwd depois para avisar a interface.
+ */
+async function dropLinkedWorktree(holder, worktrees) {
+  if (holder.isActive) {
+    const main = worktrees.find((wt) => wt.isMain && wt.path !== holder.path);
+    if (!main || !fs.existsSync(main.path)) {
+      const error = new Error("error.noMainWorktree");
+      error.status = 409;
+      error.detail = "error.noMainWorktreeDetail";
+      throw error;
+    }
+    process.chdir(main.path);
+  }
+  return step(["worktree", "remove", "--force", holder.path]);
+}
+
+/**
+ * POST /api/branch/delete-all — a saida para a branch que se recusa a morrer.
+ *
+ * `git branch -d` falha quando a branch esta checada em alguma worktree, e a
+ * worktree se recusa a sair quando ha codigo nao commitado. A pessoa fica
+ * girando entre dois erros que apontam um para o outro. Esta rota quebra o ciclo
+ * na ordem certa: libera a worktree, apaga a branch local, apaga a do remoto.
+ *
+ * Tudo sob UM lock. A cascata para no primeiro passo que falhar e devolve
+ * aquele resultado — meia exclusao e pior que nenhuma, entao o que ficou por
+ * fazer fica visivel em vez de silencioso.
+ */
+export async function deleteBranchAll({ name, remote } = {}) {
+  assertRef(name, "name");
+  if (remote) assertRef(remote, "remote");
+
+  const cwdAntes = process.cwd();
+  const result = await tx(async () => {
+    // Leitura: nao pega o lock (ja o temos) e nao suja o console do usuario.
+    const worktrees = await listWorktrees();
+    const holder = worktrees.find((wt) => wt.branch === name && !wt.bare);
+
+    if (holder) {
+      const liberada = holder.isMain
+        ? await detachMainWorktree(holder)
+        : await dropLinkedWorktree(holder, worktrees);
+      if (!liberada.ok) return liberada;
+    }
+
+    // `-D` e nao `-d`: a acao se chama "excluir tudo" e o hold-to-confirm da
+    // interface ja e a barreira. Recusar por commit nao mesclado aqui seria
+    // devolver a pessoa exatamente ao erro do qual ela veio fugindo.
+    const local = await step(["branch", "-D", name, "--"]);
+    if (!local.ok || !remote) return local;
+    return withRemoteDelete(local, remote, name);
+  });
+
+  const enriquecido = await withPendingState(result);
+  // Trocar de worktree no meio da cascata muda o diretorio do processo: a rota
+  // precisa saber para reiniciar o watcher e avisar a interface.
+  return process.cwd() === cwdAntes
+    ? enriquecido
+    : { ...enriquecido, cwdChanged: process.cwd() };
 }
 
 /** POST /api/branch/rename */

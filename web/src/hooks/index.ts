@@ -12,6 +12,7 @@ export type { HotkeyHandlers } from "./useHotkeys";
 export { useCommitDetail, useCommitDiff } from "./useCommitDetail";
 export type { AsyncResource } from "./useCommitDetail";
 
+export { useRepoPoll, REPO_POLL_MS } from "./useRepoPoll";
 export { useTrickle } from "./useTrickle";
 export { useVoiceRecorder } from "./useVoiceRecorder";
 export type { MicSupport, VoiceRecorder } from "./useVoiceRecorder";
