@@ -1,5 +1,5 @@
 /**
- * Seletor de repositorios da maquina.
+ * Seletor de repositorios da maquina, projetos favoritos e leitura de arquivo.
  *
  * `POST /repos/open` e irma de `POST /worktrees/switch`: as duas trocam o
  * `process.cwd()` do servidor e disparam `cwd:changed`, e nenhuma das duas
@@ -16,6 +16,8 @@ import {
   openRepository,
   scanForRepos,
 } from "../git/discover.mjs";
+import { addFavorite, getFavorites, removeFavorite, reorderFavorites } from "../git/favorites.mjs";
+import { getFileContent } from "../git/file.mjs";
 import { getRepoPayload } from "./repo.mjs";
 import { bodyOf, commandResult, intParam } from "./_util.mjs";
 
@@ -58,21 +60,31 @@ export function registerRepoPickerRoutes(router, deps = {}) {
     return getRepoPayload();
   });
 
-  /* --- favoritos e conteudo de arquivo: STUBS ---
-   * O contrato ja declara estas rotas para o front-end poder ser escrito contra
-   * elas. Enquanto a implementacao nao chega, devolvem 501 em vez de derrubar o
-   * boot (`assertContract` exige handler para toda rota do contrato).
-   * SUBSTITUA — nao acrescente rota nova ao lado. */
-  const naoImplementado = (nome) => () => {
-    const error = new Error(`${nome} ainda nao implementado`);
-    error.status = 501;
-    throw error;
-  };
-  router.add("GET", "/repos/favorites", naoImplementado("favoritos"));
-  router.add("POST", "/repos/favorites/add", naoImplementado("favoritos"));
-  router.add("POST", "/repos/favorites/remove", naoImplementado("favoritos"));
-  router.add("POST", "/repos/favorites/reorder", naoImplementado("favoritos"));
-  router.add("GET", "/file", naoImplementado("conteudo de arquivo"));
+  /* --- favoritos ---
+   * Irmaos dos recentes acima, com semantica oposta: recente e historico
+   * automatico e rotativo; favorito e escolha explicita, permanente, sem teto e
+   * com ordem manual. As tres mutacoes devolvem o payload inteiro para a UI
+   * nunca precisar remontar a lista na mao. */
+
+  router.add("GET", "/repos/favorites", () => getFavorites());
+
+  router.add("POST", "/repos/favorites/add", (ctx) => {
+    const body = bodyOf(ctx);
+    return addFavorite({ path: body.path, label: body.label });
+  });
+
+  router.add("POST", "/repos/favorites/remove", (ctx) => removeFavorite(bodyOf(ctx).path));
+
+  router.add("POST", "/repos/favorites/reorder", (ctx) => reorderFavorites(bodyOf(ctx).paths));
+
+  /* --- conteudo de arquivo ---
+   * `hash` ausente = working tree. A guarda contra caminho que escapa da raiz
+   * do repositorio esta em `git/file.mjs` e nao e opcional: sem ela esta rota
+   * vira leitura arbitraria da maquina por HTTP. */
+
+  router.add("GET", "/file", (ctx) =>
+    getFileContent({ path: ctx.query.path, hash: ctx.query.hash }),
+  );
 
   router.add("POST", "/repos/init", async (ctx) => {
     const body = bodyOf(ctx);

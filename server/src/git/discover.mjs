@@ -34,6 +34,7 @@ import os from "node:os";
 import path from "node:path";
 
 import { execGit, readGitLine } from "./exec.mjs";
+import { readStore, storePath, writeStore } from "./store.mjs";
 import { getWorktreesPayload } from "./worktree.mjs";
 
 /* ------------------------------------------------------------------ */
@@ -96,6 +97,13 @@ const SKIP_DIRS = new Set([
 /* Deteccao                                                            */
 /* ------------------------------------------------------------------ */
 
+/** `~/caminho` -> absoluto. Nao exige que o caminho exista. */
+export function expandUserPath(target) {
+  let dir = String(target).trim();
+  if (dir.startsWith("~")) dir = path.join(os.homedir(), dir.slice(1));
+  return path.resolve(dir);
+}
+
 /**
  * O que este diretorio e, do ponto de vista do git.
  *
@@ -127,7 +135,7 @@ export function detectRepoKind(dir) {
 }
 
 /** Nome do ramo atual de um repositorio arbitrario, sem mexer no cwd. */
-async function branchOf(dir) {
+export async function branchOf(dir) {
   try {
     const branch = await readGitLine(["symbolic-ref", "--short", "-q", "HEAD"], { cwd: dir });
     if (branch) return branch;
@@ -179,9 +187,7 @@ export async function describeRepo(dir) {
  */
 export async function listDirectory(target) {
   const home = os.homedir();
-  let dir = typeof target === "string" && target.trim() ? target.trim() : home;
-  if (dir.startsWith("~")) dir = path.join(home, dir.slice(1));
-  dir = path.resolve(dir);
+  const dir = expandUserPath(typeof target === "string" && target.trim() ? target : home);
 
   let stat;
   try {
@@ -398,36 +404,19 @@ export async function scanForRepos(options = {}) {
 /* Recentes                                                            */
 /* ------------------------------------------------------------------ */
 
+/** `~/.config/gitcraque/recent.json` (respeita XDG_CONFIG_HOME). */
 function recentFile() {
-  const base =
-    process.env.XDG_CONFIG_HOME && process.env.XDG_CONFIG_HOME.trim()
-      ? process.env.XDG_CONFIG_HOME
-      : path.join(os.homedir(), ".config");
-  return path.join(base, "gitcraque", "recent.json");
+  return storePath("recent.json");
 }
 
-async function readRecentRaw() {
-  try {
-    const text = await fsp.readFile(recentFile(), "utf8");
-    const parsed = JSON.parse(text);
-    return Array.isArray(parsed?.entries) ? parsed.entries : [];
-  } catch {
-    return []; // arquivo ausente ou corrompido: comeca do zero, sem barulho
-  }
-}
+const readRecentRaw = () => readStore(recentFile());
 
-async function writeRecentRaw(entries) {
-  const file = recentFile();
-  try {
-    await fsp.mkdir(path.dirname(file), { recursive: true });
-    // grava em temporario e renomeia: nunca deixa o arquivo pela metade
-    const tmp = `${file}.${process.pid}.tmp`;
-    await fsp.writeFile(tmp, JSON.stringify({ version: 1, entries }, null, 2), { mode: 0o600 });
-    await fsp.rename(tmp, file);
-  } catch {
-    /* nao poder gravar recentes nunca pode derrubar uma operacao de git */
-  }
-}
+/**
+ * A gravacao atomica mora em `store.mjs`, compartilhada com os favoritos.
+ * Aqui ela engole erro de escrita de proposito: nao poder gravar os recentes
+ * nunca pode derrubar uma operacao de git.
+ */
+const writeRecentRaw = (entries) => writeStore(recentFile(), entries, { swallowErrors: true });
 
 /**
  * GET /api/repos/recent — os ultimos repositorios abertos, com `exists`
@@ -479,25 +468,24 @@ export async function forgetRepo(dir) {
 /* ------------------------------------------------------------------ */
 
 /**
- * POST /api/repos/open — troca o repositorio ativo do servidor.
+ * A GUARDA que segura toda rota que aceita caminho arbitrario do usuario.
  *
- * Irma da troca de worktree: tambem e `process.chdir()`, nunca `git checkout`.
- * A guarda aqui e outra, porque o caminho vem do usuario: SO abre se o
- * diretorio for mesmo um repositorio git. Um caminho qualquer e recusado.
+ * Vive separada de `openRepository` porque os favoritos precisam EXATAMENTE da
+ * mesma checagem sem trocar o `process.cwd()` — duas versoes dela seria a
+ * receita para uma delas envelhecer mais fraca que a outra.
  *
  * @param {string} target
+ * @returns {Promise<{dir: string, root: string, gitDir: string}>} `root` e a raiz
+ *   da worktree (`--show-toplevel`), nao a subpasta que o usuario digitou.
  */
-export async function openRepository(target) {
+export async function resolveRepoDir(target) {
   if (typeof target !== "string" || !target.trim()) {
     const error = new Error("path e obrigatorio");
     error.status = 400;
     throw error;
   }
 
-  const home = os.homedir();
-  let dir = target.trim();
-  if (dir.startsWith("~")) dir = path.join(home, dir.slice(1));
-  dir = path.resolve(dir);
+  const dir = expandUserPath(target);
 
   let stat;
   try {
@@ -515,7 +503,8 @@ export async function openRepository(target) {
     throw error;
   }
 
-  // A guarda que segura tudo: o git tem de reconhecer o diretorio.
+  // O git tem de reconhecer o diretorio. Sem isto, qualquer pasta da maquina
+  // viraria destino valido.
   let gitDir = "";
   try {
     gitDir = await readGitLine(["rev-parse", "--git-dir"], { cwd: dir });
@@ -538,6 +527,21 @@ export async function openRepository(target) {
     /* repo bare nao tem toplevel: fica no proprio dir */
   }
 
+  return { dir, root, gitDir };
+}
+
+/**
+ * POST /api/repos/open — troca o repositorio ativo do servidor.
+ *
+ * Irma da troca de worktree: tambem e `process.chdir()`, nunca `git checkout`.
+ * A guarda aqui e outra, porque o caminho vem do usuario: SO abre se o
+ * diretorio for mesmo um repositorio git. Um caminho qualquer e recusado.
+ *
+ * @param {string} target
+ */
+export async function openRepository(target) {
+  const { root } = await resolveRepoDir(target);
+
   process.chdir(root);
   await rememberRepo(root);
 
@@ -558,10 +562,7 @@ export async function initRepository(target, { bare = false, initialBranch } = {
     error.status = 400;
     throw error;
   }
-  const home = os.homedir();
-  let dir = target.trim();
-  if (dir.startsWith("~")) dir = path.join(home, dir.slice(1));
-  dir = path.resolve(dir);
+  const dir = expandUserPath(target);
 
   if (detectRepoKind(dir).isRepo) {
     const error = new Error("ja existe um repositorio git nesta pasta");

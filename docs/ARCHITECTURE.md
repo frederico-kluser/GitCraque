@@ -163,6 +163,61 @@ devolvem payload vazio em vez de 500 quando o git responde *"not a git
 repository"* — antes, a tela do seletor nascia com um toast vermelho carregando
 um stack trace.
 
+### Favoritos — `git/favorites.mjs`
+
+Irmaos dos recentes e com semantica DELIBERADAMENTE oposta. A tabela e o
+projeto inteiro:
+
+| | recentes | favoritos |
+|---|---|---|
+| origem | automatica (abriu, entrou) | explicita (o usuario fixou) |
+| ordem | cronologica, o ultimo no topo | manual, so muda em `reorder` |
+| teto | `RECENT_LIMIT`, rotativo | nenhum |
+| sumir | cai sozinho da lista | so sai em `remove` |
+
+Dai o que parece detalhe e nao e: **`add` repetido nao reordena** (so atualiza o
+rotulo) e **favorito novo entra no fim**. Mexer na posicao por causa de um
+clique repetido jogaria fora o arranjo que a pessoa montou na mao — que e
+justamente o que diferencia favorito de recente. `add` passa pela mesma guarda
+de `POST /repos/open` (`resolveRepoDir`) e guarda a RAIZ da worktree, nunca a
+subpasta digitada; `remove` nao valida repositorio nenhum, porque a pasta pode
+ter sumido e e ai que remover mais importa. `reorder` e tolerante nas duas
+pontas: caminho desconhecido e ignorado e favorito nao citado mantem a ordem
+relativa, no fim — a lista do cliente pode estar velha, e nada pode sumir por
+causa de um reorder.
+
+A **gravacao atomica** (temporario + rename, 0600, leitura tolerante a arquivo
+corrompido) e uma so, em `git/store.mjs`, usada pelos dois arquivos. Duas copias
+dela seria a receita para uma envelhecer mais fraca que a outra. A diferenca e
+a urgencia: falha ao gravar os recentes e engolida (o historico e efeito
+colateral e nao pode derrubar uma operacao de git), falha ao gravar os favoritos
+sobe como erro — la a escrita e a propria operacao pedida.
+
+### Conteudo de arquivo — `git/file.mjs`
+
+`GET /file` alimenta o visualizador (markdown renderizado, codigo cru, o lado
+"depois" do diff). Com `hash` sai de `git show <hash>:<caminho>`; sem `hash`, do
+disco.
+
+**Esta e a unica rota do backend que le arquivo do disco por caminho vindo do
+cliente**, e sem guarda ela nao seria o visualizador: seria leitura arbitraria
+da maquina por HTTP — `../../../../etc/shadow`, `~/.ssh/id_rsa`,
+`/proc/self/environ` (que carrega os segredos do processo). A regra vale igual
+para as duas origens:
+
+1. o caminho tem de ser **relativo** — absoluto e `~` sao recusados de saida;
+2. normalizado (`a/../b`), nao pode comecar com `..`;
+3. resolvido contra a raiz da worktree, tem de continuar **dentro** dela;
+4. na leitura de disco, passa por `realpath` e a checagem 3 e **refeita** — sem
+   isso, um symlink apontando para fora escapa. Nao basta olhar a folha com
+   `lstat`: em `pasta-que-e-symlink/arquivo` quem escapa e a pasta do meio.
+
+Fuga e 400, nunca 403 com o erro do sistema de arquivos: a resposta nao confirma
+se o alvo existe la fora. Alem da guarda: binario (byte NUL nos primeiros 8 KB)
+volta `content: ""`, acima de 1 MB volta o inicio com `truncated: true` e `size`
+real (o corte respeita fronteira de caractere UTF-8, senao o fim do trecho vira
+um losango de erro), e arquivo ausente naquele commit e 404 — nao 500.
+
 ### Trampolim de askpass
 
 `askpass.mjs` roda como processo **filho do git**, nao do servidor. Ele nao tem

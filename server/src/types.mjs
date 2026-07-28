@@ -75,6 +75,29 @@
  * @property {boolean} isMain
  * @property {boolean} isActive
  * @property {string} label
+ *
+ * @typedef {object} FileContentPayload
+ * @property {string} path
+ * @property {string|null} hash commit de origem; null quando veio da working tree
+ * @property {string} content vazio quando `binary`
+ * @property {number} size bytes do blob
+ * @property {boolean} binary
+ * @property {boolean} truncated passou do teto; `content` traz so o inicio
+ * @property {string} language extensao normalizada, sem o ponto
+ * @property {boolean} markdown
+ *
+ * @typedef {object} FavoriteRepo
+ * @property {string} path
+ * @property {string} label apelido opcional; vazio usa o basename
+ * @property {string} name
+ * @property {string|null} branch
+ * @property {number} order ordem manual na lista
+ * @property {number} addedAt
+ * @property {boolean} exists recalculado a cada leitura
+ *
+ * @typedef {object} FavoritesPayload
+ * @property {FavoriteRepo[]} entries
+ * @property {string} file
  */
 
 export {};
