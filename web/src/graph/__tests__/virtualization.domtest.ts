@@ -16,6 +16,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { GraphView } from "../GraphView.tsx";
 import { computeGraphLayout } from "../layout.ts";
 import { syntheticRepo } from "./fixtures.ts";
+import { t } from "@/i18n";
 import type { RawCommit } from "@/types/git";
 
 const countTags = (html: string, tag: string) =>
@@ -111,7 +112,9 @@ test("cada linha montada desenha so as arestas que a cruzam", () => {
 test("estado vazio e de carregamento montam poucos nos", () => {
   const empty = render([]);
   assert.ok(countElements(empty) < 40, `estado vazio com ${countElements(empty)} nos`);
-  assert.match(empty, /Nenhum commit para desenhar/);
+  // Sai do catalogo, nao cravado: o idioma padrao pode mudar e o teste continua
+  // provando o que interessa — que o estado vazio realmente foi renderizado.
+  assert.ok(empty.includes(t("graph.empty.title")), "o titulo do estado vazio esta no markup");
 
   const loading = renderToStaticMarkup(
     createElement(GraphView, {

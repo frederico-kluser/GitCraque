@@ -22,6 +22,7 @@ import {
   WS_PATH,
 } from "./contract.mjs";
 import { detectGitVersion } from "./git/exec.mjs";
+import { pickLocale, translate } from "./i18n.mjs";
 import { getGitDir, getWorktreesPayload } from "./git/worktree.mjs";
 import { HttpError, readJsonBody } from "./router.mjs";
 import { buildRouter } from "./routes/index.mjs";
@@ -92,14 +93,14 @@ export async function createServer(options = {}) {
   const server = http.createServer((req, res) => {
     handle(req, res, { router, statics, dev }).catch((err) => {
       if (!res.headersSent) {
-        sendError(res, err);
+        sendError(res, err, pickLocale(req));
         return;
       }
       // Estourou depois de comecar a resposta: a requisicao ja era, mas a UI
       // ainda merece saber que algo quebrou no servidor.
       hub.broadcast({
         type: "error",
-        message: err?.message || "erro interno no servidor",
+        message: resolve(pickLocale(req), err?.message, err?.params) || "",
         detail: `${req.method} ${req.url}`,
       });
       res.destroy();
@@ -229,11 +230,15 @@ export function originDenial(req) {
  * ------------------------------------------------------------------ */
 
 async function handle(req, res, { router, statics, dev }) {
+  // O idioma e da REQUISICAO, nunca do processo: um servidor local pode ter
+  // varias abas abertas, cada uma na sua lingua. Ver `i18n.mjs`.
+  const locale = pickLocale(req);
+
   const denial = originDenial(req);
   if (denial) {
     sendJson(res, 403, {
-      error: "origem recusada",
-      detail: `${denial}. O gitcraque so aceita requisicoes de localhost.`,
+      error: translate(locale, "error.originRefused"),
+      detail: translate(locale, "error.originDetail", { denial }),
     });
     return;
   }
@@ -242,25 +247,25 @@ async function handle(req, res, { router, statics, dev }) {
   const pathname = url.pathname;
 
   if (pathname === WS_PATH) {
-    sendJson(res, 426, { error: "use WebSocket em /ws" });
+    sendJson(res, 426, { error: translate(locale, "error.useWebSocket") });
     return;
   }
 
   if (pathname === API_PREFIX || pathname.startsWith(`${API_PREFIX}/`)) {
-    await handleApi(req, res, router, url, pathname.slice(API_PREFIX.length) || "/");
+    await handleApi(req, res, router, url, pathname.slice(API_PREFIX.length) || "/", locale);
     return;
   }
 
   if (req.method !== "GET" && req.method !== "HEAD") {
-    sendJson(res, 405, { error: "metodo nao permitido fora de /api" });
+    sendJson(res, 405, { error: translate(locale, "error.methodOutsideApi") });
     return;
   }
 
   if (dev) {
     // Em --dev quem serve o front-end e o Vite (5273).
     sendJson(res, 404, {
-      error: "modo --dev: os estaticos sao servidos pelo Vite",
-      detail: "abra http://127.0.0.1:5273",
+      error: translate(locale, "error.devStatics"),
+      detail: translate(locale, "error.devStaticsDetail"),
     });
     return;
   }
@@ -268,16 +273,20 @@ async function handle(req, res, { router, statics, dev }) {
   await statics.serve(req, res, pathname);
 }
 
-async function handleApi(req, res, router, url, apiPath) {
+async function handleApi(req, res, router, url, apiPath, locale) {
   const match = router.match(req.method, apiPath);
   if (!match) {
     const allowed = router.allowedMethods(apiPath);
     if (allowed.length) {
       res.setHeader("allow", allowed.join(", "));
-      sendJson(res, 405, { error: `metodo ${req.method} nao existe em ${apiPath}` });
+      sendJson(res, 405, {
+        error: translate(locale, "error.methodMissing", { method: req.method, path: apiPath }),
+      });
       return;
     }
-    sendJson(res, 404, { error: `rota ${req.method} ${apiPath} nao existe` });
+    sendJson(res, 404, {
+      error: translate(locale, "error.routeMissing", { method: req.method, path: apiPath }),
+    });
     return;
   }
 
@@ -308,12 +317,21 @@ function sendJson(res, status, payload) {
   res.end(text);
 }
 
+/**
+ * Chave do catalogo vira frase no idioma da requisicao; qualquer outra coisa
+ * passa intacta — e assim que o stderr do proprio git chega na UI sem enfeite.
+ */
+const resolve = (locale, text, params) =>
+  (text === undefined || text === null ? undefined : translate(locale, text, params)) ?? text;
+
 /** Todo erro sai no envelope `ApiError` do contrato. */
-function sendError(res, err) {
+function sendError(res, err, locale = "en") {
   const status = Number.isInteger(err?.status) ? err.status : 500;
   /** @type {{error: string, detail?: string, command?: object}} */
-  const payload = { error: err?.message || "erro interno" };
-  if (err?.detail) payload.detail = err.detail;
+  const payload = {
+    error: resolve(locale, err?.message, err?.params) || translate(locale, "error.internal"),
+  };
+  if (err?.detail) payload.detail = resolve(locale, err.detail, err.params);
   if (err?.command) payload.command = err.command;
   // Dica de onde estourou, sem entregar o caminho absoluto do disco para a UI:
   // `at getLog (log.mjs:178:19)` ajuda; `file:///home/ana/...` e vazamento.

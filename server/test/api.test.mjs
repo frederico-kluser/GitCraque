@@ -11,6 +11,7 @@ import path from "node:path";
 
 import { PIPE_SUBJECT, git, makeFixtureRepo } from "./helpers/repo.mjs";
 import { bootServer } from "./helpers/server.mjs";
+import { translate } from "../src/i18n.mjs";
 
 let fixture;
 let api;
@@ -194,14 +195,14 @@ test("POST /api/worktrees/switch faz chdir, emite cwd:changed e muda o log", asy
 test("POST /api/worktrees/switch recusa caminho fora da lista", async () => {
   const { status, json } = await api.post("/api/worktrees/switch", { path: "/etc" });
   assert.equal(status, 400);
-  assert.match(json.error, /nao e uma worktree/);
+  assert.equal(json.error, translate("pt", "error.notAWorktree"));
   assert.equal(process.cwd(), fixture.root, "o cwd nao pode ter mudado");
 });
 
 test("POST /api/worktrees/switch sem path e 400", async () => {
   const { status, json } = await api.post("/api/worktrees/switch", {});
   assert.equal(status, 400);
-  assert.match(json.error, /path e obrigatorio/);
+  assert.equal(json.error, translate("pt", "error.pathRequired"));
 });
 
 test("ciclo completo de branch: criar, renomear, checkout, deletar", async () => {
@@ -226,7 +227,7 @@ test("ciclo completo de branch: criar, renomear, checkout, deletar", async () =>
 test("nome de branch comecando com - e recusado antes de virar comando", async () => {
   const { status, json } = await api.post("/api/branch/create", { name: "--upload-pack=curl" });
   assert.equal(status, 400);
-  assert.match(json.error, /nao pode comecar com/);
+  assert.equal(json.error, translate("pt", "error.argsDash", { field: "name" }));
 });
 
 test("stage, commit e unstage", async () => {
@@ -256,7 +257,7 @@ test("stage, commit e unstage", async () => {
 test("POST /api/commit sem mensagem e 400", async () => {
   const { status, json } = await api.post("/api/commit", {});
   assert.equal(status, 400);
-  assert.match(json.error, /message e obrigatorio/);
+  assert.equal(json.error, translate("pt", "error.messageRequired"));
 });
 
 test("stash: push, listagem e drop", async () => {
@@ -428,7 +429,7 @@ test("worktree add, prune e remove", async () => {
 test("nao da para remover a worktree em que o servidor esta", async () => {
   const { status, json } = await api.post("/api/worktrees/remove", { path: fixture.root });
   assert.equal(status, 409);
-  assert.match(json.error, /worktree em que o servidor esta/);
+  assert.equal(json.error, translate("pt", "error.removeCurrentWorktree"));
 });
 
 test("credenciais: GET nunca devolve o token", async () => {
@@ -454,7 +455,7 @@ test("credenciais: GET nunca devolve o token", async () => {
 test("rota inexistente e 404 no envelope ApiError", async () => {
   const { status, json } = await api.get("/api/nao-existe");
   assert.equal(status, 404);
-  assert.match(json.error, /nao existe/);
+  assert.match(json.error, new RegExp(translate("pt", "error.routeMissing", { method: "GET", path: "/nao-existe" })));
 });
 
 test("metodo errado e 405 com header Allow", async () => {
@@ -487,7 +488,7 @@ test("corpo acima de 4 MB e 413", async () => {
 test("guarda de origem: Host remoto e 403", async () => {
   const res = await api.rawRequest("/api/repo", { headers: { host: "evil.example.com" } });
   assert.equal(res.status, 403, "DNS rebinding: o dominio resolve para 127.0.0.1, o Host nao mente");
-  assert.match(res.json.error, /origem recusada/);
+  assert.equal(res.json.error, translate("en", "error.originRefused"));
 
   // Com Host local a mesma requisicao crua passa.
   const ok = await api.rawRequest("/api/repo", { headers: { host: `127.0.0.1:${api.port}` } });
@@ -588,4 +589,61 @@ test("o watcher emite repo:changed quando o .git muda por fora", async () => {
 
   await ws.close();
   git(fixture.root, "branch", "-D", "vinda-de-fora");
+});
+
+/* ------------------------------------------------------------------ *
+ * Idioma da resposta de erro
+ *
+ * O backend nao guarda idioma: ele o escolhe POR REQUISICAO. Um processo
+ * local pode ter varias abas abertas, cada uma na sua lingua.
+ * ------------------------------------------------------------------ */
+
+/** A mesma rota inexistente em cada idioma, sem reiniciar nada. */
+const erroEmIdioma = (headers) =>
+  api
+    .rawRequest("/api/worktrees/switch", {
+      method: "POST",
+      headers: { host: `127.0.0.1:${api.port}`, "content-type": "application/json", ...headers },
+      body: JSON.stringify({}),
+    })
+    .then((res) => res.json.error);
+
+test("o erro sai no idioma que a requisicao pediu", async () => {
+  assert.equal(await erroEmIdioma({ "x-gitcraque-lang": "pt" }), translate("pt", "error.pathRequired"));
+  assert.equal(await erroEmIdioma({ "x-gitcraque-lang": "es" }), translate("es", "error.pathRequired"));
+  assert.equal(await erroEmIdioma({ "x-gitcraque-lang": "zh" }), translate("zh", "error.pathRequired"));
+  assert.equal(await erroEmIdioma({ "x-gitcraque-lang": "en" }), translate("en", "error.pathRequired"));
+});
+
+test("sem o cabecalho explicito, vale o accept-language do navegador", async () => {
+  assert.equal(
+    await erroEmIdioma({ "accept-language": "pt-BR,pt;q=0.9,en;q=0.8" }),
+    translate("pt", "error.pathRequired"),
+  );
+  // Ordem de `q`, nao ordem de escrita: o espanhol ganha do ingles aqui.
+  assert.equal(
+    await erroEmIdioma({ "accept-language": "en;q=0.3,es;q=0.9" }),
+    translate("es", "error.pathRequired"),
+  );
+});
+
+test("idioma que o servidor nao fala cai no ingles", async () => {
+  assert.equal(await erroEmIdioma({ "accept-language": "fi-FI,fi" }), translate("en", "error.pathRequired"));
+  assert.equal(await erroEmIdioma({}), translate("en", "error.pathRequired"));
+});
+
+test("a escolha da interface ganha do accept-language do navegador", async () => {
+  assert.equal(
+    await erroEmIdioma({ "accept-language": "en-US,en", "x-gitcraque-lang": "zh" }),
+    translate("zh", "error.pathRequired"),
+  );
+});
+
+test("mensagem do PROPRIO git nunca e traduzida — passa como o git a emitiu", async () => {
+  const res = await api.post("/api/checkout", { ref: "nao-existe-esta-branch" });
+  assert.equal(res.status, 409);
+  // O texto vem do stderr do git, em ingles, e nao casa com chave nenhuma do
+  // catalogo: `translate` devolve undefined e a borda usa a string crua.
+  assert.doesNotMatch(res.json.error, /^error\./, "a chave crua vazou para a UI");
+  assert.match(res.json.error, /nao-existe-esta-branch/);
 });

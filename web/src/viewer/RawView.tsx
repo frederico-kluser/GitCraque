@@ -10,22 +10,14 @@
  * veio).
  */
 import { Fragment } from "react";
+import { formatBytes, t } from "@/i18n";
 import type { FileContentPayload } from "@/types/git";
 import { Notice } from "./parts.tsx";
 
-/** Bytes em algo legivel: 812 B, 41,2 kB, 2,3 MB. */
-export function formatBytes(bytes: number): string {
-  if (!Number.isFinite(bytes) || bytes < 0) return "—";
-  if (bytes < 1024) return `${bytes} B`;
-  const units = ["kB", "MB", "GB"];
-  let value = bytes / 1024;
-  let unit = 0;
-  while (value >= 1024 && unit < units.length - 1) {
-    value /= 1024;
-    unit += 1;
-  }
-  return `${value.toFixed(1).replace(".", ",")} ${units[unit]}`;
-}
+/* `formatBytes` mudou de casa: o separador decimal e do IDIOMA (41,2 kB em
+ * pt/es, 41.2 kB em en/zh), entao ele vive em `@/i18n/format`. Reexportado aqui
+ * porque `viewer/index.ts` ja o publicava. */
+export { formatBytes };
 
 /** Linhas do conteudo, sem a linha fantasma do `\n` final. */
 export function toLines(content: string): string[] {
@@ -43,8 +35,8 @@ export function RawView({ payload }: RawViewProps) {
   if (payload.binary) {
     return (
       <div className="p-3">
-        <Notice title="Arquivo binario">
-          {formatBytes(payload.size)} — nada a renderizar como texto.
+        <Notice title={t("raw.binary.title")}>
+          {t("raw.binary.body", { size: formatBytes(payload.size) })}
         </Notice>
       </div>
     );
@@ -56,15 +48,15 @@ export function RawView({ payload }: RawViewProps) {
     <div>
       {payload.truncated ? (
         <div className="p-3 pb-0">
-          <Notice tone="warning" title="Arquivo cortado">
-            O backend enviou so o inicio do blob ({formatBytes(payload.size)} no total).
+          <Notice tone="warning" title={t("raw.truncated.title")}>
+            {t("raw.truncated.body", { size: formatBytes(payload.size) })}
           </Notice>
         </div>
       ) : null}
 
       {lines.length === 0 ? (
         <div className="p-3">
-          <Notice title="Arquivo vazio">Zero bytes.</Notice>
+          <Notice title={t("raw.empty.title")}>{t("raw.empty.body")}</Notice>
         </div>
       ) : (
         <div className="grid grid-cols-[auto_1fr] items-start font-mono text-xs leading-relaxed">

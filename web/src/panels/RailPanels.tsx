@@ -69,6 +69,7 @@ import {
   worktreeMenu,
 } from "@/app/menus";
 import { contextMenuFor } from "@/hooks";
+import { t } from "@/i18n";
 import { cn, isHttpsRemote, short } from "@/lib/utils";
 import type { Branch, Remote, RemoteBranch, StashEntry, Tag, Worktree } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
@@ -181,15 +182,15 @@ function WorktreeRow({ wt }: { wt: Worktree }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="truncate text-xs font-medium text-foreground">{wt.label}</span>
-          {wt.isMain && <Chip tone="neutral">principal</Chip>}
-          {wt.bare && <Chip tone="neutral">bare</Chip>}
-          {wt.detached && <Chip tone="warning">detached</Chip>}
+          {wt.isMain && <Chip tone="neutral">{t("rail.chip.main")}</Chip>}
+          {wt.bare && <Chip tone="neutral">{t("rail.chip.bare")}</Chip>}
+          {wt.detached && <Chip tone="warning">{t("rail.chip.detached")}</Chip>}
           {wt.locked && (
             <Chip tone="warning" title={wt.lockReason}>
-              <Lock className="size-2.5" /> locked
+              <Lock className="size-2.5" /> {t("rail.chip.locked")}
             </Chip>
           )}
-          {wt.prunable && <Chip tone="danger">prunable</Chip>}
+          {wt.prunable && <Chip tone="danger">{t("rail.chip.prunable")}</Chip>}
         </div>
         <div className="truncate font-mono text-[10px] text-muted-foreground" title={wt.path}>
           {wt.path}
@@ -201,7 +202,7 @@ function WorktreeRow({ wt }: { wt: Worktree }) {
           </div>
         )}
       </div>
-      <ActionMenu label={`Acoes da worktree ${wt.label}`} items={worktreeMenu(wt)} />
+      <ActionMenu label={t("rail.worktrees.actions", { label: wt.label })} items={worktreeMenu(wt)} />
     </RailRow>
   );
 }
@@ -211,14 +212,14 @@ function WorktreesSection() {
   return (
     <RailSection
       value="worktrees"
-      title="Worktrees"
+      title={t("rail.worktrees.title")}
       count={worktrees.length}
       action={
         <ToolButton
           tone="ghost"
           size="sm"
-          aria-label="Adicionar worktree"
-          title="Adicionar worktree"
+          aria-label={t("rail.worktrees.add")}
+          title={t("rail.worktrees.add")}
           icon={<Plus className="size-3" />}
           onClick={openAddWorktree}
         />
@@ -227,8 +228,8 @@ function WorktreesSection() {
       <div id="rail-worktrees" className="flex flex-col gap-1">
         {worktrees.length === 0 ? (
           <EmptyState
-            title="Nenhuma worktree"
-            description="O servidor ainda nao listou `git worktree list --porcelain`."
+            title={t("rail.worktrees.empty.title")}
+            description={t("rail.worktrees.empty.body")}
           />
         ) : (
           worktrees.map((wt) => <WorktreeRow key={wt.path} wt={wt} />)
@@ -247,13 +248,13 @@ function AheadBehind({ ahead, behind }: { ahead: number; behind: number }) {
   return (
     <span className="flex shrink-0 items-center gap-1 font-mono text-[10px] tabular-nums">
       {ahead > 0 && (
-        <span className="flex items-center text-success" title={`${ahead} commits a frente do upstream`}>
+        <span className="flex items-center text-success" title={t("rail.branches.ahead", { count: ahead })}>
           <ArrowUp className="size-2.5" />
           {ahead}
         </span>
       )}
       {behind > 0 && (
-        <span className="flex items-center text-warning" title={`${behind} commits atras do upstream`}>
+        <span className="flex items-center text-warning" title={t("rail.branches.behind", { count: behind })}>
           <ArrowDown className="size-2.5" />
           {behind}
         </span>
@@ -315,9 +316,14 @@ function BranchRow({ branch, selected }: { branch: Branch; selected: boolean }) 
             {branch.name}
           </span>
           {branch.isHead && <Chip tone="primary">HEAD</Chip>}
+          {/* HEAD e nome do git, nao rotulo de interface: nunca traduzido. */}
           {locked && (
-            <Chip tone="warning" className="shrink-0" title={`Checada em ${branch.checkedOutIn}`}>
-              presa
+            <Chip
+              tone="warning"
+              className="shrink-0"
+              title={t("rail.chip.pinnedTitle", { worktree: branch.checkedOutIn ?? "" })}
+            >
+              {t("rail.chip.pinned")}
             </Chip>
           )}
         </div>
@@ -326,7 +332,7 @@ function BranchRow({ branch, selected }: { branch: Branch; selected: boolean }) 
         )}
       </div>
       <AheadBehind ahead={branch.ahead} behind={branch.behind} />
-      <ActionMenu label={`Acoes da branch ${branch.name}`} items={branchMenu(branch)} />
+      <ActionMenu label={t("rail.branches.actions", { name: branch.name })} items={branchMenu(branch)} />
     </RailRow>
   );
 }
@@ -338,14 +344,14 @@ function BranchesSection() {
   return (
     <RailSection
       value="branches"
-      title="Branches locais"
+      title={t("rail.branches.title")}
       count={branches.length}
       action={
         <ToolButton
           tone="ghost"
           size="sm"
-          aria-label="Nova branch"
-          title="Nova branch"
+          aria-label={t("rail.branches.new")}
+          title={t("rail.branches.new")}
           icon={<GitBranchPlus className="size-3" />}
           onClick={() => openCreateBranch()}
         />
@@ -354,11 +360,11 @@ function BranchesSection() {
       <div className="flex flex-col gap-0.5">
         {branches.length === 0 ? (
           <EmptyState
-            title="Nenhuma branch local"
-            description="Repositorio sem commits ou sem refs em refs/heads."
+            title={t("rail.branches.empty.title")}
+            description={t("rail.branches.empty.body")}
             action={
               <ToolButton icon={<GitBranchPlus className="size-3" />} onClick={() => openCreateBranch()}>
-                Criar a primeira
+                {t("rail.branches.empty.action")}
               </ToolButton>
             }
           />
@@ -385,7 +391,7 @@ function RemoteBranchRow({ rb, selected }: { rb: RemoteBranch; selected: boolean
       <Cloud className="size-3 shrink-0 text-muted-foreground" />
       <span className="min-w-0 flex-1 truncate font-mono text-[11px] text-foreground">{rb.shortName}</span>
       <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{short(rb.target)}</span>
-      <ActionMenu label={`Acoes de ${rb.name}`} items={remoteBranchMenu(rb)} />
+      <ActionMenu label={t("rail.remotes.branchActions", { name: rb.name })} items={remoteBranchMenu(rb)} />
     </RailRow>
   );
 }
@@ -418,11 +424,11 @@ function RemoteBlock({
           <div className="flex items-center gap-1.5">
             <span className="truncate text-xs font-semibold text-foreground">{remote.name}</span>
             {https ? (
-              <Chip tone="primary" title="Url https: usa o trampolim GIT_ASKPASS">
-                https · askpass
+              <Chip tone="primary" title={t("rail.chip.askpassTitle")}>
+                {t("rail.chip.askpass")}
               </Chip>
             ) : (
-              <Chip tone="neutral">ssh</Chip>
+              <Chip tone="neutral">{t("rail.chip.ssh")}</Chip>
             )}
             <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{branches.length}</span>
           </div>
@@ -435,13 +441,13 @@ function RemoteBlock({
             </div>
           )}
         </div>
-        <ActionMenu label={`Acoes do remoto ${remote.name}`} items={remoteMenu(remote)} />
+        <ActionMenu label={t("rail.remotes.actions", { name: remote.name })} items={remoteMenu(remote)} />
       </RailRow>
 
       {open && (
         <div className="flex flex-col gap-0.5 border-t border-border px-1 pt-1 pb-1">
           {branches.length === 0 ? (
-            <p className="px-2 py-2 text-[11px] text-muted-foreground">Nenhuma branch remota conhecida.</p>
+            <p className="px-2 py-2 text-[11px] text-muted-foreground">{t("rail.remotes.noBranches")}</p>
           ) : (
             branches.map((rb) => (
               <RemoteBranchRow key={rb.fullName} rb={rb} selected={selectedRef === rb.fullName} />
@@ -471,14 +477,14 @@ function RemotesSection() {
   return (
     <RailSection
       value="remotes"
-      title="Remotos"
+      title={t("rail.remotes.title")}
       count={remotes.length}
       action={
         <ToolButton
           tone="ghost"
           size="sm"
-          aria-label="Adicionar Origin"
-          title="Adicionar Origin"
+          aria-label={t("commands.remote.add")}
+          title={t("commands.remote.add")}
           icon={<Plus className="size-3" />}
           onClick={() => openAddRemote()}
         />
@@ -487,11 +493,11 @@ function RemotesSection() {
       <div className="flex flex-col gap-1.5">
         {remotes.length === 0 ? (
           <EmptyState
-            title="Nenhum remoto"
-            description="`git remote -v` nao devolveu nada. Adicione um origin para poder dar fetch e push."
+            title={t("rail.remotes.empty.title")}
+            description={t("rail.remotes.empty.body")}
             action={
               <ToolButton icon={<CloudOff className="size-3" />} onClick={() => openAddRemote()}>
-                Adicionar Origin
+                {t("commands.remote.add")}
               </ToolButton>
             }
           />
@@ -525,12 +531,14 @@ function TagRow({ tag, selected }: { tag: Tag; selected: boolean }) {
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
           <span className="truncate font-mono text-xs text-foreground">{tag.name}</span>
-          <Chip tone={tag.annotated ? "primary" : "neutral"}>{tag.annotated ? "anotada" : "leve"}</Chip>
+          <Chip tone={tag.annotated ? "primary" : "neutral"}>
+            {tag.annotated ? t("rail.chip.annotated") : t("rail.chip.lightweight")}
+          </Chip>
         </div>
         {tag.message && <div className="truncate text-[10px] text-muted-foreground">{tag.message}</div>}
       </div>
       <span className="shrink-0 font-mono text-[10px] text-muted-foreground">{short(tag.target)}</span>
-      <ActionMenu label={`Acoes da tag ${tag.name}`} items={tagMenu(tag)} />
+      <ActionMenu label={t("rail.tags.actions", { name: tag.name })} items={tagMenu(tag)} />
     </RailRow>
   );
 }
@@ -542,14 +550,14 @@ function TagsSection() {
   return (
     <RailSection
       value="tags"
-      title="Tags"
+      title={t("rail.tags.title")}
       count={tags.length}
       action={
         <ToolButton
           tone="ghost"
           size="sm"
-          aria-label="Criar tag"
-          title="Criar tag"
+          aria-label={t("rail.tags.create")}
+          title={t("rail.tags.create")}
           icon={<Plus className="size-3" />}
           onClick={() => openCreateTag()}
         />
@@ -557,7 +565,7 @@ function TagsSection() {
     >
       <div className="flex flex-col gap-0.5">
         {tags.length === 0 ? (
-          <EmptyState title="Nenhuma tag" description="Marque uma versao a partir de um commit ou branch." />
+          <EmptyState title={t("rail.tags.empty.title")} description={t("rail.tags.empty.body")} />
         ) : (
           tags.map((t) => <TagRow key={t.fullName} tag={t} selected={selectedRef === t.fullName} />)
         )}
@@ -583,7 +591,7 @@ function StashRow({ stash }: { stash: StashEntry }) {
           {stash.branch} · {stash.relativeDate}
         </div>
       </div>
-      <ActionMenu label={`Acoes de ${stash.ref}`} items={stashMenu(stash)} />
+      <ActionMenu label={t("rail.stashes.actions", { ref: stash.ref })} items={stashMenu(stash)} />
     </RailRow>
   );
 }
@@ -593,14 +601,14 @@ function StashesSection() {
   return (
     <RailSection
       value="stashes"
-      title="Stashes"
+      title={t("rail.stashes.title")}
       count={stashes.length}
       action={
         <ToolButton
           tone="ghost"
           size="sm"
-          aria-label="Guardar alteracoes"
-          title="Guardar alteracoes (stash push)"
+          aria-label={t("rail.stashes.push")}
+          title={t("rail.stashes.pushTitle")}
           icon={<Plus className="size-3" />}
           onClick={openStashPush}
         />
@@ -608,7 +616,7 @@ function StashesSection() {
     >
       <div className="flex flex-col gap-0.5">
         {stashes.length === 0 ? (
-          <EmptyState title="Pilha vazia" description="Nada guardado com `git stash`." />
+          <EmptyState title={t("rail.stashes.empty.title")} description={t("rail.stashes.empty.body")} />
         ) : (
           stashes.map((s) => <StashRow key={s.ref} stash={s} />)
         )}
@@ -621,7 +629,7 @@ function StashesSection() {
 
 export function RailPanels({ className }: PanelProps) {
   return (
-    <aside className={className} aria-label="Referencias do repositorio">
+    <aside className={className} aria-label={t("rail.label")}>
       <Accordion multiple defaultValue={["worktrees", "branches", "remotes"]} className="flex flex-col">
         <WorktreesSection />
         <BranchesSection />

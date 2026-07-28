@@ -187,7 +187,7 @@ export async function getWorktreeRoot(cwd = process.cwd()) {
  */
 export async function switchWorktree(target) {
   if (typeof target !== "string" || !target.trim()) {
-    const error = new Error("path e obrigatorio");
+    const error = new Error("error.pathRequired");
     error.status = 400;
     throw error;
   }
@@ -195,20 +195,22 @@ export async function switchWorktree(target) {
   const worktrees = await listWorktrees();
   const match = worktrees.find((wt) => samePath(wt.path, target));
   if (!match) {
-    const error = new Error("caminho nao e uma worktree deste repositorio");
+    const error = new Error("error.notAWorktree");
     error.status = 400;
-    error.detail = `${target} nao aparece em 'git worktree list'`;
+    error.detail = "error.notInList";
+    error.params = { path: target };
     throw error;
   }
   if (match.bare) {
-    const error = new Error("nao da para entrar numa worktree bare");
+    const error = new Error("error.bareWorktree");
     error.status = 400;
     throw error;
   }
   if (!fs.existsSync(match.path)) {
-    const error = new Error("a worktree existe no git mas sumiu do disco");
+    const error = new Error("error.worktreeGone");
     error.status = 409;
-    error.detail = `${match.path} nao existe (rode worktree prune)`;
+    error.detail = "error.worktreeGoneDetail";
+    error.params = { path: match.path };
     throw error;
   }
 
@@ -222,7 +224,7 @@ export async function switchWorktree(target) {
 /** POST /api/worktrees/add */
 export function addWorktree({ path: target, branch, newBranch, ref, detach, force } = {}) {
   if (typeof target !== "string" || !target.trim()) {
-    const error = new Error("path e obrigatorio");
+    const error = new Error("error.pathRequired");
     error.status = 400;
     throw error;
   }
@@ -240,14 +242,14 @@ export function addWorktree({ path: target, branch, newBranch, ref, detach, forc
 /** POST /api/worktrees/remove */
 export function removeWorktree({ path: target, force } = {}) {
   if (typeof target !== "string" || !target.trim()) {
-    const error = new Error("path e obrigatorio");
+    const error = new Error("error.pathRequired");
     error.status = 400;
     throw error;
   }
   if (samePath(target, process.cwd())) {
-    const error = new Error("nao da para remover a worktree em que o servidor esta");
+    const error = new Error("error.removeCurrentWorktree");
     error.status = 409;
-    error.detail = "troque de worktree antes de remover esta";
+    error.detail = "error.removeCurrentWorktreeDetail";
     throw error;
   }
   const args = ["worktree", "remove"];

@@ -100,9 +100,9 @@ function expandAction(token) {
  */
 export async function squash({ commits, message, fixup, base } = {}) {
   if (!Array.isArray(commits) || commits.length < 2) {
-    const error = new Error("commits precisa de pelo menos 2 hashes");
+    const error = new Error("error.squashNeedsTwo");
     error.status = 400;
-    error.detail = "squash de um commit so nao faz nada";
+    error.detail = "error.squashNeedsTwoDetail";
     throw error;
   }
   commits.forEach((c, i) => assertRef(c, `commits[${i}]`));
@@ -121,7 +121,7 @@ export async function squash({ commits, message, fixup, base } = {}) {
     if (!resolved.includes(hash)) resolved.push(hash);
   }
   if (resolved.length < 2) {
-    const error = new Error("os hashes informados apontam para o mesmo commit");
+    const error = new Error("error.squashSameCommit");
     error.status = 400;
     throw error;
   }
@@ -129,7 +129,7 @@ export async function squash({ commits, message, fixup, base } = {}) {
   // 2. Ordem topologica real do HEAD atual, do mais novo para o mais antigo.
   const headList = await readGit(["rev-list", "--topo-order", "HEAD"], { cwd });
   if (!headList.ok) {
-    const error = new Error("nao consegui listar o historico do HEAD");
+    const error = new Error("error.squashNoHistory");
     error.command = headList;
     error.status = 409;
     throw error;
@@ -142,7 +142,7 @@ export async function squash({ commits, message, fixup, base } = {}) {
 
   const fora = resolved.filter((h) => !topoIndex.has(h));
   if (fora.length) {
-    const error = new Error("ha commits selecionados que nao estao no HEAD atual");
+    const error = new Error("error.squashNotOnHead");
     error.status = 400;
     error.detail = `fora do HEAD: ${fora.map((h) => h.slice(0, 8)).join(", ")}`;
     throw error;
@@ -158,7 +158,7 @@ export async function squash({ commits, message, fixup, base } = {}) {
     if ((await parentsOf(hash, cwd)).length > 1) merges.push(hash);
   }
   if (merges.length) {
-    const error = new Error("nao da para fazer squash de merge commit");
+    const error = new Error("error.squashMergeCommit");
     error.status = 400;
     error.detail = `merges selecionados: ${merges.map((h) => h.slice(0, 8)).join(", ")}`;
     throw error;
@@ -173,17 +173,17 @@ export async function squash({ commits, message, fixup, base } = {}) {
   });
   const positions = ordered.map((h) => fpIndex.get(h));
   if (positions.some((p) => p === undefined)) {
-    const error = new Error("os commits selecionados nao estao todos na linha principal");
+    const error = new Error("error.squashNotMainline");
     error.status = 400;
-    error.detail = "so da para fazer squash na cadeia de primeiro-pai do HEAD";
+    error.detail = "error.squashNotMainlineDetail";
     throw error;
   }
   const sortedPositions = [...positions].sort((a, b) => a - b);
   for (let i = 1; i < sortedPositions.length; i += 1) {
     if (sortedPositions[i] !== sortedPositions[i - 1] + 1) {
-      const error = new Error("os commits selecionados nao sao contiguos");
+      const error = new Error("error.squashNotContiguous");
       error.status = 400;
-      error.detail = "selecione commits vizinhos na mesma linha do grafo";
+      error.detail = "error.squashNotContiguousDetail";
       throw error;
     }
   }

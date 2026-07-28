@@ -297,7 +297,7 @@ test("selecao nao contigua e recusada com mensagem clara", async () => {
       () => squash({ commits: [fixture.hashes.s1, fixture.hashes.s3] }),
       (err) => {
         assert.equal(err.status, 400);
-        assert.match(err.message, /nao sao contiguos/);
+        assert.match(err.message, /error\.squashNotContiguous/);
         return true;
       },
     );
@@ -318,7 +318,7 @@ test("merge commit na selecao e recusado", async () => {
       () => squash({ commits: [fixture.hashes.merge, fixture.hashes.mainExtra] }),
       (err) => {
         assert.equal(err.status, 400);
-        assert.match(err.message, /merge commit/);
+        assert.match(err.message, /error\.squashMergeCommit/);
         return true;
       },
     );
@@ -338,7 +338,7 @@ test("commit fora do HEAD atual e recusado", async () => {
       () => squash({ commits: [fixture.hashes.s1, fixture.hashes.s2] }),
       (err) => {
         assert.equal(err.status, 400);
-        assert.match(err.message, /nao estao no HEAD atual/);
+        assert.match(err.message, /error\.squashNotOnHead/);
         return true;
       },
     );
@@ -355,9 +355,9 @@ test("menos de dois commits e recusado", async () => {
     process.chdir(fixture.root);
     await assert.rejects(
       () => squash({ commits: [fixture.hashes.s1] }),
-      /pelo menos 2 hashes/,
+      /error\.squashNeedsTwo/,
     );
-    await assert.rejects(() => squash({}), /pelo menos 2 hashes/);
+    await assert.rejects(() => squash({}), /error\.squashNeedsTwo/);
   } finally {
     process.chdir(antes);
     fixture.cleanup();

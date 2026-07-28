@@ -22,6 +22,7 @@ import {
   FolderTree,
   GitBranchPlus,
   GitMerge,
+  Languages,
   Moon,
   RefreshCw,
   Star,
@@ -38,6 +39,7 @@ import {
   useAppState,
 } from "@/state/store";
 import { toggleTheme, useProjects, useShellState } from "@/hooks";
+import { LOCALE_OPTIONS, chooseLocale, t, useLocale } from "@/i18n";
 import { short, truncate } from "@/lib/utils";
 import {
   doCheckout,
@@ -61,15 +63,29 @@ export interface AppCommand extends CommandPaletteItem {
   run: () => void;
 }
 
-export const COMMAND_GROUPS = [
-  "Repositorio",
-  "Worktrees",
-  "Branches",
-  "Rede",
-  "Historico",
-  "Remotos",
-  "Aparencia",
-] as const;
+/**
+ * Os grupos, ja traduzidos. Funcao e nao constante porque o rotulo muda com o
+ * idioma — e ele tambem e a CHAVE de agrupamento da paleta, entao os dois lados
+ * (o `group` de cada item e o `groupOrder`) tem de sair da mesma chamada.
+ */
+export const commandGroups = () =>
+  [
+    t("commands.group.repository"),
+    t("commands.group.worktrees"),
+    t("commands.group.branches"),
+    t("commands.group.network"),
+    t("commands.group.history"),
+    t("commands.group.remotes"),
+    t("commands.group.appearance"),
+    t("language.group"),
+  ] as const;
+
+/** "abrir, trocar, repo" -> ["abrir", "trocar", "repo"], para o filtro difuso. */
+const words = (list: string): string[] =>
+  list
+    .split(",")
+    .map((w) => w.trim().toLowerCase())
+    .filter(Boolean);
 
 /** Abre a url de um remoto no navegador, convertendo scp-like em https. */
 export function browseUrl(raw: string): string | null {
@@ -88,27 +104,39 @@ export function useAppCommands(): AppCommand[] {
   const theme = useShellState((s) => s.theme);
   // Os favoritos viram um comando cada: pular de projeto sem tirar a mao do ⌘K.
   const { favorites } = useProjects();
+  // O idioma entra nas dependencias para o memo nao servir rotulos velhos.
+  const locale = useLocale();
 
   return useMemo(() => {
     const items: AppCommand[] = [];
+    const [
+      GROUP_REPO,
+      GROUP_WORKTREES,
+      GROUP_BRANCHES,
+      GROUP_NET,
+      GROUP_HISTORY,
+      GROUP_REMOTES,
+      GROUP_APPEARANCE,
+      GROUP_LANGUAGE,
+    ] = commandGroups();
 
     /* ---- repositorio ---- */
     items.push(
       {
         id: "repo.refresh",
-        label: "Recarregar o repositorio",
-        group: "Repositorio",
+        label: t("commands.repo.refresh"),
+        group: GROUP_REPO,
         icon: RefreshCw,
         shortcut: ["⌘", "R"],
-        keywords: ["refresh", "reload", "atualizar"],
+        keywords: words(t("commands.repo.refresh.keywords")),
         run: () => void doRefresh(),
       },
       {
         id: "repo.open",
-        label: "Abrir outro repositorio…",
-        group: "Repositorio",
+        label: t("commands.repo.open"),
+        group: GROUP_REPO,
         icon: FolderGit2,
-        keywords: ["abrir", "open", "trocar", "repositorio", "repo", "projeto", "pasta"],
+        keywords: words(t("commands.repo.open.keywords")),
         run: openRepoPicker,
       },
     );
@@ -116,15 +144,15 @@ export function useAppCommands(): AppCommand[] {
       const name = fav.label || fav.name;
       items.push({
         id: `repo.favorite.${fav.path}`,
-        label: `Abrir ${name}`,
-        hint: fav.exists ? fav.path : `${fav.path} — pasta nao encontrada`,
-        group: "Repositorio",
+        label: t("commands.repo.favorite", { name }),
+        hint: fav.exists ? fav.path : t("commands.repo.favorite.missing", { path: fav.path }),
+        group: GROUP_REPO,
         icon: Star,
-        keywords: ["favorito", "projeto", "abrir", "trocar", name.toLowerCase()],
+        keywords: [...words(t("commands.repo.favorite.keywords")), name.toLowerCase()],
         run: () =>
           fav.exists
             ? void doOpenRepository(fav.path)
-            : toast("warning", `${name} nao esta mais no disco`, fav.path),
+            : toast("warning", t("commands.repo.favorite.gone", { name }), fav.path),
       });
     }
 
@@ -133,21 +161,25 @@ export function useAppCommands(): AppCommand[] {
       if (wt.isActive) continue;
       items.push({
         id: `worktree.switch.${wt.path}`,
-        label: `Trocar para a worktree ${wt.label}`,
+        label: t("commands.worktree.switch", { label: wt.label }),
         hint: wt.path,
-        group: "Worktrees",
+        group: GROUP_WORKTREES,
         icon: FolderTree,
-        keywords: ["worktree", "chdir", wt.label.toLowerCase(), wt.branch?.toLowerCase() ?? ""],
+        keywords: [
+          ...words(t("commands.worktree.keywords")),
+          wt.label.toLowerCase(),
+          wt.branch?.toLowerCase() ?? "",
+        ],
         run: () => void doSwitchWorktree(wt),
       });
     }
     items.push({
       id: "worktree.list",
-      label: "Ver worktrees no rail",
-      hint: `${worktrees.length} registradas`,
-      group: "Worktrees",
+      label: t("commands.worktree.list"),
+      hint: t("commands.worktree.list.hint", { count: worktrees.length }),
+      group: GROUP_WORKTREES,
       icon: Boxes,
-      keywords: ["worktree"],
+      keywords: words(t("commands.worktree.keywords")),
       run: () => {
         const el = document.getElementById("rail-worktrees");
         el?.scrollIntoView({ block: "start", behavior: "smooth" });
@@ -157,27 +189,29 @@ export function useAppCommands(): AppCommand[] {
     /* ---- branches ---- */
     items.push({
       id: "branch.create",
-      label: "Criar branch",
-      group: "Branches",
+      label: t("commands.branch.create"),
+      group: GROUP_BRANCHES,
       icon: GitBranchPlus,
-      keywords: ["branch", "nova", "new"],
+      keywords: words(t("commands.branch.create.keywords")),
       run: () => openCreateBranch(),
     });
     for (const branch of branches) {
       if (branch.isHead) continue;
       items.push({
         id: `branch.checkout.${branch.fullName}`,
-        label: `Checkout ${branch.name}`,
-        hint: branch.checkedOutIn ? `presa em ${branch.checkedOutIn}` : short(branch.target),
-        group: "Branches",
+        label: t("commands.branch.checkout", { name: branch.name }),
+        hint: branch.checkedOutIn
+          ? t("commands.branch.checkout.pinned", { worktree: branch.checkedOutIn })
+          : short(branch.target),
+        group: GROUP_BRANCHES,
         icon: Check,
-        keywords: ["checkout", branch.name.toLowerCase()],
+        keywords: [...words(t("commands.branch.checkout.keywords")), branch.name.toLowerCase()],
         run: () =>
           branch.checkedOutIn
             ? toast(
                 "warning",
-                `${branch.name} ja esta em uso`,
-                `A branch esta checada em ${branch.checkedOutIn}. Troque de worktree em vez de fazer checkout.`,
+                t("commands.branch.inUse", { name: branch.name }),
+                t("commands.branch.inUse.detail", { worktree: branch.checkedOutIn }),
               )
             : void doCheckout(branch.name),
       });
@@ -187,34 +221,34 @@ export function useAppCommands(): AppCommand[] {
     items.push(
       {
         id: "net.fetch",
-        label: "Fetch --all --prune",
-        group: "Rede",
+        label: t("commands.net.fetch"),
+        group: GROUP_NET,
         icon: ArrowDownToLine,
-        keywords: ["fetch", "buscar"],
+        keywords: words(t("commands.net.fetch.keywords")),
         run: () => void doFetch(),
       },
       {
         id: "net.pull",
-        label: "Pull",
-        group: "Rede",
+        label: t("commands.net.pull"),
+        group: GROUP_NET,
         icon: ArrowDownToLine,
-        keywords: ["pull", "puxar"],
+        keywords: words(t("commands.net.pull.keywords")),
         run: () => void doPull(),
       },
       {
         id: "net.pull.rebase",
-        label: "Pull --rebase",
-        group: "Rede",
+        label: t("commands.net.pullRebase"),
+        group: GROUP_NET,
         icon: ArrowDownToLine,
-        keywords: ["pull", "rebase"],
+        keywords: words(t("commands.net.pullRebase.keywords")),
         run: () => void doPull(true),
       },
       {
         id: "net.push",
-        label: "Push…",
-        group: "Rede",
+        label: t("commands.net.push"),
+        group: GROUP_NET,
         icon: ArrowUpFromLine,
-        keywords: ["push", "enviar"],
+        keywords: words(t("commands.net.push.keywords")),
         run: () => openPushDialog(),
       },
     );
@@ -223,29 +257,29 @@ export function useAppCommands(): AppCommand[] {
     items.push(
       {
         id: "stash.push",
-        label: "Guardar alteracoes (stash)",
-        group: "Historico",
+        label: t("commands.stash.push"),
+        group: GROUP_HISTORY,
         icon: Archive,
-        keywords: ["stash", "guardar"],
+        keywords: words(t("commands.stash.push.keywords")),
         run: openStashPush,
       },
       {
         id: "tag.create",
-        label: "Criar tag",
-        group: "Historico",
+        label: t("commands.tag.create"),
+        group: GROUP_HISTORY,
         icon: TagIcon,
-        keywords: ["tag"],
+        keywords: words(t("commands.tag.create.keywords")),
         run: () => openCreateTag(),
       },
     );
     if (stashes.length > 0) {
       items.push({
         id: "stash.apply.latest",
-        label: `Aplicar ${stashes[0].ref}`,
+        label: t("commands.stash.applyLatest", { ref: stashes[0].ref }),
         hint: truncate(stashes[0].message, 48),
-        group: "Historico",
+        group: GROUP_HISTORY,
         icon: Archive,
-        keywords: ["stash", "apply"],
+        keywords: words(t("commands.stash.apply.keywords")),
         run: () => void doStashApply(stashes[0].ref),
       });
     }
@@ -253,21 +287,21 @@ export function useAppCommands(): AppCommand[] {
       id: "history.squash",
       label:
         selection.length >= 2
-          ? `Squash dos ${selection.length} commits selecionados`
-          : "Squash da selecao (selecione 2 ou mais)",
-      group: "Historico",
+          ? t("commands.history.squash", { count: selection.length })
+          : t("commands.history.squash.needs"),
+      group: GROUP_HISTORY,
       icon: GitMerge,
-      keywords: ["squash", "rebase", "juntar"],
+      keywords: words(t("commands.history.squash.keywords")),
       run: () => openSquash(selection),
     });
 
     /* ---- remotos ---- */
     items.push({
       id: "remote.add",
-      label: "Adicionar Origin",
-      group: "Remotos",
+      label: t("commands.remote.add"),
+      group: GROUP_REMOTES,
       icon: ExternalLink,
-      keywords: ["remote", "origin", "adicionar"],
+      keywords: words(t("commands.remote.add.keywords")),
       run: () => openAddRemote(),
     });
     for (const remote of remotes) {
@@ -275,11 +309,11 @@ export function useAppCommands(): AppCommand[] {
       if (!url) continue;
       items.push({
         id: `remote.open.${remote.name}`,
-        label: `Abrir ${remote.name} no navegador`,
+        label: t("commands.remote.browse", { name: remote.name }),
         hint: url,
-        group: "Remotos",
+        group: GROUP_REMOTES,
         icon: ExternalLink,
-        keywords: ["remote", "abrir", remote.name.toLowerCase()],
+        keywords: [...words(t("commands.remote.browse.keywords")), remote.name.toLowerCase()],
         run: () => window.open(url, "_blank", "noopener,noreferrer"),
       });
     }
@@ -287,13 +321,27 @@ export function useAppCommands(): AppCommand[] {
     /* ---- aparencia ---- */
     items.push({
       id: "theme.toggle",
-      label: theme === "dark" ? "Tema claro" : "Tema escuro",
-      group: "Aparencia",
+      label: theme === "dark" ? t("commands.theme.light") : t("commands.theme.dark"),
+      group: GROUP_APPEARANCE,
       icon: theme === "dark" ? Sun : Moon,
-      keywords: ["tema", "theme", "dark", "light", "claro", "escuro"],
+      keywords: words(t("commands.theme.keywords")),
       run: toggleTheme,
     });
 
+    /* ---- idioma: um comando por lingua, o corrente fora da lista ---- */
+    for (const option of LOCALE_OPTIONS) {
+      if (option.value === locale) continue;
+      items.push({
+        id: `language.${option.value}`,
+        label: t("commands.language.set", { name: option.label }),
+        hint: option.tag,
+        group: GROUP_LANGUAGE,
+        icon: Languages,
+        keywords: [...words(t("commands.language.keywords")), option.label.toLowerCase(), option.value],
+        run: () => chooseLocale(option.value),
+      });
+    }
+
     return items;
-  }, [worktrees, branches, remotes, stashes, selection, theme, favorites]);
+  }, [worktrees, branches, remotes, stashes, selection, theme, favorites, locale]);
 }

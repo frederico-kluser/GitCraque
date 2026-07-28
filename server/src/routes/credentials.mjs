@@ -24,6 +24,6 @@ export function registerCredentialRoutes(router) {
 }
 
 function vault() {
-  if (!runtime.vault) throw new HttpError(503, "o cofre de credenciais nao subiu");
+  if (!runtime.vault) throw new HttpError(503, "error.vaultDown");
   return runtime.vault;
 }

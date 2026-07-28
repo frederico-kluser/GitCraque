@@ -26,8 +26,10 @@ export function remoteHost(url: string): string | undefined {
 
 export const isHttpsRemote = (url: string) => /^https?:\/\//.test(url)
 
-export const plural = (n: number, one: string, many: string) =>
-  `${n} ${n === 1 ? one : many}`
+/* `plural(n, "arquivo", "arquivos")` saiu daqui: ele carregava as duas formas
+ * cravadas na chamada, que e exatamente o que o catalogo resolve. Agora e
+ * `t("changes.filesChanged", { count: n })`, com as variantes `_one`/`_other`
+ * em cada idioma — ver `@/i18n`. */
 
 /** trunca preservando o inicio, com reticencia tipografica. */
 export const truncate = (s: string, n: number) =>

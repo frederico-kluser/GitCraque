@@ -28,6 +28,7 @@ import { FileViewer } from "@/viewer";
 import { closeFile, useAppState } from "@/state/store";
 import { openContextMenu } from "@/hooks";
 import { viewerMenu } from "@/app/menus";
+import { t } from "@/i18n";
 import { cn, short } from "@/lib/utils";
 import type { PanelProps } from "@/types/modules";
 import { Chip, EmptyState } from "./parts";
@@ -70,17 +71,17 @@ export function WorkDock({ className, controls }: WorkDockProps) {
             troca a referencia para esta caixa: mover a caixa inteira nao anima
             nada, e a troca de aba continua deslizando como antes. */}
         <motion.div layout layoutRoot className="shrink-0">
-          <SmoothTabsList ariaLabel="Painel de trabalho" className="gap-0.5 p-0.5">
+          <SmoothTabsList ariaLabel={t("dock.label")} className="gap-0.5 p-0.5">
             <SmoothTabsTab value="changes" className="flex-none px-3 py-1 text-xs">
               <span className="flex items-center gap-1.5">
-                Alteracoes
+                {t("dock.tab.changes")}
                 {changeCount > 0 && (
                   <span className="font-mono text-[10px] tabular-nums opacity-70">{changeCount}</span>
                 )}
               </span>
             </SmoothTabsTab>
             <SmoothTabsTab value="viewer" className="flex-none px-3 py-1 text-xs">
-              Visualizador
+              {t("dock.tab.viewer")}
             </SmoothTabsTab>
           </SmoothTabsList>
         </motion.div>
@@ -99,7 +100,7 @@ export function WorkDock({ className, controls }: WorkDockProps) {
             {openFile.path}
           </span>
           {openFile.fromWorkingTree ? (
-            <Chip tone="warning">arvore de trabalho</Chip>
+            <Chip tone="warning">{t("dock.workingTree")}</Chip>
           ) : (
             openFile.hash && <Chip tone="primary">{short(openFile.hash)}</Chip>
           )}
@@ -137,8 +138,8 @@ export function WorkDock({ className, controls }: WorkDockProps) {
           ) : (
             <EmptyState
               className="h-full justify-center"
-              title="Nenhum arquivo aberto"
-              description="Clique num arquivo do commit selecionado, ou numa linha das alteracoes, para ver o conteudo aqui."
+              title={t("dock.empty.title")}
+              description={t("dock.empty.body")}
             />
           )}
         </SmoothTabsPanel>

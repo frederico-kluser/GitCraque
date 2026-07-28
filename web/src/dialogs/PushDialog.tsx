@@ -19,6 +19,8 @@ import {
   SegmentedToggleOption,
 } from "@/components/motion-ui/segmented-toggle";
 import { api } from "@/lib/api";
+import { t } from "@/i18n";
+import type { MessageKey } from "@/i18n";
 import {
   runOperation,
   selectBranches,
@@ -41,11 +43,11 @@ import { pushBody, pushPreview } from "./requests";
 
 type PushState = "idle" | "enviando" | "ok" | "erro";
 
-const STATE_LABEL: Record<PushState, string> = {
-  idle: "Enviar",
-  enviando: "Enviando...",
-  ok: "Enviado",
-  erro: "Falhou",
+const STATE_LABEL: Record<PushState, MessageKey> = {
+  idle: "push.state.idle",
+  enviando: "push.state.sending",
+  ok: "push.state.ok",
+  erro: "push.state.error",
 };
 
 const STATE_SURFACE: Record<PushState, string> = {
@@ -113,11 +115,10 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
   const run = async () => {
     if (!ready) return;
     setState("enviando");
-    const result = await runOperation(
-      `Push para ${remote}`,
-      () => api.push(pushBody(options)),
-      { refresh: "refs", successMessage: `Push para ${remote} concluido` },
-    );
+    const result = await runOperation(t("push.op", { remote }), () => api.push(pushBody(options)), {
+      refresh: "refs",
+      successMessage: t("push.done", { remote }),
+    });
     if (result?.ok) {
       setState("ok");
       confettiRef.current?.burst();
@@ -128,7 +129,9 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
 
   const branchOptions = branches.map((b) => ({
     value: b.name,
-    label: b.upstream ? `${b.name} → ${b.upstream}` : `${b.name} (sem upstream)`,
+    label: b.upstream
+      ? `${b.name} → ${b.upstream}`
+      : t("push.field.branch.noUpstream", { name: b.name }),
   }));
   if (branch && !branches.some((b) => b.name === branch)) {
     branchOptions.unshift({ value: branch, label: branch });
@@ -138,13 +141,13 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
     <DialogShell
       open={open}
       onClose={onClose}
-      title="Push"
-      description="Envia os commits do ramo escolhido para o remoto."
+      title={t("push.title")}
+      description={t("push.description")}
       onEnter={force ? undefined : run}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <div className="relative">
             <Confetti ref={confettiRef} />
@@ -155,7 +158,7 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
                 aria-describedby="push-hold-hint"
                 className="w-64"
               >
-                Segure para push --force-with-lease
+                {t("push.hold")}
               </HoldToConfirmButton>
             ) : (
               <MultiStateButton
@@ -164,10 +167,13 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
                 disabled={!ready}
                 surfaceClassName={STATE_SURFACE[state]}
                 feedback={state === "erro" ? "shake" : state === "ok" ? "pop" : "none"}
-                announce={`Push: ${STATE_LABEL[state]}`}
-                aria-label={`Enviar ${branch || "ramo atual"} para ${remote || "remoto"}`}
+                announce={`${t("push.title")}: ${t(STATE_LABEL[state])}`}
+                aria-label={t("push.aria", {
+                  branch: branch || t("push.aria.currentBranch"),
+                  remote: remote || t("push.aria.remote"),
+                })}
               >
-                {STATE_LABEL[state]}
+                {t(STATE_LABEL[state])}
               </MultiStateButton>
             )}
           </div>
@@ -176,22 +182,19 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
     >
       {remotes.length === 0 ? (
         <>
-          <Callout tone="warning">
-            Este repositorio nao tem nenhum remoto configurado, entao nao ha para onde
-            enviar.
-          </Callout>
+          <Callout tone="warning">{t("push.noRemotes")}</Callout>
           <Button variant="primary" onClick={() => openDialog({ kind: "add-remote" })}>
-            Adicionar remoto
+            {t("push.addRemote")}
           </Button>
         </>
       ) : (
         <>
           {remotes.length <= 3 ? (
-            <Field label="Remoto" hint={selectedRemote?.pushUrl}>
+            <Field label={t("push.field.remote")} hint={selectedRemote?.pushUrl}>
               <SegmentedToggle
                 value={remote}
                 onChange={setRemote}
-                ariaLabel="Remoto de destino"
+                ariaLabel={t("push.field.remote.aria")}
                 className="w-fit"
               >
                 {remotes.map((r) => (
@@ -203,7 +206,7 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
             </Field>
           ) : (
             <SelectField
-              label="Remoto"
+              label={t("push.field.remote")}
               value={remote}
               onChange={setRemote}
               options={remotes.map((r) => ({ value: r.name, label: `${r.name} — ${r.pushUrl}` }))}
@@ -212,14 +215,17 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
           )}
 
           <SelectField
-            label="Ramo"
+            label={t("push.field.branch")}
             value={branch}
             onChange={setBranch}
             options={branchOptions}
             hint={
               branchInfo
-                ? `${branchInfo.ahead} commits a frente, ${branchInfo.behind} atras do upstream.`
-                : "Sem upstream configurado."
+                ? t("push.field.branch.hint", {
+                    ahead: branchInfo.ahead,
+                    behind: branchInfo.behind,
+                  })
+                : t("push.field.branch.hint.none")
             }
           />
 
@@ -228,34 +234,34 @@ export function PushDialog({ open, remote: initialRemote, branch: initialBranch,
               label="--set-upstream"
               checked={setUpstream}
               onChange={setUpstreamOverride}
-              hint="Passa a acompanhar o ramo remoto depois deste push."
+              hint={t("push.field.setUpstream.hint")}
             />
             <CheckboxField
               label="--tags"
               checked={tags}
               onChange={setTags}
-              hint="Envia junto todas as tags locais."
+              hint={t("push.field.tags.hint")}
             />
             <CheckboxField
               label="--force-with-lease"
               checked={force}
               onChange={setForce}
-              hint="Sobrescreve o ramo remoto, mas so se ele estiver onde voce viu por ultimo."
+              hint={t("push.field.force.hint")}
             />
           </div>
 
           {force ? (
             <Callout tone="danger">
-              O ramo {branch || "atual"} sera SOBRESCRITO em {remote}. Quem ja tinha
-              baixado os commits antigos vai precisar rebasear.
+              {t("push.force.warning", {
+                branch: branch || t("push.force.currentBranch"),
+                remote,
+              })}
             </Callout>
           ) : null}
 
           {selectedRemote?.https ? (
             <Callout tone="info">
-              {selectedRemote.host ?? "O remoto"} usa https: se o cofre nao tiver a
-              credencial, o GitCraque vai pedir usuario e token aqui mesmo, sem travar o
-              git.
+              {t("push.https.note", { host: selectedRemote.host ?? t("push.https.theRemote") })}
             </Callout>
           ) : null}
 

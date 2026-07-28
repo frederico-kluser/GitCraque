@@ -25,6 +25,7 @@ import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { closeConfirm, selectConfirm, useShellState } from "@/hooks";
 import type { ConfirmAction, ConfirmField } from "@/hooks";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { FOCUS_RING, SectionLabel, ToolButton } from "@/panels/parts";
 
@@ -175,9 +176,9 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
 
   const buttonState: Record<RunState, { label: string; surface: string }> = {
     idle: { label: action.confirmLabel, surface: "bg-primary text-primary-foreground" },
-    running: { label: "Executando…", surface: "bg-primary/70 text-primary-foreground" },
-    ok: { label: "Pronto", surface: "bg-success text-success-foreground" },
-    error: { label: "Falhou", surface: "bg-destructive text-destructive-foreground" },
+    running: { label: t("common.running"), surface: "bg-primary/70 text-primary-foreground" },
+    ok: { label: t("common.done"), surface: "bg-success text-success-foreground" },
+    error: { label: t("common.failed"), surface: "bg-destructive text-destructive-foreground" },
   };
 
   return createPortal(
@@ -217,7 +218,7 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
           <ToolButton
             tone="ghost"
             size="sm"
-            aria-label="Fechar"
+            aria-label={t("confirm.close")}
             icon={<X className="size-3.5" />}
             onClick={closeConfirm}
           />
@@ -243,7 +244,7 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
 
         <footer className="flex items-center justify-end gap-2 pt-1">
           <ToolButton tone="ghost" onClick={closeConfirm} disabled={runState === "running"}>
-            Cancelar
+            {t("common.cancel")}
           </ToolButton>
 
           {action.destructive ? (
@@ -255,7 +256,9 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
                 missing && "pointer-events-none opacity-50",
               )}
             >
-              {runState === "running" ? "Executando…" : `Segure para ${action.confirmLabel.toLowerCase()}`}
+              {runState === "running"
+                ? t("common.running")
+                : t("common.holdTo", { action: action.confirmLabel.toLowerCase() })}
             </HoldToConfirmButton>
           ) : (
             <MultiStateButton

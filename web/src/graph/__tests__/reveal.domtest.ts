@@ -18,6 +18,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { CommitRow } from "../CommitRow.tsx";
 import { GraphView } from "../GraphView.tsx";
 import { computeGraphLayout, DEFAULT_METRICS } from "../layout.ts";
+import { t } from "@/i18n";
 import type { GraphRowData } from "../shell.ts";
 import { branchAndMerge, rowOf } from "./fixtures.ts";
 
@@ -88,7 +89,7 @@ test("a GraphView aceita o pedido de reveal sem quebrar o render", () => {
     }),
   );
 
-  assert.match(html, /Historico de commits/);
+  assert.ok(html.includes(t("graph.label")), "o rotulo acessivel do grid esta no markup");
   /* o reveal e efeito: no render de servidor ele nao roda, e nada e marcado nem
      liberado. Quem prova o comportamento e `reveal.test.ts`. */
   assert.doesNotMatch(html, /data-revealed/);

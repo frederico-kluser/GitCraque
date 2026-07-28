@@ -13,6 +13,7 @@ import {
   SegmentedToggleOption,
 } from "@/components/motion-ui/segmented-toggle";
 import { api } from "@/lib/api";
+import { t } from "@/i18n";
 import { short, truncate } from "@/lib/utils";
 import { runOperation, selectCommits, useAppState } from "@/state/store";
 import type { RawCommit } from "@/types/git";
@@ -55,9 +56,9 @@ export function SquashDialog({ open, commits, onClose }: SquashDialogProps) {
 
   const run = () => {
     onClose();
-    void runOperation("Squash", () => api.squash(squashRequest(options)), {
+    void runOperation(t("squash.op"), () => api.squash(squashRequest(options)), {
       refresh: "all",
-      successMessage: `Squash de ${ordered.length} commits`,
+      successMessage: t("squash.done", { count: ordered.length }),
     });
   };
 
@@ -65,36 +66,30 @@ export function SquashDialog({ open, commits, onClose }: SquashDialogProps) {
     <DialogShell
       open={open}
       onClose={onClose}
-      title={`Squash de ${ordered.length} commits`}
-      description="Junta os commits selecionados num so. Reescreve o historico a partir do mais antigo deles."
+      title={t("squash.title", { count: ordered.length })}
+      description={t("squash.description")}
       tone="destructive"
       size="lg"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           {enough ? (
             <HoldToConfirmButton onConfirm={run} aria-describedby="squash-hold-hint">
-              Segure para juntar
+              {t("squash.hold")}
             </HoldToConfirmButton>
           ) : null}
         </>
       }
     >
       {!enough ? (
-        <Callout tone="warning">
-          Selecione ao menos dois commits no grafo para juntar. Selecionados agora:{" "}
-          {ordered.length}.
-        </Callout>
+        <Callout tone="warning">{t("squash.needTwo", { count: ordered.length })}</Callout>
       ) : (
         <>
-          <Callout tone="danger">
-            Isto REESCREVE o historico: os commits abaixo deixam de existir com os hashes
-            atuais. Se algum ja foi publicado, o proximo push vai exigir --force-with-lease.
-          </Callout>
+          <Callout tone="danger">{t("squash.warning")}</Callout>
 
-          <Field label="Plano do rebase interativo" hint="Mesma ordem do git-rebase-todo: do mais antigo para o mais novo.">
+          <Field label={t("squash.plan")} hint={t("squash.plan.hint")}>
             <ol className="divide-y divide-border overflow-hidden rounded-md border border-border">
               {plan.map((line) => {
                 const commit = byHash.get(line.hash);
@@ -116,7 +111,7 @@ export function SquashDialog({ open, commits, onClose }: SquashDialogProps) {
                       {short(line.hash)}
                     </code>
                     <span className="truncate text-foreground">
-                      {commit ? truncate(commit.subject, 90) : "(fora do log carregado)"}
+                      {commit ? truncate(commit.subject, 90) : t("squash.outOfLog")}
                     </span>
                   </li>
                 );
@@ -125,17 +120,13 @@ export function SquashDialog({ open, commits, onClose }: SquashDialogProps) {
           </Field>
 
           <Field
-            label="O que fazer com as mensagens"
-            hint={
-              fixup
-                ? "fixup descarta as mensagens dos commits juntados."
-                : "squash abre a lista de mensagens para o commit final."
-            }
+            label={t("squash.mode")}
+            hint={fixup ? t("squash.mode.fixupHint") : t("squash.mode.squashHint")}
           >
             <SegmentedToggle
               value={mode}
               onChange={(value) => setMode(value as "squash" | "fixup")}
-              ariaLabel="Acao das linhas juntadas"
+              ariaLabel={t("squash.mode.aria")}
               className="w-fit"
             >
               <SegmentedToggleOption value="squash">squash</SegmentedToggleOption>
@@ -144,23 +135,17 @@ export function SquashDialog({ open, commits, onClose }: SquashDialogProps) {
           </Field>
 
           <TextAreaField
-            label="Mensagem final"
+            label={t("squash.message")}
             value={message}
             onChange={setMessage}
             disabled={fixup}
             placeholder={
-              fixup
-                ? "fixup mantem a mensagem do commit mais antigo."
-                : "Deixe vazio para concatenar as mensagens originais."
+              fixup ? t("squash.message.fixupPlaceholder") : t("squash.message.placeholder")
             }
-            hint={
-              fixup
-                ? "Indisponivel com fixup."
-                : "Quando preenchida, o backend faz git commit --amend -m depois do rebase."
-            }
+            hint={fixup ? t("squash.message.fixupHint") : t("squash.message.hint")}
           />
 
-          <CommandPreview argv={squashPreview(options)} label="Sera executado (com GIT_SEQUENCE_EDITOR)" />
+          <CommandPreview argv={squashPreview(options)} label={t("squash.preview")} />
           <HoldHint id="squash-hold-hint" />
         </>
       )}

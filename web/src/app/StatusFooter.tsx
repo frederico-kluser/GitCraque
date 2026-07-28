@@ -7,6 +7,7 @@
  */
 import { Circle, Clock, FolderTree, GitCommitHorizontal, Terminal } from "lucide-react";
 import { selectCommits, useAppState } from "@/state/store";
+import { formatNumber, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { ConnectionState } from "@/lib/ws";
 
@@ -41,24 +42,27 @@ export function StatusFooter({ className }: { className?: string }) {
         className,
       )}
     >
-      <Item icon={<FolderTree className="size-3" />} title="process.cwd() do servidor">
+      <Item icon={<FolderTree className="size-3" />} title={t("footer.cwd")}>
         {cwd ?? "—"}
       </Item>
       <span className="h-3 w-px shrink-0 bg-border" />
-      <Item icon={<Terminal className="size-3" />} title="Versao do binario do git">
+      <Item icon={<Terminal className="size-3" />} title={t("footer.gitVersion")}>
         {gitVersion ?? "git ?"}
       </Item>
       <span className="h-3 w-px shrink-0 bg-border" />
-      <Item icon={<GitCommitHorizontal className="size-3" />} title="Commits carregados / alcancaveis por --all">
-        {commits.length.toLocaleString("pt-BR")}
-        {total > commits.length ? ` / ${total.toLocaleString("pt-BR")}` : ""} commits
+      <Item icon={<GitCommitHorizontal className="size-3" />} title={t("footer.commits")}>
+        {formatNumber(commits.length)}
+        {total > commits.length ? ` / ${formatNumber(total)}` : ""} {t("footer.commitsSuffix")}
       </Item>
       <span className="h-3 w-px shrink-0 bg-border" />
-      <Item icon={<Clock className="size-3" />} title="Tempo do ultimo `git log`">
+      <Item icon={<Clock className="size-3" />} title={t("footer.elapsed")}>
         {elapsed != null ? `${elapsed} ms` : "—"}
       </Item>
       <span className="flex-1" />
-      <span className={cn("flex shrink-0 items-center gap-1.5", CONNECTION_TONE[connection])} title="WebSocket">
+      <span
+        className={cn("flex shrink-0 items-center gap-1.5", CONNECTION_TONE[connection])}
+        title={t("footer.websocket")}
+      >
         <Circle className="size-2 fill-current" />
         ws: {connection}
       </span>

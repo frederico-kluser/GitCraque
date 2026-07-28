@@ -10,6 +10,7 @@
 import { useEffect, useState } from "react";
 import { HoldToConfirmButton } from "@/components/motion-ui/hold-to-confirm";
 import { api } from "@/lib/api";
+import { t } from "@/i18n";
 import { runOperation, selectBranches, selectRemotes, useAppState } from "@/state/store";
 import {
   Button,
@@ -55,9 +56,9 @@ export function DeleteLocalBranchDialog({
 
   const run = async () => {
     const result = await runOperation(
-      `Apagar ramo ${name}`,
+      t("deleteLocal.op", { name }),
       () => api.deleteBranchLocal(deleteBranchLocalBody(options)),
-      { refresh: "refs", successMessage: `Ramo ${name} apagado` },
+      { refresh: "refs", successMessage: t("deleteLocal.done", { name }) },
     );
     if (result?.ok) {
       onClose();
@@ -72,14 +73,14 @@ export function DeleteLocalBranchDialog({
     <DialogShell
       open={open}
       onClose={onClose}
-      title={`Apagar o ramo ${name}`}
-      description="Remove apenas a referencia local. O remoto nao e tocado."
+      title={t("deleteLocal.title", { name })}
+      description={t("deleteLocal.description")}
       tone="destructive"
       size="sm"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <HoldToConfirmButton
             key={force ? "force" : "safe"}
@@ -87,28 +88,26 @@ export function DeleteLocalBranchDialog({
             aria-describedby="delete-local-hint"
             className="w-56"
           >
-            {force ? "Segure para forcar (-D)" : "Segure para apagar"}
+            {force ? t("deleteLocal.holdForce") : t("deleteLocal.hold")}
           </HoldToConfirmButton>
         </>
       }
     >
       {branch?.upstream ? (
         <Callout tone="info">
-          {name} acompanha {branch.upstream} ({branch.ahead} a frente, {branch.behind}{" "}
-          atras). O ramo no servidor continua existindo.
+          {t("deleteLocal.upstream", {
+            name,
+            upstream: branch.upstream,
+            ahead: branch.ahead,
+            behind: branch.behind,
+          })}
         </Callout>
       ) : null}
 
       {needsForce ? (
-        <Callout tone="danger">
-          O git recusou: {name} nao esta totalmente mesclado. Com -D os commits que so
-          existem nele ficam inalcancaveis e somem no proximo gc.
-        </Callout>
+        <Callout tone="danger">{t("deleteLocal.notMerged", { name })}</Callout>
       ) : (
-        <Callout tone="warning">
-          Com -d o git so apaga se o ramo ja estiver mesclado. Se recusar, a opcao -D
-          aparece aqui.
-        </Callout>
+        <Callout tone="warning">{t("deleteLocal.safe")}</Callout>
       )}
 
       <CommandPreview argv={deleteBranchLocalPreview(options)} />
@@ -149,9 +148,9 @@ export function DeleteRemoteBranchDialog({
   const run = () => {
     onClose();
     void runOperation(
-      `Apagar ${remote}/${name}`,
+      t("deleteRemote.op", { remote, name }),
       () => api.deleteBranchRemote(deleteBranchRemoteBody(options)),
-      { refresh: "refs", successMessage: `${remote}/${name} apagado no servidor` },
+      { refresh: "refs", successMessage: t("deleteRemote.done", { remote, name }) },
     );
   };
 
@@ -159,34 +158,32 @@ export function DeleteRemoteBranchDialog({
     <DialogShell
       open={open}
       onClose={onClose}
-      title={`Apagar ${name} no servidor`}
-      description="Isto e um push de delecao: o ramo deixa de existir no remoto."
+      title={t("deleteRemote.title", { name })}
+      description={t("deleteRemote.description")}
       tone="destructive"
       size="sm"
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <HoldToConfirmButton
             onConfirm={run}
             aria-describedby="delete-remote-hint"
             className="w-56"
           >
-            Segure para apagar no servidor
+            {t("deleteRemote.hold")}
           </HoldToConfirmButton>
         </>
       }
     >
       <Callout tone="danger">
-        Apaga {name} NO SERVIDOR {remote || "(sem remoto)"}. Todo mundo que usa esse
-        remoto perde a referencia, e nenhum comando local desfaz isso. A copia local
-        continua onde esta.
+        {t("deleteRemote.warning", { name, remote: remote || t("deleteRemote.noRemote") })}
       </Callout>
 
       {remotes.length > 1 ? (
         <SelectField
-          label="Remoto"
+          label={t("deleteRemote.field.remote")}
           value={remote}
           onChange={setRemote}
           options={remotes.map((r) => ({ value: r.name, label: `${r.name} — ${r.pushUrl}` }))}

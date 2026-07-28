@@ -20,6 +20,7 @@ import {
   StaggerRevealHeadline,
   StaggerRevealItem,
 } from "@/components/motion-ui/stagger-reveal";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { GraphMetrics, GraphViewProps } from "@/types/modules";
 import { CommitRow } from "./CommitRow.tsx";
@@ -56,14 +57,14 @@ function ColumnHeader() {
       )}
     >
       <div role="columnheader" className="pl-[var(--graph-pad)]">
-        Grafo
+        {t("graph.column.graph")}
       </div>
       <div role="columnheader" className="pl-2">
-        Descricao
+        {t("graph.column.description")}
       </div>
-      <div role="columnheader">Autor</div>
-      <div role="columnheader">Data</div>
-      <div role="columnheader">Hash</div>
+      <div role="columnheader">{t("graph.column.author")}</div>
+      <div role="columnheader">{t("graph.column.date")}</div>
+      <div role="columnheader">{t("graph.column.hash")}</div>
     </div>
   );
 }
@@ -96,11 +97,10 @@ function EmptyState() {
     <div className="grid h-full place-items-center p-8">
       <StaggerReveal className="flex max-w-sm flex-col items-center gap-2 text-center">
         <StaggerRevealHeadline as="h2" className="font-heading text-base text-foreground">
-          Nenhum commit para desenhar
+          {t("graph.empty.title")}
         </StaggerRevealHeadline>
         <StaggerRevealItem as="p" className="text-sm text-muted-foreground">
-          Este repositorio ainda nao tem historico. Faca o primeiro commit e a
-          View Tree aparece aqui.
+          {t("graph.empty.body")}
         </StaggerRevealItem>
         <StaggerRevealItem as="p" className="font-mono text-xs text-muted-foreground">
           git log --all --topo-order
@@ -367,7 +367,7 @@ export function GraphView({
       ref={gridRef}
       role="grid"
       tabIndex={0}
-      aria-label="Historico de commits"
+      aria-label={t("graph.label")}
       aria-colcount={5}
       aria-rowcount={commits.length + 1}
       aria-activedescendant={primary !== null ? rowDomId(primary) : undefined}

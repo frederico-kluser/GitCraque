@@ -225,12 +225,13 @@ async function readFromWorktree(base, relative, absolute) {
     real = await fsp.realpath(absolute);
   } catch (err) {
     if (err.code === "ENOENT" || err.code === "ENOTDIR") {
-      const error = new Error(`o arquivo ${relative} nao existe na working tree`);
+      const error = new Error("error.fileMissing");
       error.status = 404;
+      error.params = { path: relative };
       error.detail = err.code;
       throw error;
     }
-    const error = new Error("sem permissao para ler este arquivo");
+    const error = new Error("error.fileNoPermission");
     error.status = 403;
     error.detail = `${relative}: ${err.code ?? err.message}`;
     throw error;

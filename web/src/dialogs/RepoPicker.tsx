@@ -48,6 +48,7 @@ import {
 } from "@/components/motion-ui/smooth-tabs";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { api } from "@/lib/api";
+import { Rich, t } from "@/i18n";
 import { cn, truncate } from "@/lib/utils";
 import { initRepository, openRepository, toast, useAppState } from "@/state/store";
 import type {
@@ -162,7 +163,7 @@ function Linha({
             <span className="truncate text-sm font-medium text-foreground">{titulo}</span>
             {ativo ? (
               <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                <Check className="size-2.5" /> aberto
+                <Check className="size-2.5" /> {t("common.opened")}
               </span>
             ) : null}
           </span>
@@ -272,12 +273,12 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
       if (payload.repos.length === 0) {
         toast(
           "info",
-          "Nenhum repositorio encontrado",
-          `${payload.scanned} pastas visitadas em ${payload.elapsedMs} ms — use a aba Navegar`,
+          t("picker.scan.none.title"),
+          t("picker.scan.none.body", { scanned: payload.scanned, ms: payload.elapsedMs }),
         );
       }
     } catch (e) {
-      toast("error", "A varredura falhou", e instanceof Error ? e.message : String(e));
+      toast("error", t("picker.scan.failed"), e instanceof Error ? e.message : String(e));
     } finally {
       setVarrendo(false);
     }
@@ -412,15 +413,15 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
           onChange={(e) => setBusca(e.target.value)}
           spellCheck={false}
           autoComplete="off"
-          placeholder="Filtrar por nome, ou colar um caminho e apertar Enter"
-          aria-label="Filtrar repositorios ou digitar um caminho"
+          placeholder={t("picker.search.placeholder")}
+          aria-label={t("picker.search.aria")}
           className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
         />
         {busca ? (
           <button
             type="button"
             onClick={() => setBusca("")}
-            aria-label="Limpar filtro"
+            aria-label={t("picker.search.clear")}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
           >
             <X className="size-3.5" />
@@ -431,8 +432,12 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
       {buscaEhCaminho ? (
         <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
           <CornerDownLeft className="size-3" />
-          Enter {aba === "navegar" ? "navega para" : "abre"}{" "}
-          <span className="font-mono text-foreground">{truncate(busca.trim(), 60)}</span>
+          <Rich
+            k={aba === "navegar" ? "picker.enter.navigate" : "picker.enter.open"}
+            nodes={{
+              path: <span className="font-mono text-foreground">{truncate(busca.trim(), 60)}</span>,
+            }}
+          />
         </p>
       ) : null}
 
@@ -441,25 +446,26 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
         onValueChange={(v) => setAba(v as Aba)}
         className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        <SmoothTabsList ariaLabel="Onde procurar o repositorio">
+        <SmoothTabsList ariaLabel={t("picker.tabs.aria")}>
           <SmoothTabsTab value="favoritos">
             <Star
               className="mr-1.5 inline size-3.5"
               fill={favoritos.entries.length ? "currentColor" : "none"}
             />
-            Favoritos {favoritos.entries.length ? `(${favoritos.entries.length})` : ""}
+            {t("picker.tab.favorites")}{" "}
+            {favoritos.entries.length ? `(${favoritos.entries.length})` : ""}
           </SmoothTabsTab>
           <SmoothTabsTab value="recentes">
             <Clock className="mr-1.5 inline size-3.5" />
-            Recentes {recentes?.length ? `(${recentes.length})` : ""}
+            {t("picker.tab.recents")} {recentes?.length ? `(${recentes.length})` : ""}
           </SmoothTabsTab>
           <SmoothTabsTab value="procurar">
             <Radar className="mr-1.5 inline size-3.5" />
-            Procurar {encontrados?.length ? `(${encontrados.length})` : ""}
+            {t("picker.tab.scan")} {encontrados?.length ? `(${encontrados.length})` : ""}
           </SmoothTabsTab>
           <SmoothTabsTab value="navegar">
             <FolderOpen className="mr-1.5 inline size-3.5" />
-            Navegar
+            {t("picker.tab.browse")}
           </SmoothTabsTab>
         </SmoothTabsList>
 
@@ -486,9 +492,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
               <Esqueleto />
             ) : recentesFiltrados.length === 0 ? (
               <ListaVazia>
-                {recentes.length === 0
-                  ? "Nenhum repositorio aberto ainda. Use Procurar ou Navegar."
-                  : "Nenhum recente casa com o filtro."}
+                {recentes.length === 0 ? t("picker.recents.empty") : t("picker.recents.noMatch")}
               </ListaVazia>
             ) : (
               <div className="space-y-0.5 p-1">
@@ -510,7 +514,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                           <span>{relativo(r.lastOpenedAt)}</span>
                         </span>
                       ) : (
-                        <span className="text-warning">sumiu do disco</span>
+                        <span className="text-warning">{t("common.missingFromDisk")}</span>
                       )
                     }
                     onClick={() => void abrir(r.path)}
@@ -519,8 +523,8 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                         <button
                           type="button"
                           onClick={() => void esquecer(r.path)}
-                          aria-label={`Esquecer ${r.name}`}
-                          title="Remover dos recentes"
+                          aria-label={t("picker.recents.forget", { name: r.name })}
+                          title={t("picker.recents.forgetTitle")}
                           className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
                         >
                           <Trash2 className="size-3.5" />
@@ -541,10 +545,10 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
             ) : encontradosFiltrados.length === 0 ? (
               <ListaVazia>
                 {encontrados === null
-                  ? "Varredura nao iniciada."
+                  ? t("picker.scan.notStarted")
                   : encontrados.length === 0
-                    ? "Nenhum repositorio nas pastas conhecidas. Tente a aba Navegar."
-                    : "Nenhum resultado casa com o filtro."}
+                    ? t("picker.scan.empty")
+                    : t("picker.scan.noMatch")}
               </ListaVazia>
             ) : (
               <div className="space-y-0.5 p-1">
@@ -559,7 +563,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                     selecionado={i === cursor}
                     detalhe={
                       <span className="flex items-center gap-2">
-                        {r.bare ? <span>bare</span> : null}
+                        {r.bare ? <span>{t("picker.browse.bare")}</span> : null}
                         {r.branch ? (
                           <span className="font-mono text-foreground">{r.branch}</span>
                         ) : null}
@@ -583,7 +587,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                 <Callout tone="danger">{erroPasta}</Callout>
               </div>
             ) : !pasta ? (
-              <ListaVazia>Escolha um ponto de partida.</ListaVazia>
+              <ListaVazia>{t("picker.browse.pickStart")}</ListaVazia>
             ) : (
               <div className="space-y-0.5 p-1">
                 {pasta.parent ? (
@@ -595,7 +599,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                   />
                 ) : null}
                 {entradasFiltradas.length === 0 ? (
-                  <ListaVazia>Nenhuma subpasta aqui.</ListaVazia>
+                  <ListaVazia>{t("picker.browse.noSubfolders")}</ListaVazia>
                 ) : (
                   entradasFiltradas.map((e, i) => (
                     <Linha
@@ -608,12 +612,16 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                         )
                       }
                       titulo={e.name}
-                      caminho={e.isRepo ? "repositorio git" : encurtar(e.path, home)}
+                      caminho={e.isRepo ? t("picker.browse.isRepo") : encurtar(e.path, home)}
                       ativo={e.path === cwdAtual}
                       desabilitado={abrindo}
                       selecionado={i === cursor}
                       detalhe={
-                        e.isBare ? "bare" : e.isWorktree ? "worktree ligada" : undefined
+                        e.isBare
+                          ? t("picker.browse.bare")
+                          : e.isWorktree
+                            ? t("picker.browse.linkedWorktree")
+                            : undefined
                       }
                       onClick={() => (e.isRepo ? void abrir(e.path) : void irPara(e.path))}
                       // So repositorio ganha estrela: fixar uma pasta qualquer
@@ -628,7 +636,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                 )}
                 {pasta.truncated ? (
                   <p className="px-3 py-2 text-[11px] text-muted-foreground">
-                    A pasta tem mais subpastas do que o teto de listagem — refine com o filtro.
+                    {t("picker.browse.tooMany")}
                   </p>
                 ) : null}
               </div>
@@ -660,20 +668,20 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
           </nav>
         ) : aba === "procurar" ? (
           <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">
-            {varreduraTruncada
-              ? "A varredura parou no teto de tempo — nem tudo foi visitado."
-              : "Procura nas pastas conhecidas (pessoal, Projects, code, /opt, /srv), ate 4 niveis."}
+            {varreduraTruncada ? t("picker.scan.truncated") : t("picker.scan.note")}
           </p>
         ) : aba === "favoritos" ? (
           <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">
             {favoritos.disponivel
-              ? "Arraste pela alca para ordenar, o lapis da um apelido, a estrela desafixa. Ao contrario dos recentes, nada entra nem sai daqui sozinho."
-              : "Fixar projetos depende de uma rota que este servidor ainda nao expoe."}
+              ? t("picker.favorites.note")
+              : t("picker.favorites.unavailableNote")}
           </p>
         ) : (
           <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">
-            Setas navegam, Enter abre. Abrir um repositorio faz{" "}
-            <span className="font-mono">process.chdir()</span> no servidor — nao ha checkout.
+            <Rich
+              k="picker.footer.keys"
+              nodes={{ chdir: <span className="font-mono">process.chdir()</span> }}
+            />
           </p>
         )}
 
@@ -685,7 +693,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
               ) : (
                 <Radar className="mr-1.5 inline size-3.5" />
               )}
-              {varrendo ? "Varrendo…" : "Varrer de novo"}
+              {varrendo ? t("picker.scan.running") : t("picker.scan.again")}
             </Button>
           ) : null}
 
@@ -696,7 +704,9 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
               onClick={() => void initRepository(pasta.path).then((r) => r && onOpened?.())}
             >
               <HardDriveDownload className="mr-1.5 inline size-3.5" />
-              git init em {truncate(pasta.path.split(sep).pop() || pasta.path, 18)}
+              {t("picker.browse.gitInit", {
+                name: truncate(pasta.path.split(sep).pop() || pasta.path, 18),
+              })}
             </Button>
           ) : null}
 
@@ -706,7 +716,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
               disabled={abrindo}
               onClick={() => void abrir(pasta.path)}
             >
-              Abrir esta pasta
+              {t("picker.browse.openHere")}
             </Button>
           ) : null}
         </div>

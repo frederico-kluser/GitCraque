@@ -21,6 +21,8 @@ import {
   MoreHorizontal,
 } from "lucide-react";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
+import { t } from "@/i18n";
+import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { ChangeStatus } from "@/types/git";
 
@@ -192,7 +194,7 @@ export function MenuItems({ items }: { items: ActionMenuItem[] }) {
 
 export function ActionMenu({
   items,
-  label = "Acoes",
+  label,
   trigger,
   className,
 }: {
@@ -202,6 +204,7 @@ export function ActionMenu({
   className?: string;
 }) {
   if (items.length === 0) return null;
+  const menuLabel = label ?? t("parts.actions");
 
   return (
     /**
@@ -230,7 +233,7 @@ export function ActionMenu({
     >
       <Menu.Root>
         <Menu.Trigger
-          aria-label={label}
+          aria-label={menuLabel}
           className={cn(
             "inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
             "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
@@ -296,20 +299,25 @@ export function EmptyState({
 /* Status de arquivo                                                   */
 /* ------------------------------------------------------------------ */
 
-const STATUS_META: Record<ChangeStatus, { icon: ComponentType<{ className?: string }>; className: string; label: string }> = {
-  added: { icon: FilePlus2, className: "text-success", label: "adicionado" },
-  modified: { icon: FileDiff, className: "text-warning", label: "modificado" },
-  deleted: { icon: FileMinus2, className: "text-destructive", label: "removido" },
-  renamed: { icon: FileSymlink, className: "text-primary", label: "renomeado" },
-  copied: { icon: Files, className: "text-primary", label: "copiado" },
-  typechange: { icon: FileSymlink, className: "text-warning", label: "tipo alterado" },
-  unmerged: { icon: AlertTriangle, className: "text-destructive", label: "conflito" },
-  untracked: { icon: FileQuestion, className: "text-muted-foreground", label: "nao rastreado" },
-  unknown: { icon: FileQuestion, className: "text-muted-foreground", label: "desconhecido" },
+/** O rotulo e uma CHAVE: traduzido na leitura, para acompanhar o idioma. */
+const STATUS_META: Record<
+  ChangeStatus,
+  { icon: ComponentType<{ className?: string }>; className: string; label: MessageKey }
+> = {
+  added: { icon: FilePlus2, className: "text-success", label: "status.added" },
+  modified: { icon: FileDiff, className: "text-warning", label: "status.modified" },
+  deleted: { icon: FileMinus2, className: "text-destructive", label: "status.deleted" },
+  renamed: { icon: FileSymlink, className: "text-primary", label: "status.renamed" },
+  copied: { icon: Files, className: "text-primary", label: "status.copied" },
+  typechange: { icon: FileSymlink, className: "text-warning", label: "status.typechange" },
+  unmerged: { icon: AlertTriangle, className: "text-destructive", label: "status.unmerged" },
+  untracked: { icon: FileQuestion, className: "text-muted-foreground", label: "status.untracked" },
+  unknown: { icon: FileQuestion, className: "text-muted-foreground", label: "status.unknown" },
 };
 
 export function statusMeta(status: ChangeStatus) {
-  return STATUS_META[status] ?? STATUS_META.unknown;
+  const meta = STATUS_META[status] ?? STATUS_META.unknown;
+  return { ...meta, label: t(meta.label) };
 }
 
 export function StatusGlyph({ status, className }: { status: ChangeStatus; className?: string }) {

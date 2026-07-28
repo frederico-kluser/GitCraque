@@ -5,6 +5,7 @@
  */
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
+import { t } from "@/i18n";
 import { remoteHost } from "@/lib/utils";
 import { runOperation, selectRemotes, useAppState } from "@/state/store";
 import {
@@ -47,14 +48,11 @@ export function AddRemoteDialog({
   const nameError = !name.trim()
     ? undefined
     : !isValidRemoteName(name)
-      ? "Nome invalido: use letras, numeros, ponto, hifen ou sublinhado."
+      ? t("addRemote.name.invalid")
       : duplicated
-        ? `Ja existe um remoto chamado ${name.trim()}.`
+        ? t("addRemote.name.duplicated", { name: name.trim() })
         : undefined;
-  const urlError =
-    url.trim() && kind === "invalid"
-      ? "Url invalida. Use https://host/org/repo.git ou git@host:org/repo.git."
-      : undefined;
+  const urlError = url.trim() && kind === "invalid" ? t("addRemote.url.invalid") : undefined;
 
   const ready = Boolean(name.trim()) && !nameError && kind !== "invalid" && !urlError;
   const options = { name: name.trim(), url: url.trim() };
@@ -62,9 +60,9 @@ export function AddRemoteDialog({
   const run = () => {
     if (!ready) return;
     onClose();
-    void runOperation("Adicionar remoto", () => api.addRemote(addRemoteBody(options)), {
+    void runOperation(t("addRemote.op"), () => api.addRemote(addRemoteBody(options)), {
       refresh: "config",
-      successMessage: `Remoto ${options.name} adicionado`,
+      successMessage: t("addRemote.done", { name: options.name }),
     });
   };
 
@@ -72,52 +70,49 @@ export function AddRemoteDialog({
     <DialogShell
       open={open}
       onClose={onClose}
-      title="Adicionar remoto"
-      description="Cadastra um destino de fetch e push neste repositorio."
+      title={t("addRemote.title")}
+      description={t("addRemote.description")}
       size="md"
       onEnter={run}
       footer={
         <>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" onClick={run} disabled={!ready}>
-            Adicionar
+            {t("common.add")}
           </Button>
         </>
       }
     >
       <TextField
-        label="Nome"
+        label={t("addRemote.name")}
         value={name}
         onChange={setName}
         placeholder="origin"
         autoFocus
         error={nameError}
-        hint="Como o remoto vai aparecer em git remote -v."
+        hint={t("addRemote.name.hint")}
       />
 
       <TextField
-        label="Url"
+        label={t("addRemote.url")}
         value={url}
         onChange={setUrl}
         placeholder="https://github.com/org/repo.git"
         mono
         error={urlError}
-        hint="https://host/org/repo.git, ssh://host/caminho ou git@host:org/repo.git"
+        hint={t("addRemote.url.hint")}
       />
 
       {kind === "https" ? (
         <Callout tone="warning">
-          Url https: fetch e push passam pelo trampolim GIT_ASKPASS. Na primeira vez o
-          GitCraque vai pedir usuario e token para {remoteHost(url.trim()) ?? "este host"}{" "}
-          numa caixa propria — o git nunca fica travado num prompt.
+          {t("addRemote.https", {
+            host: remoteHost(url.trim()) ?? t("addRemote.https.thisHost"),
+          })}
         </Callout>
       ) : kind === "ssh" || kind === "scp" ? (
-        <Callout tone="info">
-          Url ssh: a autenticacao e do seu agente de chaves. Se a chave tiver
-          passphrase, o pedido tambem chega pela caixa de credenciais.
-        </Callout>
+        <Callout tone="info">{t("addRemote.ssh")}</Callout>
       ) : null}
 
       {ready ? <CommandPreview argv={addRemotePreview(options)} /> : null}

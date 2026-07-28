@@ -44,8 +44,15 @@ O backend escuta em **5271**; o Vite em dev escuta em **5273** e faz proxy.
 - **Nunca invente rota.** A superficie REST inteira esta em `web/src/lib/api.ts`
   e espelhada em `server/src/contract.mjs`.
 - **Nunca duplique estado do repositorio.** Tudo passa por `web/src/state/store.ts`.
-- Comentarios e texto de UI em **portugues**; identificadores em ingles.
-- Sem acentos em comentarios de codigo (mantem o diff limpo em terminais variados).
+- **Nenhum texto de interface cravado no codigo.** Tudo sai do catalogo:
+  `t("chave")` de `@/i18n` no front-end, chave de `server/src/i18n.mjs` na
+  mensagem de erro do backend. Texto novo entra em
+  `web/src/i18n/locales/pt.ts` (o catalogo mestre) e o `tsc` cobra os outros
+  tres. Detalhes em `docs/UI.md`.
+- Comentarios em **portugues**; identificadores em ingles.
+- Sem acentos em comentarios de codigo (mantem o diff limpo em terminais
+  variados). O TEXTO do catalogo leva acento normal — ele e conteudo, nao
+  comentario.
 
 ## Fronteiras entre modulos
 
@@ -57,6 +64,9 @@ Cada frente e dona absoluta do seu diretorio e nao edita o dos outros:
 | grafo | `web/src/graph/**` | `dnd`, `dialogs`, `panels`, `app` |
 | dnd | `web/src/dnd/**`, `web/src/dialogs/**` | `graph`, `panels`, `app` |
 | shell | `web/src/app/**`, `web/src/panels/**`, `web/src/hooks/**` | `graph`, `dnd`, `dialogs` |
+
+`web/src/i18n/**` e transversal, como `lib/`: toda frente LE dele (`t`), e
+acrescentar chave em `locales/*.ts` nao invade diretorio de ninguem.
 
 **Arquivos congelados** (nao edite sem alinhar — eles sao o contrato):
 `web/src/types/git.ts`, `web/src/types/modules.ts`, `web/src/lib/api.ts`,

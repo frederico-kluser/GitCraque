@@ -25,6 +25,7 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { Archive, CircleDot, Cloud, GitBranch, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useDraggableEntity, useDropFeedback, useDroppableTarget } from "@/dnd";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { CommitRef, DragPayload, DropPayload, RefKind } from "@/types/git";
 
@@ -175,7 +176,7 @@ export function RefChip({ refEntry, onActivate, onContextMenu }: RefChipProps) {
       data-dragging={drag.isDragging || undefined}
       title={
         ativavel
-          ? `${refEntry.fullName ?? refEntry.name} — duplo clique troca para esta branch; arraste para outra para mesclar ou rebasear`
+          ? t("graph.refChip.hint", { ref: refEntry.fullName ?? refEntry.name })
           : (refEntry.fullName ?? refEntry.name)
       }
       className={cn(

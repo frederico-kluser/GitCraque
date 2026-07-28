@@ -13,6 +13,7 @@
  */
 import { useEffect, useState } from "react";
 import { answerCredentialPrompt, cancelCredentialPrompt, useAppState } from "@/state/store";
+import { t } from "@/i18n";
 import type { CredentialPrompt } from "@/types/git";
 import {
   Button,
@@ -69,25 +70,29 @@ export function CredentialDialog() {
     <DialogShell
       open={open}
       onClose={cancelCredentialPrompt}
-      title={isUsername ? `Usuario para ${shown.host}` : `Senha ou token para ${shown.host}`}
-      description="O git esta esperando esta resposta para continuar. Nada e escrito em disco nem vai para a linha de comando."
+      title={
+        isUsername
+          ? t("credential.title.username", { host: shown.host })
+          : t("credential.title.secret", { host: shown.host })
+      }
+      description={t("credential.description")}
       size="sm"
       onEnter={confirm}
       footer={
         <>
           <span className="mr-auto text-xs text-muted-foreground">
-            {seconds > 0 ? `Expira em ${seconds}s` : "Pedido expirado"}
+            {seconds > 0 ? t("credential.expiresIn", { seconds }) : t("credential.expired")}
           </span>
           <Button variant="ghost" onClick={cancelCredentialPrompt}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
           <Button variant="primary" onClick={confirm} disabled={!value || seconds <= 0}>
-            Enviar ao git
+            {t("credential.send")}
           </Button>
         </>
       }
     >
-      <Field label="O git pediu" hint={`Host: ${shown.host}`}>
+      <Field label={t("credential.prompt")} hint={t("credential.host", { host: shown.host })}>
         <pre className="overflow-x-auto rounded-md border border-border bg-surface-inset px-3 py-2">
           <code className="font-mono text-xs text-foreground">{shown.prompt}</code>
         </pre>
@@ -95,28 +100,24 @@ export function CredentialDialog() {
 
       <TextField
         key={shown.requestId}
-        label={isUsername ? "Usuario" : "Senha ou token de acesso"}
+        label={isUsername ? t("credential.field.username") : t("credential.field.secret")}
         value={value}
         onChange={setValue}
         type={isUsername ? "text" : "password"}
         autoFocus
         autoComplete={isUsername ? "username" : "current-password"}
         mono={!isUsername}
-        placeholder={isUsername ? "seu-usuario" : "ghp_..."}
+        placeholder={isUsername ? t("credential.field.username.placeholder") : "ghp_..."}
       />
 
       <CheckboxField
-        label="Lembrar nesta sessao"
+        label={t("credential.remember")}
         checked={remember}
         onChange={setRemember}
-        hint="Guarda no cofre em memoria do servidor ate ele ser encerrado. Nunca vai para disco."
+        hint={t("credential.remember.hint")}
       />
 
-      <Callout tone="info">
-        O valor segue por um socket unix ate o cofre e de la para o stdout do askpass.
-        Ele nao entra no env do processo do git (que qualquer um le em /proc) nem em
-        argv.
-      </Callout>
+      <Callout tone="info">{t("credential.note")}</Callout>
     </DialogShell>
   );
 }

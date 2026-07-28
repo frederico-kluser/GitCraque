@@ -15,6 +15,7 @@
  */
 import { Fragment } from "react";
 import type { DiffHunk, DiffLine, DiffPayload } from "@/types/git";
+import { Rich, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Notice } from "./parts.tsx";
 
@@ -95,9 +96,7 @@ export function DiffView({ patch, path }: DiffViewProps) {
   if (!patch) {
     return (
       <div className="p-3">
-        <Notice title="Sem alteracoes neste commit">
-          {path} nao foi tocado aqui — o conteudo esta nas abas Cru e Formatado.
-        </Notice>
+        <Notice title={t("diff.noChanges.title")}>{t("diff.noChanges.body", { path })}</Notice>
       </div>
     );
   }
@@ -105,7 +104,7 @@ export function DiffView({ patch, path }: DiffViewProps) {
   if (patch.binary) {
     return (
       <div className="p-3">
-        <Notice title="Arquivo binario">Git nao gera patch de texto para {patch.path}.</Notice>
+        <Notice title={t("diff.binary.title")}>{t("diff.binary.body", { path: patch.path })}</Notice>
       </div>
     );
   }
@@ -113,9 +112,7 @@ export function DiffView({ patch, path }: DiffViewProps) {
   if (patch.hunks.length === 0) {
     return (
       <div className="p-3">
-        <Notice title="Patch vazio">
-          Nenhum trecho alterado — o git registrou a mudanca sem alterar conteudo (modo, renomeacao).
-        </Notice>
+        <Notice title={t("diff.emptyPatch.title")}>{t("diff.emptyPatch.body")}</Notice>
       </div>
     );
   }
@@ -124,7 +121,10 @@ export function DiffView({ patch, path }: DiffViewProps) {
     <div className="grid grid-cols-[auto_auto_auto_1fr] items-start font-mono text-xs leading-relaxed">
       {patch.oldPath && patch.oldPath !== patch.path ? (
         <div className="col-span-4 border-b border-border px-3 py-1.5 text-muted-foreground">
-          renomeado de <span className="text-foreground">{patch.oldPath}</span>
+          <Rich
+            k="diff.renamedFrom"
+            nodes={{ path: <span className="text-foreground">{patch.oldPath}</span> }}
+          />
         </div>
       ) : null}
       {patch.hunks.map((hunk, index) => (

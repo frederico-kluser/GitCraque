@@ -7,7 +7,8 @@
  */
 import { CommandPalette } from "@/components/motion-ui/command-palette";
 import { setPaletteOpen, useShellState } from "@/hooks";
-import { COMMAND_GROUPS, useAppCommands } from "./commands";
+import { t } from "@/i18n";
+import { commandGroups, useAppCommands } from "./commands";
 
 export function CommandBar({ className }: { className?: string }) {
   const commands = useAppCommands();
@@ -19,17 +20,17 @@ export function CommandBar({ className }: { className?: string }) {
         open={open}
         onOpenChange={setPaletteOpen}
         items={commands}
-        groupOrder={[...COMMAND_GROUPS]}
-        triggerLabel="Buscar comando…"
-        inputPlaceholder="fetch, checkout, worktree, squash…"
-        inputAriaLabel="Buscar comando do GitCraque"
-        dialogLabel="Comandos do GitCraque"
+        groupOrder={[...commandGroups()]}
+        triggerLabel={t("palette.trigger")}
+        inputPlaceholder={t("palette.placeholder")}
+        inputAriaLabel={t("palette.inputLabel")}
+        dialogLabel={t("palette.dialogLabel")}
         footerHints={[
-          { keys: "↑↓", label: "navegar" },
-          { keys: "↵", label: "executar" },
-          { keys: "esc", label: "fechar" },
+          { keys: "↑↓", label: t("palette.hint.navigate") },
+          { keys: "↵", label: t("palette.hint.run") },
+          { keys: "esc", label: t("palette.hint.close") },
         ]}
-        renderEmpty={(query) => <>Nenhum comando casa com “{query}”.</>}
+        renderEmpty={(query) => <>{t("palette.empty", { query })}</>}
         onSelect={(item) => {
           const command = commands.find((c) => c.id === item.id);
           command?.run();

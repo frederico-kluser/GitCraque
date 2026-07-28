@@ -20,6 +20,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import test, { after, before } from "node:test";
+import { translate } from "../src/i18n.mjs";
 
 const CONFIG_TMP = fs.mkdtempSync(path.join(os.tmpdir(), "gitcraque-fav-config-"));
 process.env.XDG_CONFIG_HOME = CONFIG_TMP;
@@ -89,7 +90,7 @@ test("addFavorite RECUSA pasta que nao e repositorio git", async () => {
   await limpar();
   await assert.rejects(
     () => addFavorite({ path: P("so-uma-pasta") }),
-    (err) => err.status === 400 && /nao e um repositorio git/.test(err.message),
+    (err) => err.status === 400 && err.message === "error.notARepository",
   );
   const { entries } = await getFavorites();
   assert.equal(entries.length, 0, "nada pode ter sido gravado");
@@ -358,7 +359,7 @@ test("as quatro rotas de favoritos respondem pelo HTTP", async () => {
   // A guarda tambem vale pela porta.
   const recusado = await api.post("/api/repos/favorites/add", { path: P("so-uma-pasta") });
   assert.equal(recusado.status, 400);
-  assert.match(recusado.json.error, /nao e um repositorio git/);
+  assert.equal(recusado.json.error, translate("pt", "error.notARepository"));
 });
 
 test("corpo invalido nas rotas de favoritos e 400, nunca 500", async () => {

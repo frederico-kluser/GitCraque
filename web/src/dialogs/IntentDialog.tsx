@@ -6,6 +6,7 @@
  * clique. Este dialogo e o UNICO lugar onde a operacao arrastada e executada.
  */
 import { HoldToConfirmButton } from "@/components/motion-ui/hold-to-confirm";
+import { t } from "@/i18n";
 import type { DragIntent, DragIntentOption } from "@/types/git";
 import { executeIntentOption } from "./executors";
 import { Button, Callout, CommandPreview, DialogShell, HoldHint, RefChip } from "./parts";
@@ -39,17 +40,17 @@ export function IntentDialog({ intent, open, onClose }: IntentDialogProps) {
         <>
           <span className="mr-auto flex items-center gap-1.5 text-xs text-muted-foreground">
             <RefChip mono={intent.source.type === "commit"}>{intent.source.label}</RefChip>
-            para
+            {t("dialog.intent.for")}
             <RefChip>{intent.target.label}</RefChip>
           </span>
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("common.cancel")}
           </Button>
         </>
       }
     >
       {intent.options.length === 0 ? (
-        <Callout tone="warning">{intent.reason ?? "Nenhuma operacao disponivel."}</Callout>
+        <Callout tone="warning">{intent.reason ?? t("dialog.intent.noOperation")}</Callout>
       ) : null}
 
       <div className={intent.options.length > 1 ? "grid gap-3 sm:grid-cols-2" : "space-y-3"}>
@@ -77,14 +78,14 @@ function OptionCard({
           {option.label}
           {option.destructive ? (
             <span className="ml-2 rounded bg-destructive/15 px-1.5 py-0.5 text-[0.65rem] font-medium uppercase tracking-wide text-destructive">
-              reescreve historico
+              {t("dialog.intent.rewritesHistory")}
             </span>
           ) : null}
         </h3>
         <p className="text-sm leading-relaxed text-muted-foreground">{option.description}</p>
       </div>
 
-      <CommandPreview argv={option.preview} label="Sera executado" />
+      <CommandPreview argv={option.preview} label={t("common.willRun")} />
 
       <div className="mt-auto flex flex-col gap-2">
         {option.destructive ? (
@@ -94,7 +95,7 @@ function OptionCard({
               aria-describedby={hintId}
               className="w-full"
             >
-              Segure para {option.id === "rebase" ? "rebasear" : "confirmar"}
+              {option.id === "rebase" ? t("dialog.intent.holdRebase") : t("dialog.intent.holdConfirm")}
             </HoldToConfirmButton>
             <HoldHint id={hintId} />
           </>

@@ -5,6 +5,7 @@
  * esta num repositorio): la ela e a tela inteira, porque nao ha nada por baixo
  * para voltar. Ver `RepoPicker` com `variant="page"`.
  */
+import { t } from "@/i18n";
 import { RepoPicker } from "./RepoPicker";
 import { DialogShell } from "./parts";
 
@@ -13,8 +14,8 @@ export function RepoPickerDialog({ open, onClose }: { open: boolean; onClose: ()
     <DialogShell
       open={open}
       onClose={onClose}
-      title="Abrir repositorio"
-      description="Trocar de repositorio faz process.chdir() no servidor e recarrega a View Tree inteira. Nenhum checkout acontece."
+      title={t("picker.dialog.title")}
+      description={t("picker.dialog.description")}
       size="lg"
     >
       <RepoPicker variant="dialog" onOpened={onClose} />

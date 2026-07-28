@@ -15,6 +15,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { api, ApiRequestError } from "@/lib/api";
 import { socket, type ConnectionState } from "@/lib/ws";
+import { t } from "@/i18n";
 import type {
   ConsoleLine,
   CredentialPrompt,
@@ -229,7 +230,7 @@ export async function loadLog(limit = state.limit) {
     set({ log, limit });
     return log;
   } catch (e) {
-    toast("error", "Falha ao ler o historico", describe(e));
+    toast("error", t("store.log.failed"), describe(e));
     return null;
   } finally {
     setLoading("log", false);
@@ -243,7 +244,7 @@ export async function loadRefs() {
     set({ refs });
     return refs;
   } catch (e) {
-    toast("error", "Falha ao ler as referencias", describe(e));
+    toast("error", t("store.refs.failed"), describe(e));
     return null;
   } finally {
     setLoading("refs", false);
@@ -413,7 +414,12 @@ export async function runOperation<T extends GitCommandResult>(
     if (result.ok) {
       toast("success", opts.successMessage ?? label, summarize(result), result.argv);
     } else {
-      toast("error", `${label} falhou`, result.error || result.stderr || "erro desconhecido", result.argv);
+      toast(
+        "error",
+        t("store.operation.failed", { label }),
+        result.error || result.stderr || t("common.unknownError"),
+        result.argv,
+      );
     }
     const reason = opts.refresh ?? "all";
     if (reason === "all") await refreshAll();
@@ -421,7 +427,7 @@ export async function runOperation<T extends GitCommandResult>(
     return result;
   } catch (e) {
     const err = e instanceof ApiRequestError ? e : null;
-    toast("error", `${label} falhou`, describe(e), err?.command?.argv);
+    toast("error", t("store.operation.failed", { label }), describe(e), err?.command?.argv);
     if (err?.command) {
       pushConsole({
         kind: "error",
@@ -449,14 +455,17 @@ const summarize = (r: GitCommandResult) => {
  */
 export async function switchWorktree(wt: Worktree | string) {
   const path = typeof wt === "string" ? wt : wt.path;
-  set({ loading: { ...state.loading, operation: true }, operationLabel: `Trocando para ${path}` });
+  set({
+    loading: { ...state.loading, operation: true },
+    operationLabel: t("store.worktree.switching", { path }),
+  });
   try {
     const payload = await api.switchWorktree(path);
     set({ worktrees: payload });
     pushConsole({ kind: "info", text: `process.chdir("${path}")`, cwd: payload.cwd });
     return payload;
   } catch (e) {
-    toast("error", "Nao foi possivel trocar de worktree", describe(e));
+    toast("error", t("store.worktree.failed"), describe(e));
     return null;
   } finally {
     set({ loading: { ...state.loading, operation: false }, operationLabel: null });
@@ -473,16 +482,16 @@ export async function switchWorktree(wt: Worktree | string) {
 export async function openRepository(path: string) {
   set({
     loading: { ...state.loading, operation: true },
-    operationLabel: `Abrindo ${path}`,
+    operationLabel: t("store.repo.opening", { path }),
   });
   try {
     const repo = await api.openRepo(path);
     set({ repo, fatal: null });
     pushConsole({ kind: "info", text: `process.chdir("${repo.cwd}")`, cwd: repo.cwd });
-    toast("success", "Repositorio aberto", repo.name);
+    toast("success", t("store.repo.opened"), repo.name);
     return repo;
   } catch (e) {
-    toast("error", "Nao foi possivel abrir o repositorio", describe(e));
+    toast("error", t("store.repo.openFailed"), describe(e));
     return null;
   } finally {
     set({ loading: { ...state.loading, operation: false }, operationLabel: null });
@@ -493,15 +502,15 @@ export async function openRepository(path: string) {
 export async function initRepository(path: string, initialBranch?: string) {
   set({
     loading: { ...state.loading, operation: true },
-    operationLabel: `git init em ${path}`,
+    operationLabel: t("store.repo.initializing", { path }),
   });
   try {
     const repo = await api.initRepo({ path, initialBranch });
     set({ repo, fatal: null });
-    toast("success", "Repositorio criado", repo.cwd);
+    toast("success", t("store.repo.created"), repo.cwd);
     return repo;
   } catch (e) {
-    toast("error", "git init falhou", describe(e));
+    toast("error", t("store.repo.initFailed"), describe(e));
     return null;
   } finally {
     set({ loading: { ...state.loading, operation: false }, operationLabel: null });
@@ -539,17 +548,20 @@ export function bootstrap() {
   socket.onState((connection) => set({ connection }));
 
   socket.on("hello", (e) => {
-    pushConsole({ kind: "info", text: `conectado — gitcraque ${e.version} (pid ${e.pid}) em ${e.cwd}` });
+    pushConsole({
+      kind: "info",
+      text: t("store.ws.connected", { version: e.version, pid: e.pid, cwd: e.cwd }),
+    });
   });
 
   // O sinal central do requisito de worktrees: o servidor mudou de diretorio.
   socket.on("cwd:changed", (e) => {
     pushConsole({
       kind: "info",
-      text: `diretorio do servidor agora e ${e.cwd}${e.worktree?.branch ? ` (${e.worktree.branch})` : ""}`,
+      text: `${t("store.ws.cwdChanged", { cwd: e.cwd })}${e.worktree?.branch ? ` (${e.worktree.branch})` : ""}`,
       cwd: e.cwd,
     });
-    toast("info", "Worktree ativa", e.worktree?.label ?? e.cwd);
+    toast("info", t("store.worktree.active"), e.worktree?.label ?? e.cwd);
     // descarta a View Tree inteira antes de recarregar
     set({
       log: null,

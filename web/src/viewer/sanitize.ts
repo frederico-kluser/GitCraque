@@ -29,6 +29,10 @@
  * a entrada crua seria transformar a rede de seguranca em cano.
  */
 import DOMPurify from "dompurify";
+/* `../i18n/store.ts` e nao `@/i18n`: estes dois modulos sao carregados pelo
+ * `node --test` SEM bundler (ver `__tests__/sanitize.test.mjs`), e ali o alias
+ * `@/` nao resolve. O `store` nao depende de React nem de alias — cabe. */
+import { t } from "../i18n/store.ts";
 import { SAFE_URI_REGEXP } from "./url-policy.ts";
 
 /* ------------------------------------------------------------------ */
@@ -183,7 +187,8 @@ function ensureHooks() {
 
 export class SanitizerUnavailableError extends Error {
   constructor() {
-    super("DOMPurify sem DOM disponivel — o markdown nao pode ser exibido com seguranca");
+    // A mensagem aparece NA TELA, dentro do aviso do `MarkdownView`.
+    super(t("sanitize.noDom"));
     this.name = "SanitizerUnavailableError";
   }
 }

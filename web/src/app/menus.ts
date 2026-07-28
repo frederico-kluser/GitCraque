@@ -41,6 +41,7 @@ import {
   X,
 } from "lucide-react";
 import type { MenuItemSpec } from "@/hooks";
+import { t } from "@/i18n";
 import type { ViewerMode } from "@/viewer";
 import { clearSelection, getState, openFile, selectRef } from "@/state/store";
 import { short } from "@/lib/utils";
@@ -121,62 +122,62 @@ export function commitMenu(hash: string): MenuItemSpec[] {
   if (emLote) {
     return [
       {
-        label: `Squash dos ${selecao.length} commits`,
+        label: t("menu.commit.squashSelected", { count: selecao.length }),
         icon: GitMerge,
         onSelect: () => openSquash(selecao),
       },
       {
-        label: `Cherry-pick dos ${selecao.length} na branch atual`,
+        label: t("menu.commit.cherryPickSelected", { count: selecao.length }),
         icon: Layers,
         onSelect: () => openCherryPick(selecao),
       },
       {
-        label: "Copiar os hashes",
+        label: t("menu.commit.copyHashes"),
         icon: ClipboardCopy,
         separatorBefore: true,
         hint: String(selecao.length),
-        onSelect: () => void doCopy(selecao.join("\n"), "Hashes copiados"),
+        onSelect: () => void doCopy(selecao.join("\n"), t("copy.hashes")),
       },
-      { label: "Limpar a selecao", icon: Undo2, onSelect: clearSelection },
+      { label: t("menu.commit.clearSelection"), icon: Undo2, onSelect: clearSelection },
     ];
   }
 
   const items: MenuItemSpec[] = [
     {
-      label: "Checkout deste commit",
+      label: t("menu.commit.checkout"),
       icon: Check,
-      hint: "detached",
+      hint: t("menu.hint.detached"),
       onSelect: () => openCheckoutCommit(hash),
     },
-    { label: "Criar branch aqui", icon: GitBranchPlus, onSelect: () => openCreateBranch(hash) },
-    { label: "Criar tag aqui", icon: TagIcon, onSelect: () => openCreateTag(hash) },
+    { label: t("menu.commit.createBranch"), icon: GitBranchPlus, onSelect: () => openCreateBranch(hash) },
+    { label: t("menu.commit.createTag"), icon: TagIcon, onSelect: () => openCreateTag(hash) },
     {
-      label: "Cherry-pick na branch atual",
+      label: t("menu.commit.cherryPick"),
       icon: Layers,
       separatorBefore: true,
       onSelect: () => openCherryPick([hash]),
     },
-    { label: "Reverter", icon: Undo2, onSelect: () => openRevert(hash) },
+    { label: t("menu.commit.revert"), icon: Undo2, onSelect: () => openRevert(hash) },
     {
-      label: "Reset da branch atual ate aqui",
+      label: t("menu.commit.reset"),
       icon: History,
       destructive: true,
       onSelect: () => openResetTo(hash),
     },
     {
-      label: "Copiar hash",
+      label: t("menu.commit.copyHash"),
       icon: ClipboardCopy,
       separatorBefore: true,
       hint: short(hash),
-      onSelect: () => void doCopy(hash, "Hash copiado"),
+      onSelect: () => void doCopy(hash, t("copy.hash")),
     },
   ];
 
   if (commit) {
     items.push({
-      label: "Copiar assunto",
+      label: t("menu.commit.copySubject"),
       icon: ClipboardCopy,
-      onSelect: () => void doCopy(commit.subject, "Assunto copiado"),
+      onSelect: () => void doCopy(commit.subject, t("copy.subject")),
     });
   }
   return items;
@@ -195,58 +196,62 @@ export function branchMenu(branch: Branch): MenuItemSpec[] {
 
   return [
     {
-      label: "Checkout",
+      label: t("rail.branches.checkout"),
       icon: Check,
       disabled: branch.isHead || presa,
-      hint: branch.isHead ? "atual" : presa ? `presa em ${branch.checkedOutIn}` : undefined,
+      hint: branch.isHead
+        ? t("menu.hint.current")
+        : presa
+          ? t("commands.branch.checkout.pinned", { worktree: branch.checkedOutIn ?? "" })
+          : undefined,
       onSelect: () => void doCheckout(branch.name),
     },
     {
-      label: "Levar a View Tree ate aqui",
+      label: t("menu.reveal"),
       icon: Crosshair,
       onSelect: () => selectRef(branch.fullName),
     },
     {
-      label: `Mesclar em ${atual ?? "…"}`,
+      label: t("menu.branch.mergeInto", { branch: atual ?? "…" }),
       icon: GitMerge,
       separatorBefore: true,
       disabled: !integravel,
-      hint: branch.isHead ? "e a atual" : atual ? undefined : "detached",
+      hint: branch.isHead ? t("menu.hint.isCurrent") : atual ? undefined : t("menu.hint.detached"),
       onSelect: () => openMergeInto(branch.name),
     },
     {
-      label: `Rebasear ${atual ?? "…"} sobre esta`,
+      label: t("menu.branch.rebaseOnto", { branch: atual ?? "…" }),
       icon: History,
       destructive: true,
       disabled: !integravel,
       onSelect: () => openRebaseOnto(branch.name),
     },
     {
-      label: "Push desta branch",
+      label: t("rail.branches.push"),
       icon: Upload,
       separatorBefore: true,
       onSelect: () => openPushDialog({ branch: branch.name }),
     },
-    { label: "Renomear", icon: Pencil, onSelect: () => openRenameBranch(branch.name) },
+    { label: t("rail.branches.rename"), icon: Pencil, onSelect: () => openRenameBranch(branch.name) },
     {
-      label: "Criar branch a partir daqui",
+      label: t("menu.branch.createFrom"),
       icon: GitBranchPlus,
       onSelect: () => openCreateBranch(branch.name),
     },
-    { label: "Criar tag aqui", icon: TagIcon, onSelect: () => openCreateTag(branch.name) },
+    { label: t("rail.branches.tagHere"), icon: TagIcon, onSelect: () => openCreateTag(branch.name) },
     {
-      label: "Copiar nome",
+      label: t("menu.copyName"),
       icon: ClipboardCopy,
       separatorBefore: true,
-      onSelect: () => void doCopy(branch.name, "Nome copiado"),
+      onSelect: () => void doCopy(branch.name, t("copy.name")),
     },
     {
-      label: "Deletar Branch (Local)",
+      label: t("rail.branches.deleteLocal"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
       disabled: branch.isHead || presa,
-      hint: branch.isHead ? "e a atual" : undefined,
+      hint: branch.isHead ? t("menu.hint.isCurrent") : undefined,
       onSelect: () => openDeleteBranchLocal(branch.name),
     },
   ];
@@ -258,37 +263,39 @@ export function remoteBranchMenu(rb: RemoteBranch): MenuItemSpec[] {
 
   return [
     {
-      label: localJaExiste ? `Checkout de ${rb.shortName}` : "Checkout (cria a local rastreando)",
+      label: localJaExiste
+        ? t("menu.remoteBranch.checkoutExisting", { name: rb.shortName })
+        : t("menu.remoteBranch.checkoutNew"),
       icon: Check,
       onSelect: () =>
         doActivateRef({ kind: "remoteBranch", name: rb.name, fullName: rb.fullName, isHead: false, remote: rb.remote }),
     },
     {
-      label: "Criar branch local daqui",
+      label: t("rail.remotes.createLocal"),
       icon: GitBranchPlus,
       onSelect: () => openCreateBranch(rb.name),
     },
     {
-      label: "Levar a View Tree ate aqui",
+      label: t("menu.reveal"),
       icon: Crosshair,
       onSelect: () => selectRef(rb.fullName),
     },
     {
-      label: `Mesclar em ${atual ?? "…"}`,
+      label: t("menu.branch.mergeInto", { branch: atual ?? "…" }),
       icon: GitMerge,
       separatorBefore: true,
       disabled: !atual,
-      hint: atual ? undefined : "detached",
+      hint: atual ? undefined : t("menu.hint.detached"),
       onSelect: () => openMergeInto(rb.name),
     },
     {
-      label: "Copiar nome",
+      label: t("menu.copyName"),
       icon: ClipboardCopy,
       separatorBefore: true,
-      onSelect: () => void doCopy(rb.name, "Nome copiado"),
+      onSelect: () => void doCopy(rb.name, t("copy.name")),
     },
     {
-      label: "Deletar Branch (Origin)",
+      label: t("rail.remotes.deleteRemote"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -300,24 +307,24 @@ export function remoteBranchMenu(rb: RemoteBranch): MenuItemSpec[] {
 export function tagMenu(tag: Tag): MenuItemSpec[] {
   return [
     {
-      label: "Levar a View Tree ate aqui",
+      label: t("menu.reveal"),
       icon: Crosshair,
       onSelect: () => selectRef(tag.fullName),
     },
     {
-      label: "Criar branch a partir da tag",
+      label: t("menu.tag.createBranch"),
       icon: GitBranchPlus,
       onSelect: () => openCreateBranch(tag.name),
     },
     {
-      label: "Copiar nome",
+      label: t("menu.copyName"),
       icon: ClipboardCopy,
       separatorBefore: true,
       hint: short(tag.target),
-      onSelect: () => void doCopy(tag.name, "Nome copiado"),
+      onSelect: () => void doCopy(tag.name, t("copy.name")),
     },
     {
-      label: "Deletar tag",
+      label: t("rail.tags.delete"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -365,33 +372,38 @@ export function remoteMenu(remote: Remote): MenuItemSpec[] {
 
   const items: MenuItemSpec[] = [
     {
-      label: "Fetch --prune deste remoto",
+      label: t("menu.remote.fetch"),
       icon: Cloud,
       onSelect: () => void doFetchRemote(remote.name),
     },
     {
-      label: "Push para este remoto",
+      label: t("rail.remotes.push"),
       icon: Upload,
       onSelect: () => openPushDialog({ remote: remote.name }),
     },
-    { label: "Editar url", icon: Pencil, separatorBefore: true, onSelect: () => openEditRemoteUrl(remote) },
     {
-      label: "Copiar url de fetch",
+      label: t("rail.remotes.editUrl"),
+      icon: Pencil,
+      separatorBefore: true,
+      onSelect: () => openEditRemoteUrl(remote),
+    },
+    {
+      label: t("menu.remote.copyFetchUrl"),
       icon: ClipboardCopy,
-      onSelect: () => void doCopy(remote.fetchUrl, "Url copiada"),
+      onSelect: () => void doCopy(remote.fetchUrl, t("copy.url")),
     },
   ];
 
   if (url) {
     items.push({
-      label: "Abrir no navegador",
+      label: t("menu.remote.browse"),
       icon: ExternalLink,
       onSelect: () => window.open(url, "_blank", "noopener,noreferrer"),
     });
   }
 
   items.push({
-    label: "Remover remoto",
+    label: t("rail.remotes.removeRemote"),
     icon: Trash2,
     destructive: true,
     separatorBefore: true,
@@ -403,24 +415,24 @@ export function remoteMenu(remote: Remote): MenuItemSpec[] {
 export function stashMenu(stash: StashEntry): MenuItemSpec[] {
   return [
     {
-      label: "Aplicar (mantem na pilha)",
+      label: t("rail.stashes.apply"),
       icon: Undo2,
       onSelect: () => void doStashApply(stash.ref),
     },
     {
-      label: "Pop (aplica e remove)",
+      label: t("rail.stashes.pop"),
       icon: Archive,
       destructive: true,
       onSelect: () => openStashPop(stash.ref),
     },
     {
-      label: "Copiar a mensagem",
+      label: t("menu.stash.copyMessage"),
       icon: ClipboardCopy,
       separatorBefore: true,
-      onSelect: () => void doCopy(stash.message, "Mensagem copiada"),
+      onSelect: () => void doCopy(stash.message, t("copy.message")),
     },
     {
-      label: "Descartar",
+      label: t("rail.stashes.drop"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
@@ -432,26 +444,31 @@ export function stashMenu(stash: StashEntry): MenuItemSpec[] {
 export function worktreeMenu(wt: Worktree): MenuItemSpec[] {
   return [
     {
-      label: "Trocar para esta worktree",
+      label: t("menu.worktree.switch"),
       icon: Link2,
       disabled: wt.isActive,
-      hint: wt.isActive ? "ativa" : "process.chdir",
+      hint: wt.isActive ? t("rail.chip.active") : t("menu.hint.chdir"),
       onSelect: () => void doSwitchWorktree(wt),
     },
     {
-      label: "Copiar o caminho",
+      label: t("menu.copyPath"),
       icon: ClipboardCopy,
-      onSelect: () => void doCopy(wt.path, "Caminho copiado"),
+      onSelect: () => void doCopy(wt.path, t("copy.path")),
     },
-    { label: "Adicionar worktree", icon: FolderPlus, separatorBefore: true, onSelect: openAddWorktree },
-    { label: "Prune (limpar registros)", icon: Wand2, onSelect: openPruneWorktrees },
     {
-      label: "Remover esta worktree",
+      label: t("rail.worktrees.add"),
+      icon: FolderPlus,
+      separatorBefore: true,
+      onSelect: openAddWorktree,
+    },
+    { label: t("rail.worktrees.prune"), icon: Wand2, onSelect: openPruneWorktrees },
+    {
+      label: t("rail.worktrees.removeThis"),
       icon: Trash2,
       destructive: true,
       separatorBefore: true,
       disabled: wt.isMain,
-      hint: wt.isMain ? "principal" : undefined,
+      hint: wt.isMain ? t("rail.chip.main") : undefined,
       onSelect: () => openRemoveWorktree(wt),
     },
   ];
@@ -469,39 +486,39 @@ export function changeFileMenu(entry: StatusEntry): MenuItemSpec[] {
 
   return [
     {
-      label: "Ver no visualizador",
+      label: t("menu.file.view"),
       icon: Eye,
       onSelect: () => openFile(entry.path, null, true),
     },
     preparado
       ? {
-          label: "Despreparar",
+          label: t("changes.unstage"),
           icon: FileMinus2,
           separatorBefore: true,
           onSelect: () => void doUnstage([entry.path]),
         }
       : {
-          label: "Preparar",
+          label: t("changes.stage"),
           icon: FilePlus2,
           separatorBefore: true,
           onSelect: () => void doStage([entry.path]),
         },
     {
-      label: "Descartar alteracoes",
+      label: t("action.discard.op"),
       icon: Trash2,
       destructive: true,
       onSelect: () => openDiscard([entry.path]),
     },
     {
-      label: "Copiar o caminho",
+      label: t("menu.copyPath"),
       icon: ClipboardCopy,
       separatorBefore: true,
-      onSelect: () => void doCopy(entry.path, "Caminho copiado"),
+      onSelect: () => void doCopy(entry.path, t("copy.path")),
     },
     {
-      label: "Copiar o nome do arquivo",
+      label: t("menu.copyFileName"),
       icon: ClipboardCopy,
-      onSelect: () => void doCopy(fileName(entry.path), "Nome copiado"),
+      onSelect: () => void doCopy(fileName(entry.path), t("copy.name")),
     },
   ];
 }
@@ -510,28 +527,28 @@ export function changeFileMenu(entry: StatusEntry): MenuItemSpec[] {
 export function commitFileMenu(file: CommitFileChange, hash: string): MenuItemSpec[] {
   return [
     {
-      label: "Ver neste commit",
+      label: t("menu.commitFile.view"),
       icon: Eye,
       hint: short(hash),
       onSelect: () => openFile(file.path, hash),
     },
     {
-      label: "Ver a versao da arvore de trabalho",
+      label: t("menu.commitFile.viewWorking"),
       icon: GitCommitHorizontal,
       disabled: file.status === "deleted",
-      hint: file.status === "deleted" ? "removido" : undefined,
+      hint: file.status === "deleted" ? t("status.deleted") : undefined,
       onSelect: () => openFile(file.path, null, true),
     },
     {
-      label: "Copiar o caminho",
+      label: t("menu.copyPath"),
       icon: ClipboardCopy,
       separatorBefore: true,
-      onSelect: () => void doCopy(file.path, "Caminho copiado"),
+      onSelect: () => void doCopy(file.path, t("copy.path")),
     },
     {
-      label: "Copiar o nome do arquivo",
+      label: t("menu.copyFileName"),
       icon: ClipboardCopy,
-      onSelect: () => void doCopy(fileName(file.path), "Nome copiado"),
+      onSelect: () => void doCopy(fileName(file.path), t("copy.name")),
     },
   ];
 }
@@ -561,42 +578,45 @@ export interface ViewerMenuContext {
 export function viewerMenu(ctx: ViewerMenuContext): MenuItemSpec[] {
   const items: MenuItemSpec[] = [
     {
-      label: "Copiar a selecao",
+      label: t("menu.viewer.copySelection"),
       icon: ClipboardCopy,
       disabled: ctx.selection.length === 0,
-      hint: ctx.selection.length === 0 ? "nada marcado" : `${ctx.selection.length} car.`,
-      onSelect: () => void doCopy(ctx.selection, "Selecao copiada"),
+      hint:
+        ctx.selection.length === 0
+          ? t("menu.viewer.nothingSelected")
+          : t("menu.viewer.chars", { count: ctx.selection.length }),
+      onSelect: () => void doCopy(ctx.selection, t("copy.selection")),
     },
     {
-      label: "Copiar o caminho",
+      label: t("menu.copyPath"),
       icon: ClipboardCopy,
-      onSelect: () => void doCopy(ctx.path, "Caminho copiado"),
+      onSelect: () => void doCopy(ctx.path, t("copy.path")),
     },
   ];
 
   if (ctx.hash) {
     items.push({
-      label: "Copiar o hash de origem",
+      label: t("menu.viewer.copySourceHash"),
       icon: ClipboardCopy,
       hint: short(ctx.hash),
-      onSelect: () => void doCopy(ctx.hash as string, "Hash copiado"),
+      onSelect: () => void doCopy(ctx.hash as string, t("copy.hash")),
     });
   }
 
   for (const [i, mode] of ctx.modes.entries()) {
     items.push({
-      label: `Ver em ${ctx.modeLabel(mode)}`,
+      label: t("menu.viewer.viewMode", { mode: ctx.modeLabel(mode) }),
       icon: Eye,
       separatorBefore: i === 0,
       disabled: mode === ctx.mode,
-      hint: mode === ctx.mode ? "atual" : undefined,
+      hint: mode === ctx.mode ? t("menu.hint.current") : undefined,
       onSelect: () => ctx.onMode(mode),
     });
   }
 
   if (ctx.hash) {
     items.push({
-      label: "Abrir a versao da arvore de trabalho",
+      label: t("menu.viewer.openWorking"),
       icon: GitCommitHorizontal,
       separatorBefore: true,
       onSelect: () => openFile(ctx.path, null, true),
@@ -605,7 +625,7 @@ export function viewerMenu(ctx: ViewerMenuContext): MenuItemSpec[] {
 
   if (ctx.onClose) {
     items.push({
-      label: "Fechar o visualizador",
+      label: t("viewer.close"),
       icon: X,
       separatorBefore: true,
       onSelect: ctx.onClose,

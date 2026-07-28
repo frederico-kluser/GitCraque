@@ -27,9 +27,10 @@ export function assertRef(value, field) {
     throw error;
   }
   if (value.startsWith("-")) {
-    const error = new Error(`${field} nao pode comecar com "-"`);
+    const error = new Error("error.argsDash");
     error.status = 400;
-    error.detail = "o git leria o valor como opcao de linha de comando";
+    error.params = { field };
+    error.detail = "error.argsDashDetail";
     throw error;
   }
   return value;
@@ -294,7 +295,7 @@ export async function reset({ ref, mode } = {}) {
   assertRef(ref, "ref");
   const allowed = new Set(["soft", "mixed", "hard"]);
   if (!allowed.has(mode)) {
-    const error = new Error("mode deve ser soft, mixed ou hard");
+    const error = new Error("error.resetMode");
     error.status = 400;
     throw error;
   }
@@ -318,7 +319,7 @@ const OP_KINDS = new Set(["rebase", "merge", "cherry-pick", "revert"]);
 
 function assertOpKind(kind) {
   if (!OP_KINDS.has(kind)) {
-    const error = new Error("kind deve ser rebase, merge, cherry-pick ou revert");
+    const error = new Error("error.opKind");
     error.status = 400;
     throw error;
   }
@@ -451,12 +452,12 @@ const RAW_BLOCKLIST = new Set(["gui", "citool", "difftool", "mergetool", "daemon
 /** POST /api/raw — qualquer comando git cru, ainda assim por argv em array. */
 export async function raw({ args } = {}) {
   if (!Array.isArray(args) || args.length === 0) {
-    const error = new Error("args e obrigatorio e nao pode ser vazio");
+    const error = new Error("error.argsRequired");
     error.status = 400;
     throw error;
   }
   if (args.some((a) => typeof a !== "string")) {
-    const error = new Error("args so aceita strings");
+    const error = new Error("error.argsStrings");
     error.status = 400;
     throw error;
   }
@@ -464,7 +465,7 @@ export async function raw({ args } = {}) {
   if (sub && RAW_BLOCKLIST.has(sub)) {
     const error = new Error(`o comando "${sub}" nao pode rodar pelo gitcraque`);
     error.status = 400;
-    error.detail = "abre interface propria e travaria o servidor";
+    error.detail = "error.opInteractive";
     throw error;
   }
   const result = await tx(() => step(args));

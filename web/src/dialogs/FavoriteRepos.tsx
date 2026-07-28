@@ -76,6 +76,7 @@ import {
 } from "react";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { ApiRequestError, api } from "@/lib/api";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { toast } from "@/state/store";
 import type { FavoriteRepo, FavoritesPayload } from "@/types/git";
@@ -166,7 +167,7 @@ export function useFavoritos(): ControleFavoritos {
       void mutar(
         atual.current.filter((f) => f.path !== path),
         () => api.removeFavorite(path),
-        "Nao foi possivel desafixar o projeto",
+        t("favorites.error.unpin"),
       );
     },
     [mutar],
@@ -190,7 +191,7 @@ export function useFavoritos(): ControleFavoritos {
       void mutar(
         [...atual.current, otimista],
         () => api.addFavorite({ path }),
-        "Nao foi possivel fixar o projeto",
+        t("favorites.error.pin"),
       );
     },
     [mutar, remover],
@@ -203,7 +204,7 @@ export function useFavoritos(): ControleFavoritos {
       void mutar(
         atual.current.map((f) => (f.path === path ? { ...f, label } : f)),
         () => api.addFavorite({ path, label }),
-        "Nao foi possivel renomear o favorito",
+        t("favorites.error.rename"),
       );
     },
     [mutar],
@@ -220,7 +221,7 @@ export function useFavoritos(): ControleFavoritos {
       void mutar(
         previsto,
         () => api.reorderFavorites(paths),
-        "Nao foi possivel reordenar os favoritos",
+        t("favorites.error.reorder"),
       );
     },
     [mutar],
@@ -270,8 +271,10 @@ export function EstrelaFavorito({
     <button
       type="button"
       aria-pressed={fixado}
-      aria-label={fixado ? `Desafixar ${nome} dos favoritos` : `Fixar ${nome} nos favoritos`}
-      title={fixado ? "Remover dos favoritos" : "Fixar nos favoritos"}
+      aria-label={
+        fixado ? t("favorites.unpin", { name: nome }) : t("favorites.pin", { name: nome })
+      }
+      title={fixado ? t("favorites.unpinTitle") : t("favorites.pinTitle")}
       onClick={() => controle.alternar(path, nome)}
       className={cn(
         "shrink-0 rounded p-1.5 outline-none transition-opacity hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
@@ -305,10 +308,10 @@ function mover<T>(lista: T[], de: number, para: number): T[] {
 }
 
 const instrucoes: ScreenReaderInstructions = {
-  draggable:
-    "Para reordenar com o teclado, foque a alca do projeto e pressione espaco ou Enter. " +
-    "Use as setas para escolher a nova posicao e pressione espaco ou Enter de novo para soltar, " +
-    "ou Escape para cancelar. Alt com as setas move o projeto sem entrar no modo de arrasto.",
+  // Getter: o @dnd-kit le a cada montagem, entao o texto acompanha o idioma.
+  get draggable() {
+    return t("favorites.a11y.instructions");
+  },
 };
 
 /* ------------------------------------------------------------------ */
@@ -414,8 +417,8 @@ function LinhaFavorito({
             {...arrastavel.listeners}
             {...arrastavel.attributes}
             onKeyDown={teclasDaAlca}
-            aria-label={`Reordenar ${titulo}`}
-            title="Arraste para reordenar (ou Alt + setas)"
+            aria-label={t("favorites.reorder", { name: titulo })}
+            title={t("favorites.reorderTitle")}
             className="shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
           >
             <GripVertical className="size-3.5" />
@@ -450,7 +453,7 @@ function LinhaFavorito({
                 <span className="truncate text-sm font-medium text-foreground">{titulo}</span>
                 {aberto ? (
                   <span className="inline-flex items-center gap-1 rounded-full bg-primary/15 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                    <Check className="size-2.5" /> aberto
+                    <Check className="size-2.5" /> {t("common.opened")}
                   </span>
                 ) : null}
               </span>
@@ -464,7 +467,7 @@ function LinhaFavorito({
                   <span className="font-mono text-foreground">{fav.branch}</span>
                 ) : null
               ) : (
-                <span className="text-warning">sumiu do disco</span>
+                <span className="text-warning">{t("common.missingFromDisk")}</span>
               )}
             </span>
           </button>
@@ -476,8 +479,8 @@ function LinhaFavorito({
               <button
                 type="button"
                 onClick={onEditar}
-                aria-label={`Renomear ${titulo}`}
-                title="Dar um apelido a este projeto"
+                aria-label={t("favorites.rename", { name: titulo })}
+                title={t("favorites.renameTitle")}
                 className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
               >
                 <Pencil className="size-3.5" />
@@ -489,7 +492,7 @@ function LinhaFavorito({
                 className="shrink-0 rounded px-2 py-1 text-[11px] font-medium text-muted-foreground outline-none hover:bg-accent hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Trash2 className="mr-1 inline size-3" />
-                Remover
+                {t("favorites.remove")}
               </button>
             )}
             <EstrelaFavorito path={fav.path} nome={titulo} controle={controle} sempreVisivel />
@@ -521,7 +524,7 @@ function RotuloEditor({
   return (
     <span className="flex min-w-0 flex-1 items-center gap-2">
       <label htmlFor={id} className="sr-only">
-        Apelido do projeto
+        {t("favorites.label")}
       </label>
       <input
         id={id}
@@ -550,7 +553,7 @@ function RotuloEditor({
         }}
         className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
       />
-      <span className="shrink-0 text-[11px] text-muted-foreground">Enter salva · Esc desiste</span>
+      <span className="shrink-0 text-[11px] text-muted-foreground">{t("favorites.editHint")}</span>
     </span>
   );
 }
@@ -617,16 +620,27 @@ export function PainelFavoritos({
   const anuncios: Announcements = useMemo(
     () => ({
       onDragStart: ({ active }) =>
-        `Reordenando ${nomeDe(String(active.id))}, posicao ${ordem.indexOf(String(active.id)) + 1} de ${ordem.length}.`,
+        t("favorites.a11y.start", {
+          name: nomeDe(String(active.id)),
+          index: ordem.indexOf(String(active.id)) + 1,
+          total: ordem.length,
+        }),
       onDragOver: ({ over }) =>
         over
-          ? `Sera solto na posicao ${ordem.indexOf(String(over.id)) + 1} de ${ordem.length}.`
-          : "Fora da lista.",
+          ? t("favorites.a11y.over", {
+              index: ordem.indexOf(String(over.id)) + 1,
+              total: ordem.length,
+            })
+          : t("favorites.a11y.outside"),
       onDragEnd: ({ active, over }) =>
         over && over.id !== active.id
-          ? `${nomeDe(String(active.id))} foi para a posicao ${ordem.indexOf(String(over.id)) + 1}.`
-          : "A ordem nao mudou.",
-      onDragCancel: ({ active }) => `Reordenacao de ${nomeDe(String(active.id))} cancelada.`,
+          ? t("favorites.a11y.end", {
+              name: nomeDe(String(active.id)),
+              index: ordem.indexOf(String(over.id)) + 1,
+            })
+          : t("favorites.a11y.unchanged"),
+      onDragCancel: ({ active }) =>
+        t("favorites.a11y.cancel", { name: nomeDe(String(active.id)) }),
     }),
     [nomeDe, ordem],
   );
@@ -666,13 +680,13 @@ export function PainelFavoritos({
   if (!controle.disponivel) {
     return (
       <p className="flex flex-wrap items-center justify-center gap-1.5 px-3 py-8 text-center text-sm text-muted-foreground">
-        Favoritos indisponiveis nesta versao do servidor.
+        {t("favorites.unavailable")}
         <button
           type="button"
           onClick={controle.recarregar}
           className="rounded px-1.5 py-0.5 underline underline-offset-2 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
         >
-          tentar de novo
+          {t("common.retry")}
         </button>
       </p>
     );
@@ -680,15 +694,12 @@ export function PainelFavoritos({
 
   if (controle.entries.length === 0) {
     return (
-      <ListaVazia>
-        Nenhum projeto fixado. Clique na estrela de um repositorio em Recentes,
-        Procurar ou Navegar para fixa-lo aqui.
-      </ListaVazia>
+      <ListaVazia>{t("favorites.empty")}</ListaVazia>
     );
   }
 
   if (entradas.length === 0) {
-    return <ListaVazia>Nenhum favorito casa com o filtro.</ListaVazia>;
+    return <ListaVazia>{t("favorites.noMatch")}</ListaVazia>;
   }
 
   const iAtivo = arrastando ? ordem.indexOf(arrastando) : -1;
@@ -734,7 +745,7 @@ export function PainelFavoritos({
       </ul>
       {filtrando && controle.entries.length > 1 ? (
         <p className="px-3 pb-2 text-[11px] text-muted-foreground">
-          Limpe o filtro para reordenar — com a lista parcial nao da para saber a ordem inteira.
+          {t("favorites.filterHint")}
         </p>
       ) : null}
     </DndContext>

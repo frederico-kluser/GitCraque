@@ -8,6 +8,7 @@
  * toast em vez de falha silenciosa.
  */
 import { api } from "@/lib/api";
+import { t } from "@/i18n";
 import { runOperation, toast } from "@/state/store";
 import type { DragIntentOption, GitCommandResult } from "@/types/git";
 import { INTENT_ENDPOINTS } from "@/dnd/intents";
@@ -33,7 +34,7 @@ export function executeIntentOption(
             commits: asStrings(body.commits),
             onto: asOptionalString(body.onto),
           }),
-        { refresh: "all", successMessage: "Cherry-pick aplicado" },
+        { refresh: "all", successMessage: t("exec.cherryPick.done") },
       );
 
     case INTENT_ENDPOINTS.merge:
@@ -44,7 +45,7 @@ export function executeIntentOption(
             source: asString(body.source),
             into: asOptionalString(body.into),
           }),
-        { refresh: "all", successMessage: "Merge concluido" },
+        { refresh: "all", successMessage: t("exec.merge.done") },
       );
 
     case INTENT_ENDPOINTS.rebase:
@@ -55,7 +56,7 @@ export function executeIntentOption(
             source: asString(body.source),
             onto: asString(body.onto),
           }),
-        { refresh: "all", successMessage: "Rebase concluido" },
+        { refresh: "all", successMessage: t("exec.rebase.done") },
       );
 
     case INTENT_ENDPOINTS.deleteBranchLocal:
@@ -66,7 +67,7 @@ export function executeIntentOption(
             name: asString(body.name),
             force: body.force === true,
           }),
-        { refresh: "refs", successMessage: "Ramo apagado" },
+        { refresh: "refs", successMessage: t("exec.deleteLocal.done") },
       );
 
     case INTENT_ENDPOINTS.deleteBranchRemote:
@@ -77,14 +78,14 @@ export function executeIntentOption(
             remote: asString(body.remote),
             name: asString(body.name),
           }),
-        { refresh: "refs", successMessage: "Ramo remoto apagado" },
+        { refresh: "refs", successMessage: t("exec.deleteRemote.done") },
       );
 
     default:
       toast(
         "error",
-        "Rota desconhecida",
-        `A intencao pediu ${option.endpoint}, que nao tem execucao mapeada.`,
+        t("exec.unknownRoute"),
+        t("exec.unknownRoute.body", { endpoint: option.endpoint }),
       );
       return Promise.resolve(null);
   }

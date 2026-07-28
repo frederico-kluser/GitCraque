@@ -32,6 +32,7 @@ import {
 } from "@/hooks";
 import type { SideLayout } from "@/hooks";
 import { Splitter } from "@/app/Splitter";
+import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { PanelProps } from "@/types/modules";
 import { DetailPanel } from "./DetailPanel";
@@ -68,8 +69,8 @@ export function DrawerControls({
       <ToolButton
         size="sm"
         tone="ghost"
-        aria-label={`Minimizar ${nome}`}
-        title={`Minimizar ${nome}`}
+        aria-label={t("side.minimize", { name: nome })}
+        title={t("side.minimize", { name: nome })}
         disabled={colapsada}
         onClick={() => minimizeSide(id)}
         icon={<Minus className="size-3.5" />}
@@ -77,8 +78,8 @@ export function DrawerControls({
       <ToolButton
         size="sm"
         tone="ghost"
-        aria-label={maximizada ? `Restaurar ${nome}` : `Maximizar ${nome}`}
-        title={maximizada ? `Restaurar ${nome}` : `Maximizar ${nome}`}
+        aria-label={maximizada ? t("side.restore", { name: nome }) : t("side.maximize", { name: nome })}
+        title={maximizada ? t("side.restore", { name: nome }) : t("side.maximize", { name: nome })}
         active={maximizada}
         onClick={() => toggleMaximizeSide(id)}
         icon={
@@ -121,8 +122,8 @@ function CollapsedBar({
       <button
         type="button"
         onClick={restoreSide}
-        aria-label={`Expandir ${nome}`}
-        title={`Expandir ${nome}`}
+        aria-label={t("side.expand", { name: nome })}
+        title={t("side.expand", { name: nome })}
         className={cn(
           "flex min-w-0 flex-1 items-center gap-2 rounded-md py-0.5 text-left",
           "hover:text-foreground",
@@ -168,15 +169,15 @@ export function SidePanel({ className }: PanelProps) {
     <aside
       className={cn("grid min-h-0 min-w-0", className)}
       style={{ gridTemplateRows: rows }}
-      aria-label="Detalhe e trabalho"
+      aria-label={t("side.label")}
     >
       {/* --- gaveta de cima: detalhe do commit --- */}
       {detalheColapsada ? (
-        <CollapsedBar id="detail" nome="Detalhe" posicao="topo" layout={layout} />
+        <CollapsedBar id="detail" nome={t("side.drawer.detail")} posicao="topo" layout={layout} />
       ) : (
         <DetailPanel
           className="min-h-0 bg-card"
-          headerExtra={<DrawerControls id="detail" layout={layout} nome="Detalhe" />}
+          headerExtra={<DrawerControls id="detail" layout={layout} nome={t("side.drawer.detail")} />}
         />
       )}
 
@@ -187,7 +188,7 @@ export function SidePanel({ className }: PanelProps) {
           value={sideSplit}
           min={SIDE_RANGE.min}
           max={SIDE_RANGE.max}
-          label="Altura do detalhe do commit"
+          label={t("app.splitter.sideSplit")}
           onChange={setSideSplit}
         />
       ) : (
@@ -196,11 +197,11 @@ export function SidePanel({ className }: PanelProps) {
 
       {/* --- gaveta de baixo: alteracoes e visualizador --- */}
       {trabalhoColapsada ? (
-        <CollapsedBar id="work" nome="Trabalho" posicao="base" layout={layout} />
+        <CollapsedBar id="work" nome={t("side.drawer.work")} posicao="base" layout={layout} />
       ) : (
         <WorkDock
           className="min-h-0 border-t border-border"
-          controls={<DrawerControls id="work" layout={layout} nome="Trabalho" />}
+          controls={<DrawerControls id="work" layout={layout} nome={t("side.drawer.work")} />}
         />
       )}
     </aside>
