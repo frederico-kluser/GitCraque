@@ -7,23 +7,43 @@
  * fica com a coluna inteira em vez de meia. Dois ou mais commits: o painel vira
  * o resumo do intervalo, com o botao de Squash.
  *
+ * SEM commit selecionado a coluna NAO fica vazia quando ha trabalho em aberto:
+ * mostra a arvore de trabalho, com a mesma lista clicavel. Isso e o que faz a
+ * troca de worktree cair direto no que aquela worktree tem por commitar —
+ * `cwd:changed` limpa a selecao inteira (`state/store.ts:671-678`), entao o
+ * estado logo apos a troca e exatamente este. Sem selecao e com a arvore limpa,
+ * o vazio de sempre.
+ *
  * O carregamento e por hash, com cache e descarte de resposta obsoleta
  * (`useCommitDetail`), e o vazio e coberto por `Skeleton` do Motion UI.
  */
 import { useMemo } from "react";
-import { GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
+import { FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import { openFile, selectCommit, selectCommits, useAppState } from "@/state/store";
-import { contextMenuFor, useCommitDetail } from "@/hooks";
+import { contextMenuFor, openChanges, useCommitDetail, useWorkingDiffStats, type DiffStats } from "@/hooks";
 import { openSquash } from "@/app/actions";
-import { commitFileMenu, commitMenu } from "@/app/menus";
+import { changeFileMenu, commitFileMenu, commitMenu } from "@/app/menus";
 import { Rich, formatDateTime, formatGitRelativeDate, t } from "@/i18n";
 import { cn, short } from "@/lib/utils";
-import type { CommitDetail } from "@/types/git";
+import type { CommitDetail, StatusEntry } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
-import { Chip, DiffStat, EmptyState, FilePath, FOCUS_RING, SectionLabel, StatusGlyph, ToolButton } from "./parts";
+import {
+  Chip,
+  DiffStat,
+  EmptyState,
+  FilePath,
+  FOCUS_RING,
+  GROUP_ORDER,
+  GROUP_TITLE,
+  SectionLabel,
+  StatusGlyph,
+  ToolButton,
+  displayStatus,
+  groupEntries,
+} from "./parts";
 
 /* ------------------------------------------------------------------ */
 /* Esqueleto                                                           */
@@ -134,6 +154,146 @@ function SelectionSummary({ selected }: { selected: string[] }) {
     </div>
   );
 }
+
+/* ------------------------------------------------------------------ */
+/* Arvore de trabalho — o que ainda nao virou commit                   */
+/* ------------------------------------------------------------------ */
+
+/** Uma linha de arquivo em aberto: abre o diff dele na propria coluna. */
+function WorkingFileRow({ entry, stats }: { entry: StatusEntry; stats: DiffStats }) {
+  // Marca a linha so quando o arquivo aberto veio DAQUI: o mesmo caminho pode
+  // estar aberto a partir de um commit, e ai a linha marcada nao e esta.
+  const opened = useAppState((s) => s.openFile);
+  const isOpen = opened?.path === entry.path && opened.fromWorkingTree;
+  const delta = stats.get(entry.path);
+
+  return (
+    <button
+      type="button"
+      aria-current={isOpen ? "true" : undefined}
+      title={t("changes.viewFile", { path: entry.path })}
+      /* `hash: null` + `fromWorkingTree` e o que manda o visualizador ler do
+         disco em vez de um commit — o mesmo caminho que a gaveta de staging usa. */
+      onClick={() => openFile(entry.path, null, true)}
+      onContextMenu={contextMenuFor(entry.path, () => changeFileMenu(entry))}
+      className={cn(
+        "flex items-center gap-2 rounded-sm px-1.5 py-1 text-left transition-colors",
+        "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+        isOpen ? "bg-primary/12 ring-1 ring-primary ring-inset" : "hover:bg-accent",
+        FOCUS_RING,
+      )}
+    >
+      <StatusGlyph status={displayStatus(entry)} />
+      <FilePath path={entry.path} className="flex-1" />
+      {entry.oldPath && (
+        <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground" title={entry.oldPath}>
+          ← {entry.oldPath.split("/").pop()}
+        </span>
+      )}
+      {delta?.binary ? (
+        <Chip tone="neutral">{t("common.binaryShort")}</Chip>
+      ) : (
+        delta && <DiffStat insertions={delta.insertions} deletions={delta.deletions} />
+      )}
+    </button>
+  );
+}
+
+/**
+ * A coluna direita quando nao ha commit selecionado e a arvore tem trabalho.
+ *
+ * Mesma anatomia do detalhe de commit — cabecalho, depois a lista de arquivos
+ * clicaveis — para que trocar de worktree e clicar num commit se parecam. As
+ * acoes de preparar, descartar e commitar continuam na gaveta: aqui e leitura,
+ * e o botao do cabecalho leva para la em um clique.
+ */
+function WorkingTreeDetail() {
+  const status = useAppState((s) => s.status);
+  const stats = useWorkingDiffStats(status);
+  const entries = status?.entries ?? EMPTY_ENTRIES;
+
+  const groups = useMemo(() => groupEntries(entries), [entries]);
+  const total = useMemo(() => {
+    let insertions = 0;
+    let deletions = 0;
+    for (const entry of entries) {
+      const delta = stats.get(entry.path);
+      if (!delta || delta.binary) continue;
+      insertions += delta.insertions;
+      deletions += delta.deletions;
+    }
+    return { insertions, deletions };
+  }, [entries, stats]);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <header className="flex flex-col gap-2 border-b border-border p-3">
+        <div className="flex items-center gap-2">
+          <FolderGit2 className="size-4 shrink-0 text-primary" />
+          <h2 className="font-heading text-sm font-semibold text-foreground">
+            {t("detail.working.title")}
+          </h2>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-1.5">
+          {status?.branch && <Chip tone="primary">{status.branch}</Chip>}
+          {status?.upstream && (
+            <Chip tone="neutral" mono>
+              {status.upstream}
+            </Chip>
+          )}
+          {status && (status.ahead > 0 || status.behind > 0) && (
+            <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+              ↑{status.ahead} ↓{status.behind}
+            </span>
+          )}
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <span>{t("changes.filesChanged", { count: entries.length })}</span>
+          <DiffStat insertions={total.insertions} deletions={total.deletions} />
+          <span className="flex-1" />
+          {/* Uma vez so, no cabecalho: repetido em cada grupo, o mesmo aviso
+              aparecia tres vezes na mesma tela. */}
+          <span className="text-[10px]">{t("detail.working.hint")}</span>
+        </div>
+
+        <div>
+          <ToolButton
+            tone="primary"
+            icon={<GitCommitHorizontal className="size-3.5" />}
+            onClick={openChanges}
+          >
+            {t("detail.working.stage")}
+          </ToolButton>
+        </div>
+      </header>
+
+      {GROUP_ORDER.map((group) =>
+        groups[group].length === 0 ? null : (
+          <section key={group}>
+            <header className="flex items-center gap-2 px-3 py-2">
+              <SectionLabel className={group === "conflicted" ? "text-destructive" : "text-foreground"}>
+                {t(GROUP_TITLE[group])}
+              </SectionLabel>
+              <span className="font-mono text-[10px] text-muted-foreground tabular-nums">
+                {groups[group].length}
+              </span>
+            </header>
+            <div className="flex flex-col gap-0.5 px-2 pb-2">
+              {groups[group].map((entry) => (
+                <WorkingFileRow key={entry.path} entry={entry} stats={stats} />
+              ))}
+            </div>
+          </section>
+        ),
+      )}
+    </div>
+  );
+}
+
+/** Constante de modulo: literal inline mudaria a identidade a cada render. */
+const EMPTY_ENTRIES: StatusEntry[] = [];
 
 /* ------------------------------------------------------------------ */
 /* Detalhe de um commit                                                */
@@ -291,11 +451,29 @@ export function DetailPanel({ className }: DetailPanelProps) {
   const primary = useAppState((s) => s.selection.primary);
   const selected = useAppState((s) => s.selection.commits);
   const detail = useCommitDetail(primary);
+  // Numero, nao o array: `entries` e objeto novo a cada refresh, e o comparador
+  // do `useAppState` e `Object.is`.
+  const dirtyCount = useAppState((s) => s.status?.entries.length ?? 0);
+  // `status` ainda nulo E carregando e a janela logo depois de `cwd:changed`:
+  // decidir "arvore limpa" ali mostraria o vazio por um instante e trocaria
+  // para a lista em seguida. Fora dessa janela o refresh reusa o status antigo,
+  // entao a tela nao pisca a cada watcher.
+  const loadingStatus = useAppState((s) => s.status === null && s.loading.status);
 
   if (selected.length > 1) {
     return (
       <section className={cn("flex flex-col", className)} aria-label={t("detail.selectionLabel")}>
         <SelectionSummary selected={selected} />
+      </section>
+    );
+  }
+
+  // Sem commit selecionado, a coluna e da arvore de trabalho — e e isso que a
+  // troca de worktree passa a mostrar sozinha, sem clique na branch atual.
+  if (!primary && (dirtyCount > 0 || loadingStatus)) {
+    return (
+      <section className={cn("flex flex-col", className)} aria-label={t("changes.label")}>
+        {loadingStatus && dirtyCount === 0 ? <DetailSkeleton /> : <WorkingTreeDetail />}
       </section>
     );
   }

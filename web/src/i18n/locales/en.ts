@@ -333,6 +333,9 @@ export const en: Messages = {
   "detail.viewFile": "View {path} in the viewer",
   "detail.fileCount_one": "{count} file",
   "detail.fileCount_other": "{count} files",
+  "detail.working.title": "Uncommitted changes",
+  "detail.working.hint": "click to see the diff",
+  "detail.working.stage": "Stage and commit",
 
   "selection.title": "Selection",
   "selection.count_one": "{count} commit",

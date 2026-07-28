@@ -328,6 +328,9 @@ export const zh: Messages = {
   "detail.viewFile": "在查看器中查看 {path}",
   "detail.fileCount_one": "{count} 个文件",
   "detail.fileCount_other": "{count} 个文件",
+  "detail.working.title": "未提交的更改",
+  "detail.working.hint": "点击查看差异",
+  "detail.working.stage": "暂存并提交",
 
   "selection.title": "选区",
   "selection.count_one": "{count} 个提交",

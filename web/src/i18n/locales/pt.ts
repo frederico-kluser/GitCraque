@@ -343,6 +343,9 @@ export const pt = {
   "detail.viewFile": "Ver {path} no visualizador",
   "detail.fileCount_one": "{count} arquivo",
   "detail.fileCount_other": "{count} arquivos",
+  "detail.working.title": "Alterações em aberto",
+  "detail.working.hint": "clique para ver o diff",
+  "detail.working.stage": "Preparar e commitar",
 
   "selection.title": "Seleção",
   "selection.count_one": "{count} commit",

@@ -1,7 +1,8 @@
 /**
  * Coluna direita: UMA tela por vez.
  *
- *   Detalhe  → metadados do commit selecionado e a lista de arquivos (o padrao)
+ *   Detalhe  → metadados do commit selecionado e a lista de arquivos; sem commit
+ *              selecionado, as alteracoes em aberto da arvore de trabalho (o padrao)
  *   View     → o conteudo do arquivo aberto, com voltar no cabecalho
  *
  * Antes eram duas gavetas empilhadas com divisoria arrastavel, e o painel de
