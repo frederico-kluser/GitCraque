@@ -467,7 +467,12 @@ export type ServerEvent =
   | { type: "credentials:needed"; prompt: CredentialPrompt }
   | { type: "credentials:resolved"; requestId: string; ok: boolean }
   | { type: "error"; message: string; detail?: string }
-  | { type: "pong"; ts: number };
+  | { type: "pong"; ts: number }
+  /** passo do agente: comando disparado, texto, custo ou falha */
+  | { type: "ai:event"; id: string; event: AgentEvent }
+  /** o agente terminou; `text` e o veredito de uma linha */
+  | { type: "ai:done"; id: string; text: string; cost: number; error: string }
+  | { type: "ai:error"; id: string; text: string; cost: number; error: string };
 
 export type GitCommandPhase = "start" | "stdout" | "stderr" | "exit";
 
@@ -662,4 +667,69 @@ export interface ConsoleLine {
   cwd?: string;
   exitCode?: number | null;
   durationMs?: number;
+}
+
+/* ------------------------------------------------------------------ *
+ * 15. Agente: microfone -> transcricao -> pi coding agent
+ * ------------------------------------------------------------------ */
+
+/**
+ * Um passo do agente, ja traduzido pelo backend a partir do fluxo NDJSON do pi.
+ *
+ * `kind: "tool"` com `tool: "bash"` e o unico que traz `command` preenchido: e
+ * nele que o git acontece, e mostrar o comando literal e a promessa do produto.
+ */
+export type AgentEvent =
+  | { kind: "session-start"; utterance: string; source: AgentSource }
+  | { kind: "start" }
+  | { kind: "tool"; tool: string; command: string; file: string }
+  | { kind: "tool-end"; tool: string; failed: boolean }
+  | { kind: "text"; delta: string }
+  | { kind: "usage"; cost: number }
+  | { kind: "end" }
+  | { kind: "error"; message: string };
+
+/** De onde veio o pedido. O agente calibra a desconfianca com isso. */
+export type AgentSource = "voice" | "text";
+
+/** De qual camada a chave da OpenRouter foi resolvida. */
+export type AiKeySource = "stored" | "env-file" | "env" | "none";
+
+/** GET /api/ai/status */
+export interface AiStatusPayload {
+  hasKey: boolean;
+  keySource: AiKeySource;
+  /** impressao digital da chave; nunca a chave */
+  masked: string;
+  transcribeModel: string;
+  agentModel: string;
+  pi: {
+    /** "path" = binario encontrado; "npx" = baixa na primeira execucao */
+    kind: "path" | "npx";
+    needsDownload: boolean;
+  };
+  busy: boolean;
+  session: AgentSessionInfo | null;
+}
+
+export interface AgentSessionInfo {
+  id: string;
+  startedAt: number;
+  utterance: string;
+  source: AgentSource;
+}
+
+/** POST /api/ai/transcribe */
+export interface TranscriptionPayload {
+  text: string;
+  /** custo real em USD, vindo do `usage.cost` da OpenRouter */
+  cost: number;
+  /** duracao do audio em segundos */
+  seconds: number;
+}
+
+/** POST /api/ai/run — responde na hora; o andamento vem pelo WebSocket */
+export interface AgentRunPayload {
+  id: string;
+  startedAt: number;
 }

@@ -13,6 +13,8 @@ export { useCommitDetail, useCommitDiff } from "./useCommitDetail";
 export type { AsyncResource } from "./useCommitDetail";
 
 export { useTrickle } from "./useTrickle";
+export { useVoiceRecorder } from "./useVoiceRecorder";
+export type { MicSupport, VoiceRecorder } from "./useVoiceRecorder";
 export { useProjects, loadProjects, getProjects } from "./useProjects";
 export type { ProjectsState } from "./useProjects";
 export { useWorkingDiffStats } from "./useWorkingDiff";

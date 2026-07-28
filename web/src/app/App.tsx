@@ -46,6 +46,7 @@ import { ContextMenuHost } from "./ContextMenuHost";
 import { Splitter } from "./Splitter";
 import { StatusFooter } from "./StatusFooter";
 import { Toasts } from "./Toasts";
+import { VoiceBubble } from "./VoiceBubble";
 
 /* ------------------------------------------------------------------ */
 /* Menus da View Tree                                                  */
@@ -282,6 +283,10 @@ export function App() {
           em tudo o que nao e campo de texto. */}
       <ContextMenuHost />
       <Toasts />
+
+      {/* Microfone flutuante do bottom center. Fica em z-40, abaixo de tudo o
+          que vem acima, para que um dialogo sempre o cubra. */}
+      <VoiceBubble />
 
       {/* Reconexao: banner fixo, para nao depender do scroll da toolbar. */}
       {connection === "reconnecting" && (

@@ -17,6 +17,7 @@ import { api, ApiRequestError } from "@/lib/api";
 import { socket, type ConnectionState } from "@/lib/ws";
 import { t } from "@/i18n";
 import type {
+  AgentSource,
   ConsoleLine,
   CredentialPrompt,
   DragIntent,
@@ -115,9 +116,56 @@ export interface AppState {
   /** pedido vivo do trampolim de askpass */
   credentialPrompt: CredentialPrompt | null;
 
+  /** sessao do agente de voz/texto */
+  agent: AgentSlice;
+
   /** paginacao do log */
   limit: number;
 }
+
+/**
+ * O que a bolha do microfone mostra.
+ *
+ * `commands` guarda os comandos git que o agente disparou de fato — e a
+ * promessa central do produto aplicada ao caminho da voz: nada acontece sem
+ * que se possa ver o argv que rodou.
+ */
+export interface AgentSlice {
+  phase: AgentPhase;
+  /** o que a pessoa falou ou digitou, ja transcrito */
+  utterance: string;
+  source: AgentSource;
+  /** comandos git disparados nesta sessao, na ordem */
+  commands: string[];
+  /** o veredito de uma linha, quando termina */
+  verdict: string;
+  /** mensagem de falha, quando falha */
+  error: string;
+  /** soma do que a sessao custou em USD (transcricao + agente) */
+  cost: number;
+}
+
+export type AgentPhase =
+  | "idle"
+  | "recording"
+  | "transcribing"
+  | "running"
+  | "done"
+  | "failed";
+
+/**
+ * Constante de modulo, nao literal inline: o comparador do `useAppState` e
+ * `Object.is`, entao um objeto novo a cada leitura re-renderizaria para sempre.
+ */
+const AGENT_IDLE: AgentSlice = {
+  phase: "idle",
+  utterance: "",
+  source: "voice",
+  commands: [],
+  verdict: "",
+  error: "",
+  cost: 0,
+};
 
 const INITIAL: AppState = {
   repo: null,
@@ -136,6 +184,7 @@ const INITIAL: AppState = {
   openFile: null,
   pendingIntent: null,
   credentialPrompt: null,
+  agent: AGENT_IDLE,
   limit: 2000,
 };
 
@@ -541,6 +590,62 @@ export function cancelCredentialPrompt() {
 
 let booted = false;
 
+/* ------------------------------------------------------------------ */
+/* Agente de voz e texto                                               */
+/* ------------------------------------------------------------------ */
+
+const patchAgent = (patch: Partial<AgentSlice>) =>
+  set((s) => ({ agent: { ...s.agent, ...patch } }));
+
+/** O microfone abriu. Zera o que sobrou da sessao anterior. */
+export function agentRecordingStarted() {
+  set({ agent: { ...AGENT_IDLE, phase: "recording" } });
+}
+
+/** O audio foi para a OpenRouter. */
+export function agentTranscribing() {
+  patchAgent({ phase: "transcribing" });
+}
+
+/** Cancela sem mandar nada — o botao solto sem audio util cai aqui. */
+export function agentCancelled(error = "") {
+  set({ agent: { ...AGENT_IDLE, phase: error ? "failed" : "idle", error } });
+}
+
+/** Volta a bolha para o repouso. */
+export function agentClosed() {
+  set({ agent: AGENT_IDLE });
+}
+
+/**
+ * Manda a intencao para o agente. O POST volta na hora com o id da sessao; o
+ * andamento chega pelos eventos `ai:*` do WebSocket.
+ */
+export async function runAgent(utterance: string, source: AgentSource, cost = 0) {
+  const text = utterance.trim();
+  if (!text) {
+    set({ agent: { ...AGENT_IDLE, phase: "failed", error: t("agent.empty") } });
+    return;
+  }
+  set({
+    agent: { ...AGENT_IDLE, phase: "running", utterance: text, source, cost },
+  });
+  try {
+    await api.runAgent({ utterance: text, source });
+  } catch (e) {
+    patchAgent({ phase: "failed", error: describe(e) });
+  }
+}
+
+/** Mata a sessao em voo. O repositorio fica como estiver — a UI ja sabe mostrar. */
+export async function abortAgent() {
+  try {
+    await api.abortAgent();
+  } catch (e) {
+    toast("error", describe(e));
+  }
+}
+
 export function bootstrap() {
   if (booted) return;
   booted = true;
@@ -607,6 +712,36 @@ export function bootstrap() {
     toast("error", e.message, e.detail);
   });
 
+  /* ---- agente ----
+   * O comando git que o agente dispara NAO passa pelo `execGit` do backend, e
+   * portanto nao gera `git:command`. Por isso ele e empurrado para o console
+   * daqui: sem isto, o painel de auditoria ficaria mudo durante a sessao em que
+   * mais coisa acontece.
+   */
+  socket.on("ai:event", (e) => {
+    const ev = e.event;
+    if (ev.kind === "tool" && ev.command) {
+      patchAgent({ commands: [...getState().agent.commands, ev.command] });
+      pushConsole({ kind: "command", text: ev.command });
+    } else if (ev.kind === "usage") {
+      patchAgent({ cost: getState().agent.cost + ev.cost });
+    } else if (ev.kind === "error") {
+      pushConsole({ kind: "error", text: ev.message });
+    }
+  });
+
+  socket.on("ai:done", (e) => {
+    patchAgent({ phase: "done", verdict: e.text, cost: getState().agent.cost + e.cost });
+    // O watcher ja anunciou cada escrita do agente, mas um refresh final fecha
+    // qualquer janela de debounce que tenha agrupado o ultimo lote.
+    void refreshAll();
+  });
+
+  socket.on("ai:error", (e) => {
+    patchAgent({ phase: "failed", error: e.error || e.text });
+    void refreshAll();
+  });
+
   socket.connect();
   void refreshAll();
 }
@@ -623,6 +758,7 @@ function describe(e: unknown): string {
 /* Seletores prontos (estaveis — nao criam objeto novo a cada render)   */
 /* ------------------------------------------------------------------ */
 
+export const selectAgent = (s: AppState) => s.agent;
 export const selectCommits = (s: AppState) => s.log?.commits ?? EMPTY_COMMITS;
 export const selectBranches = (s: AppState) => s.refs?.branches ?? EMPTY_ARR;
 export const selectRemoteBranches = (s: AppState) => s.refs?.remoteBranches ?? EMPTY_ARR;

@@ -14,6 +14,7 @@
 import { spawn } from "node:child_process";
 import { randomUUID } from "node:crypto";
 
+import { assertNotBusy } from "../ai/session.mjs";
 import { GIT_MAX_BUFFER_BYTES, GIT_TIMEOUT_MS } from "../contract.mjs";
 import { runtime } from "../runtime.mjs";
 
@@ -66,6 +67,11 @@ export const isMutating = () => mutationDepth > 0;
  * Leituras nao passam por aqui.
  */
 export function withMutationLock(fn) {
+  // Enquanto o agente trabalha, mutacao vinda da INTERFACE e recusada na hora.
+  // A checagem e aqui e nao no handler porque este e o unico ponto por onde
+  // toda mutacao passa. O proprio agente nao e afetado: ele roda git no seu
+  // processo, por fora do `execGit`. Ver `ai/session.mjs`.
+  assertNotBusy();
   const run = mutationChain.then(() => {
     mutationDepth += 1;
     runtime.watcher?.beginSuppression();

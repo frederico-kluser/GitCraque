@@ -100,6 +100,15 @@ export const ROUTES = [
   ["GET", "/file"],
 
   ["POST", "/raw"],
+
+  // Agente: microfone -> transcricao -> pi coding agent.
+  // A chave da OpenRouter e UMA so e paga as duas pernas (transcricao e agente).
+  ["GET", "/ai/status"],
+  ["POST", "/ai/key"],
+  ["DELETE", "/ai/key"],
+  ["POST", "/ai/transcribe"],
+  ["POST", "/ai/run"],
+  ["POST", "/ai/abort"],
 ];
 
 /** Tipos de evento que o servidor pode emitir no WebSocket. */
@@ -113,6 +122,10 @@ export const SERVER_EVENTS = /** @type {const} */ ([
   "credentials:resolved",
   "error",
   "pong",
+  // Passo do agente (comando disparado, texto, erro), o veredito e a falha.
+  "ai:event",
+  "ai:done",
+  "ai:error",
 ]);
 
 /** Tipos de evento que o cliente pode enviar. */

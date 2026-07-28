@@ -3,6 +3,9 @@
  * Toda rota que existe esta aqui; nada fora daqui deve ser chamado por fetch cru.
  */
 import type {
+  AgentRunPayload,
+  AgentSource,
+  AiStatusPayload,
   ApiError,
   Branch,
   CommitDetail,
@@ -21,6 +24,7 @@ import type {
   SquashRequest,
   SquashResult,
   StatusPayload,
+  TranscriptionPayload,
   WorktreesPayload,
 } from "@/types/git";
 import { getLocale } from "@/i18n";
@@ -224,6 +228,23 @@ export const api = {
 
   /* ---- escotilha: qualquer comando git cru ---- */
   raw: (body: { args: string[] }) => post<GitCommandResult>("/raw", body),
+
+  /* ---- agente: microfone -> transcricao -> pi coding agent ----
+   * Uma unica chave da OpenRouter paga as duas pernas. Ela NUNCA chega ao
+   * navegador: `aiKey` so a envia, e `aiStatus` devolve apenas a mascara.
+   *
+   * `runAgent` responde na hora com o id da sessao; o andamento chega pelo
+   * WebSocket (`ai:event`, `ai:done`, `ai:error`), porque uma sessao leva
+   * minutos e nenhum navegador segura um POST por tanto tempo.
+   */
+  aiStatus: () => get<AiStatusPayload>("/ai/status"),
+  aiSaveKey: (key: string) => post<{ ok: true; masked: string }>("/ai/key", { key }),
+  aiClearKey: () => del<{ ok: true; removed: boolean }>("/ai/key"),
+  transcribe: (body: { audio: string; format?: string; language?: string }) =>
+    post<TranscriptionPayload>("/ai/transcribe", body),
+  runAgent: (body: { utterance: string; source: AgentSource }) =>
+    post<AgentRunPayload>("/ai/run", body),
+  abortAgent: () => post<{ ok: true; aborted: boolean }>("/ai/abort", {}),
 };
 
 export type Api = typeof api;
