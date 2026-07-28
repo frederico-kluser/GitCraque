@@ -18,6 +18,7 @@ import {
 } from "../git/discover.mjs";
 import { addFavorite, getFavorites, removeFavorite, reorderFavorites } from "../git/favorites.mjs";
 import { getFileContent } from "../git/file.mjs";
+import { searchRepos } from "../git/search.mjs";
 import { getRepoPayload } from "./repo.mjs";
 import { bodyOf, commandResult, intParam } from "./_util.mjs";
 
@@ -49,6 +50,15 @@ export function registerRepoPickerRoutes(router, deps = {}) {
       budgetMs: intParam(body.budgetMs),
     });
   });
+
+  /* --- busca no historico ---
+   * Irma da varredura, com custo oposto: aquela toca o disco sob orcamento,
+   * esta le o indice que aquela (e a navegacao) alimentaram. Por isso e GET e
+   * pode ser chamada a cada tecla. */
+
+  router.add("GET", "/repos/search", (ctx) =>
+    searchRepos({ q: ctx.query.q, limit: intParam(ctx.query.limit) }),
+  );
 
   /* --- abertura --- */
 

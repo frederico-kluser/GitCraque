@@ -65,6 +65,16 @@ before(() => {
     git(dir, "add", "-A");
     git(dir, "commit", "-q", "-m", "commit inicial");
   }
+  // Um repositorio DENTRO de outro — o caso que a varredura precisa listar.
+  // Sem ele, a assercao sobre repositorio aninhado passa por vacuidade.
+  {
+    const interno = path.join(LAB, "alpha", "interno");
+    fs.mkdirSync(interno, { recursive: true });
+    git(interno, "init", "-q", "-b", "main");
+    fs.writeFileSync(path.join(interno, "b.txt"), "y\n");
+    git(interno, "add", "-A");
+    git(interno, "commit", "-q", "-m", "commit do interno");
+  }
   fs.mkdirSync(path.join(LAB, "so-uma-pasta"), { recursive: true });
   fs.writeFileSync(path.join(LAB, "um-arquivo.txt"), "nao sou pasta\n");
   fs.writeFileSync(path.join(LAB, "alpha", "outro-arquivo.md"), "nem eu\n");
@@ -188,12 +198,29 @@ test("a varredura enriquece cada achado com ramo e data do ultimo commit", async
   assert.match(alpha.lastCommitRelative, /ago|second|minute/);
 });
 
-test("a varredura NAO desce dentro de um repositorio ja encontrado", async () => {
+/*
+ * INVARIANTE INVERTIDA em 2026-07, a pedido explicito.
+ *
+ * Ate aqui este teste exigia o contrario — "a varredura NAO desce dentro de um
+ * repositorio ja encontrado" — com o argumento de que o que ha dentro pertence
+ * ao repositorio pai. Na pratica isso escondia projeto com git interno
+ * (submodulo, worktree, pasta de terceiro versionada a parte): quem tem um nao
+ * conseguia achar pelo seletor, porque varredura nenhuma o listava.
+ *
+ * A entrada continua distinguivel: `nested` diz que ela esta dentro de outro
+ * repositorio e `parentRepo` diz de qual. Quem nao os quiser, filtra.
+ */
+test("a varredura DESCE dentro de um repositorio e marca o interno", async () => {
   const { repos } = await scanForRepos({ roots: [LAB], depth: 5 });
-  assert.ok(
-    !repos.some((r) => r.path.startsWith(path.join(LAB, "alpha", path.sep))),
-    "submodulo/worktree aninhada nao pode aparecer como entrada solta",
-  );
+  const interno = repos.find((r) => r.path === path.join(LAB, "alpha", "interno"));
+  assert.ok(interno, `o git interno nao apareceu: ${repos.map((r) => r.path).join(", ")}`);
+  assert.equal(interno.nested, true);
+  assert.equal(interno.parentRepo, path.join(LAB, "alpha"));
+
+  // O pai continua sendo uma entrada normal, nao aninhada.
+  const alpha = repos.find((r) => r.path === path.join(LAB, "alpha"));
+  assert.equal(alpha.nested, false);
+  assert.equal(alpha.parentRepo, null);
 });
 
 test("a varredura respeita o teto de profundidade", async () => {

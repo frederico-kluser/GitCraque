@@ -73,6 +73,7 @@ const MESSAGES = {
     "error.pathsStrings": "paths only accepts non-empty strings",
     "error.messageRequired": "message is required",
     "error.labelText": "label must be text",
+    "error.favoritesWriteFailed": "could not save the favourites",
 
     "error.notAWorktree": "the path is not a worktree of this repository",
     "error.notInList": "{path} does not show up in 'git worktree list'",
@@ -146,6 +147,7 @@ const MESSAGES = {
     "error.pathsStrings": "paths só aceita strings não vazias",
     "error.messageRequired": "message é obrigatório",
     "error.labelText": "label tem de ser texto",
+    "error.favoritesWriteFailed": "não foi possível gravar os favoritos",
 
     "error.notAWorktree": "caminho não é uma worktree deste repositório",
     "error.notInList": "{path} não aparece em 'git worktree list'",
@@ -220,6 +222,7 @@ const MESSAGES = {
     "error.pathsStrings": "paths solo acepta strings no vacías",
     "error.messageRequired": "message es obligatorio",
     "error.labelText": "label tiene que ser texto",
+    "error.favoritesWriteFailed": "no se pudieron guardar los favoritos",
 
     "error.notAWorktree": "la ruta no es un worktree de este repositorio",
     "error.notInList": "{path} no aparece en 'git worktree list'",
@@ -294,6 +297,7 @@ const MESSAGES = {
     "error.pathsStrings": "paths 只接受非空字符串",
     "error.messageRequired": "message 是必填项",
     "error.labelText": "label 必须是文本",
+    "error.favoritesWriteFailed": "无法保存收藏",
 
     "error.notAWorktree": "该路径不是此仓库的工作树",
     "error.notInList": "{path} 没有出现在 'git worktree list' 中",

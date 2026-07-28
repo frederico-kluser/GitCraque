@@ -795,9 +795,18 @@ export const zh: Messages = {
   "picker.tabs.aria": "在哪里查找仓库",
   "picker.tab.favorites": "收藏",
   "picker.tab.recents": "最近",
-  "picker.tab.scan": "搜索",
+  "picker.tab.search": "搜索",
+  // 「扫描」而非「搜索」：旁边的标签页现在搜索已知仓库的历史记录，
+  // 两个同名标签页会让人无从选择。
+  "picker.tab.scan": "扫描",
   "picker.tab.browse": "浏览",
-  "picker.recents.empty": "还没有打开过任何仓库。请使用「搜索」或「浏览」。",
+  "picker.search.historyEmpty":
+    "尚未知晓任何 git 文件夹。请使用「扫描」或「浏览」—— 在那里出现过的都会记在这里。",
+  "picker.search.noMatch": "没有已知仓库匹配该搜索。",
+  "picker.search.insideOf": "位于 {name} 内",
+  "picker.search.note_one": "在已见过的 {count} 个 git 文件夹中搜索，无论它在何处。",
+  "picker.search.note_other": "在已见过的 {count} 个 git 文件夹中搜索，无论它们在何处。",
+  "picker.recents.empty": "还没有打开过任何仓库。请使用「扫描」或「浏览」。",
   "picker.recents.noMatch": "没有最近项匹配该筛选。",
   "picker.recents.forget": "忘记 {name}",
   "picker.recents.forgetTitle": "从最近项中移除",
@@ -819,6 +828,9 @@ export const zh: Messages = {
   "picker.browse.tooMany": "该文件夹的子文件夹数量超过了列表上限 —— 请用筛选缩小范围。",
   "picker.browse.gitInit": "在 {name} 执行 git init",
   "picker.browse.openHere": "打开此文件夹",
+  "picker.browse.open": "打开",
+  "picker.browse.openRepo": "打开 {name}",
+  "picker.browse.openRepoTitle": "打开此仓库 —— 点击行只会进入文件夹",
   "picker.favorites.note":
     "拖动手柄可排序，铅笔可设置别名，星标可取消固定。与最近项不同，这里的内容不会自行增减。",
   "picker.favorites.unavailableNote": "固定项目需要此服务器尚未提供的接口。",

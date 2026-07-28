@@ -27,6 +27,7 @@ process.env.XDG_CONFIG_HOME = CONFIG_TMP;
 
 const { addFavorite, favoritesFile, getFavorites, removeFavorite, reorderFavorites } =
   await import("../src/git/favorites.mjs");
+const { closeDb, db } = await import("../src/git/db.mjs");
 const { getRecentRepos } = await import("../src/git/discover.mjs");
 const { bootServer } = await import("./helpers/server.mjs");
 
@@ -282,53 +283,64 @@ test("favorito cuja pasta sumiu vem com exists:false em vez de estourar", async 
   assert.equal(sumido.branch, "principal", "mantem o ultimo ramo conhecido");
 });
 
-test("o arquivo e gravado com permissao 0600 e formato versionado", async () => {
+test("o banco e gravado com permissao 0600 e schema versionado", async () => {
   await limpar();
   await addFavorite({ path: P("alpha") });
 
   const file = favoritesFile();
-  assert.equal(fs.statSync(file).mode & 0o777, 0o600);
-  const bruto = JSON.parse(fs.readFileSync(file, "utf8"));
-  assert.equal(bruto.version, 1);
-  assert.equal(bruto.entries.length, 1);
-  assert.equal(bruto.entries[0].path, R("alpha"));
+  assert.equal(
+    fs.statSync(file).mode & 0o777,
+    0o600,
+    "os caminhos dos repositorios de alguem nao sao assunto dos outros usuarios da maquina",
+  );
+  assert.equal(db().prepare("PRAGMA user_version").get().user_version, 1);
 
-  // Nao sobra temporario da gravacao atomica.
-  const sobras = fs.readdirSync(path.dirname(file)).filter((n) => n.endsWith(".tmp"));
-  assert.deepEqual(sobras, []);
+  const linhas = db().prepare("SELECT * FROM favorites").all();
+  assert.equal(linhas.length, 1);
+  assert.equal(linhas[0].path, R("alpha"));
 });
 
-test("arquivo corrompido nao derruba nada: a lista volta vazia", async () => {
-  fs.writeFileSync(favoritesFile(), "{ isto nao e json valido");
+test("banco corrompido nao derruba nada: a lista volta vazia", async () => {
+  // Um JSON quebrado era sobrescrito na gravacao seguinte; um sqlite quebrado
+  // faria TODA operacao falhar para sempre. Por isso `db.mjs` poe o arquivo de
+  // lado e recomeca — o efeito visivel tem de ser o mesmo de antes.
+  closeDb();
+  fs.writeFileSync(favoritesFile(), "{ isto nao e um banco sqlite");
+
   const { entries } = await getFavorites();
   assert.deepEqual(entries, []);
 
-  // E gravar por cima conserta o arquivo.
+  // E gravar por cima volta a funcionar.
   await addFavorite({ path: P("beta") });
   const depois = await getFavorites();
   assert.equal(depois.entries.length, 1);
+
+  // O arquivo quebrado foi guardado, nao apagado.
+  const postos = fs
+    .readdirSync(path.dirname(favoritesFile()))
+    .filter((n) => n.includes(".corrompido-"));
+  assert.ok(postos.length > 0, "o banco ilegivel tem de ficar recuperavel");
 });
 
-test("entrada editada na mao e saneada: ordem esparsa, campo faltando, duplicata", async () => {
-  fs.writeFileSync(
-    favoritesFile(),
-    JSON.stringify({
-      version: 1,
-      entries: [
-        { path: R("gama"), order: 90 },
-        { path: R("alpha"), order: 10, label: "Alfa" },
-        { path: R("alpha"), order: 11 },
-        { path: "   ", order: 1 },
-        "lixo",
-      ],
-    }),
-  );
+test("linha editada na mao e saneada: posicao esparsa e campo faltando", async () => {
+  await limpar();
+  // Posicoes esparsas e um `name` vazio, como sairia de um `sqlite3` na mao.
+  db()
+    .prepare(
+      `INSERT INTO favorites (path, label, name, branch, position, added_at)
+       VALUES (?, '', '', NULL, 90, 1), (?, 'Alfa', '', NULL, 10, 2)`,
+    )
+    .run(R("gama"), R("alpha"));
 
   const { entries } = await getFavorites();
-  assert.deepEqual(entries.map((e) => e.name), ["alpha", "gama"], "ordem esparsa vira ordem densa");
+  assert.deepEqual(
+    entries.map((e) => e.name),
+    ["alpha", "gama"],
+    "posicao esparsa vira ordem densa, respeitando a ordem relativa",
+  );
   assert.deepEqual(entries.map((e) => e.order), [0, 1]);
   assert.equal(entries[0].label, "Alfa");
-  assert.equal(entries[0].branch, "main", "branch ausente no disco e recalculado");
+  assert.equal(entries[0].branch, "main", "branch ausente no banco e recalculado na leitura");
 });
 
 /* ------------------------------------------------------------------ *

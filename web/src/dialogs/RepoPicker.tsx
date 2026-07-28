@@ -9,14 +9,24 @@
  *   variant="dialog"  dentro do DialogShell, para trocar de repositorio a
  *                     qualquer momento (toolbar e ⌘K).
  *
- * Quatro fontes, em abas: os favoritos (fixados a mao, ordenaveis), os recentes
- * (persistidos pelo servidor), a varredura das raizes conhecidas, e a navegacao
- * livre por pastas. A caixa de busca filtra as tres primeiras e tambem aceita um
- * caminho digitado — colar `~/code/projeto` e apertar Enter abre direto.
+ * Cinco fontes, em abas: os favoritos (fixados a mao, ordenaveis), os recentes,
+ * a BUSCA no historico de pastas git ja vistas, a varredura das raizes
+ * conhecidas, e a navegacao livre por pastas.
+ *
+ * A caixa de busca acumula tres papeis, e a diferenca entre eles importa:
+ * FILTRA a lista local das abas de favoritos, recentes, varredura e navegacao;
+ * CONSULTA o servidor para alimentar a aba Buscar, que e a unica capaz de
+ * alcancar um repositorio fora das raizes conhecidas ou um git interno que so
+ * apareceu numa navegacao; e aceita um CAMINHO colado — `~/code/projeto` mais
+ * Enter navega (na aba Navegar) ou abre (nas demais).
+ *
+ * Na aba Navegar, clicar numa linha SEMPRE entra na pasta, inclusive quando ela
+ * e um repositorio: sem isso nao ha como chegar num git interno, porque a pasta
+ * que o contem tambem e repositorio. Abrir e o botao proprio da linha.
  *
  * Favoritos vem primeiro de proposito: e a unica lista que o usuario escolheu.
  * Toda a mecanica deles mora em `FavoriteRepos.tsx`; aqui so entram a aba e a
- * estrela que cada linha das outras tres ganha.
+ * estrela que cada linha das outras ganha.
  *
  * Abrir um repositorio e `process.chdir()` no servidor, nunca `git checkout`;
  * o recarregamento vem do evento `cwd:changed`, igual a troca de worktree.
@@ -57,10 +67,11 @@ import type {
   FsListPayload,
   FsRootsPayload,
   RecentRepo,
+  RepoSearchHit,
 } from "@/types/git";
 import { EstrelaFavorito, PainelFavoritos, useFavoritos } from "./FavoriteRepos";
 import { Button, Callout } from "./parts";
-import { Esqueleto, ListaVazia, encurtar, relativo } from "./repo-picker-parts";
+import { Esqueleto, ListaVazia, basename, encurtar, relativo } from "./repo-picker-parts";
 
 export type RepoPickerVariant = "page" | "dialog";
 
@@ -71,7 +82,7 @@ export interface RepoPickerProps {
   className?: string;
 }
 
-type Aba = "favoritos" | "recentes" | "procurar" | "navegar";
+type Aba = "favoritos" | "recentes" | "buscar" | "procurar" | "navegar";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -180,6 +191,41 @@ function Linha({
   );
 }
 
+/**
+ * O botao que ABRE um repositorio a partir da aba de navegacao.
+ *
+ * Existe porque o clique na linha passou a significar "entrar na pasta". Sem um
+ * gesto proprio para abrir, a unica saida seria descer na pasta e usar o
+ * "Abrir aqui" do rodape — dois passos para o caso mais comum. Aparece no hover
+ * como as outras acoes da linha, e continua visivel pelo teclado.
+ */
+function BotaoAbrir({
+  nome,
+  desabilitado,
+  onClick,
+}: {
+  nome: string;
+  desabilitado?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={desabilitado}
+      onClick={onClick}
+      aria-label={t("picker.browse.openRepo", { name: nome })}
+      title={t("picker.browse.openRepoTitle")}
+      className={cn(
+        "shrink-0 rounded border border-border px-2 py-1 text-[11px] font-medium text-foreground",
+        "opacity-0 transition-opacity hover:bg-accent focus-visible:opacity-100",
+        "group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40",
+      )}
+    >
+      {t("picker.browse.open")}
+    </button>
+  );
+}
+
 /* ------------------------------------------------------------------ */
 /* O seletor                                                           */
 /* ------------------------------------------------------------------ */
@@ -198,6 +244,9 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
   const [encontrados, setEncontrados] = useState<DiscoveredRepo[] | null>(null);
   const [varrendo, setVarrendo] = useState(false);
   const [varreduraTruncada, setVarreduraTruncada] = useState(false);
+
+  const [globais, setGlobais] = useState<RepoSearchHit[] | null>(null);
+  const [totalHistorico, setTotalHistorico] = useState(0);
 
   const [pasta, setPasta] = useState<FsListPayload | null>(null);
   const [navegando, setNavegando] = useState(false);
@@ -262,6 +311,39 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
   useEffect(() => {
     if (aba === "navegar" && !pasta) void irPara(raizes?.cwd || undefined);
   }, [aba, pasta, irPara, raizes]);
+
+  /* --- busca no historico ---
+   * As outras tres abas FILTRAM o que ja esta na tela; esta PERGUNTA ao
+   * servidor. E a unica que alcanca um repositorio fora das raizes conhecidas,
+   * ou um git interno que so apareceu numa navegacao — nada disso cabe nas
+   * listas locais. Le indice, nao disco: por isso pode rodar a cada tecla.
+   *
+   * Roda mesmo com outra aba na frente, para o contador da aba ficar vivo
+   * enquanto se digita — e assim que a pessoa descobre que a busca global tem
+   * resposta quando a lista local nao tem. */
+  useEffect(() => {
+    const termo = busca.trim();
+    let vivo = true;
+    // Curto porque e leitura local; longo o bastante para nao consultar a cada
+    // caractere de quem digita depressa.
+    const timer = setTimeout(() => {
+      api
+        .searchRepos(termo)
+        .then((p) => {
+          if (!vivo) return;
+          setGlobais(p.entries);
+          setTotalHistorico(p.total);
+        })
+        .catch(() => {
+          // Historico indisponivel nao pode estragar as outras tres abas.
+          if (vivo) setGlobais([]);
+        });
+    }, 140);
+    return () => {
+      vivo = false;
+      clearTimeout(timer);
+    };
+  }, [busca]);
 
   /* --- varredura --- */
   const varrer = useCallback(async () => {
@@ -344,9 +426,11 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
       ? favoritosFiltrados.map((f) => ({ path: f.path, isRepo: f.exists }))
       : aba === "recentes"
         ? recentesFiltrados.map((r) => ({ path: r.path, isRepo: r.exists }))
-        : aba === "procurar"
-          ? encontradosFiltrados.map((r) => ({ path: r.path, isRepo: true }))
-          : entradasFiltradas.map((e) => ({ path: e.path, isRepo: e.isRepo }));
+        : aba === "buscar"
+          ? (globais ?? []).map((r) => ({ path: r.path, isRepo: r.exists }))
+          : aba === "procurar"
+            ? encontradosFiltrados.map((r) => ({ path: r.path, isRepo: true }))
+            : entradasFiltradas.map((e) => ({ path: e.path, isRepo: e.isRepo }));
 
   useEffect(() => {
     setCursor(0);
@@ -375,9 +459,13 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
       }
       const alvo = lista[cursor];
       if (!alvo) return;
-      if (aba === "navegar" && !alvo.isRepo) void irPara(alvo.path);
-      // Favorito cuja pasta sumiu nao abre — nem pelo teclado.
-      else if (aba !== "favoritos" || alvo.isRepo) void abrir(alvo.path);
+      // Na navegacao, Enter ENTRA — mesmo em pasta que e repositorio, igual ao
+      // clique. Abrir tem gesto proprio: o botao "Abrir" da linha, alcancavel
+      // por Tab (e a guarda logo acima deixa o Enter dele passar).
+      if (aba === "navegar") void irPara(alvo.path);
+      // Nas duas listas que guardam caminho antigo (favoritos e historico), a
+      // pasta pode ter sumido. Sumiu, nao abre — nem pelo teclado.
+      else if ((aba !== "favoritos" && aba !== "buscar") || alvo.isRepo) void abrir(alvo.path);
     } else if (event.key === "Backspace" && !busca && aba === "navegar" && pasta?.parent) {
       event.preventDefault();
       void irPara(pasta.parent);
@@ -459,6 +547,10 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
             <Clock className="mr-1.5 inline size-3.5" />
             {t("picker.tab.recents")} {recentes?.length ? `(${recentes.length})` : ""}
           </SmoothTabsTab>
+          <SmoothTabsTab value="buscar">
+            <Search className="mr-1.5 inline size-3.5" />
+            {t("picker.tab.search")} {globais?.length ? `(${globais.length})` : ""}
+          </SmoothTabsTab>
           <SmoothTabsTab value="procurar">
             <Radar className="mr-1.5 inline size-3.5" />
             {t("picker.tab.scan")} {encontrados?.length ? `(${encontrados.length})` : ""}
@@ -532,6 +624,56 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                         <EstrelaFavorito path={r.path} nome={r.name} controle={favoritos} />
                       </>
                     }
+                  />
+                ))}
+              </div>
+            )}
+          </SmoothTabsPanel>
+
+          {/* ---------------- buscar (historico) ---------------- */}
+          <SmoothTabsPanel value="buscar">
+            {globais === null ? (
+              <Esqueleto />
+            ) : globais.length === 0 ? (
+              <ListaVazia>
+                {totalHistorico === 0
+                  ? t("picker.search.historyEmpty")
+                  : t("picker.search.noMatch")}
+              </ListaVazia>
+            ) : (
+              <div className="space-y-0.5 p-1">
+                {globais.map((r, i) => (
+                  <Linha
+                    key={r.path}
+                    icon={<FolderGit2 className="size-4" />}
+                    titulo={r.name}
+                    caminho={encurtar(r.path, home)}
+                    ativo={r.path === cwdAtual}
+                    desabilitado={!r.exists || abrindo}
+                    selecionado={i === cursor}
+                    detalhe={
+                      r.exists ? (
+                        <span className="flex items-center gap-2">
+                          {/* O que so esta aba mostra: este repositorio esta
+                              DENTRO de outro. Sem dizer isso, duas linhas de
+                              mesmo nome ficariam indistinguiveis. */}
+                          {r.nested && r.parentRepo ? (
+                            <span className="text-muted-foreground">
+                              {t("picker.search.insideOf", {
+                                name: truncate(basename(r.parentRepo), 18),
+                              })}
+                            </span>
+                          ) : null}
+                          {r.branch ? (
+                            <span className="font-mono text-foreground">{r.branch}</span>
+                          ) : null}
+                        </span>
+                      ) : (
+                        <span className="text-warning">{t("common.missingFromDisk")}</span>
+                      )
+                    }
+                    onClick={() => void abrir(r.path)}
+                    acao={<EstrelaFavorito path={r.path} nome={r.name} controle={favoritos} />}
                   />
                 ))}
               </div>
@@ -623,12 +765,26 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                             ? t("picker.browse.linkedWorktree")
                             : undefined
                       }
-                      onClick={() => (e.isRepo ? void abrir(e.path) : void irPara(e.path))}
-                      // So repositorio ganha estrela: fixar uma pasta qualquer
-                      // criaria um favorito que nunca abre.
+                      /* ENTRAR, nunca abrir — inclusive quando a pasta e um
+                         repositorio. Ate 2026-07 o clique aqui trocava o
+                         projeto na hora, e isso tornava impossivel chegar num
+                         git INTERNO: a pasta que o contem tambem e repositorio,
+                         entao clicar nela abria o de fora em vez de revelar o
+                         de dentro. Abrir agora e o botao ao lado, explicito. */
+                      onClick={() => void irPara(e.path)}
+                      // So repositorio ganha estrela e botao de abrir: fixar ou
+                      // abrir uma pasta qualquer criaria um favorito que nunca
+                      // abre e uma troca de projeto que o servidor recusaria.
                       acao={
                         e.isRepo ? (
-                          <EstrelaFavorito path={e.path} nome={e.name} controle={favoritos} />
+                          <>
+                            <BotaoAbrir
+                              nome={e.name}
+                              desabilitado={abrindo}
+                              onClick={() => void abrir(e.path)}
+                            />
+                            <EstrelaFavorito path={e.path} nome={e.name} controle={favoritos} />
+                          </>
                         ) : null
                       }
                     />
@@ -675,6 +831,10 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
             {favoritos.disponivel
               ? t("picker.favorites.note")
               : t("picker.favorites.unavailableNote")}
+          </p>
+        ) : aba === "buscar" ? (
+          <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">
+            {t("picker.search.note", { count: totalHistorico })}
           </p>
         ) : (
           <p className="min-w-0 flex-1 text-[11px] text-muted-foreground">

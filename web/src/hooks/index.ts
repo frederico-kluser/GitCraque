@@ -15,7 +15,7 @@ export type { AsyncResource } from "./useCommitDetail";
 export { useTrickle } from "./useTrickle";
 export { useVoiceRecorder } from "./useVoiceRecorder";
 export type { MicSupport, VoiceRecorder } from "./useVoiceRecorder";
-export { useProjects, loadProjects, getProjects } from "./useProjects";
+export { useProjects, loadProjects, getProjects, toggleFavorite } from "./useProjects";
 export type { ProjectsState } from "./useProjects";
 export { useWorkingDiffStats } from "./useWorkingDiff";
 export type { DiffStats, FileDelta } from "./useWorkingDiff";

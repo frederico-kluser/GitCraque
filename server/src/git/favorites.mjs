@@ -18,18 +18,21 @@
  *  3. `remove` nao valida se o caminho ainda e um repositorio. A pasta pode ter
  *     sumido — e e exatamente ai que remover mais importa.
  *
- * A gravacao atomica e a mesma dos recentes e mora em `store.mjs`; duas copias
- * dela seria a receita para uma envelhecer mais fraca que a outra.
+ * A persistencia mora em `db.mjs` (tabela `favorites`), compartilhada com os
+ * recentes e com o historico de descobertas. Ao contrario dos recentes, a
+ * escrita aqui PROPAGA erro: fixar um projeto e a operacao que a pessoa pediu,
+ * entao a UI precisa saber quando ela falha, senao mostra como salvo o que nao
+ * foi.
  */
 import fs from "node:fs";
 import path from "node:path";
 
+import { db, dbFile } from "./db.mjs";
 import { branchOf, detectRepoKind, expandUserPath, resolveRepoDir } from "./discover.mjs";
-import { readStore, storePath, writeStore } from "./store.mjs";
 
-/** `~/.config/gitcraque/favorites.json` (respeita XDG_CONFIG_HOME). */
+/** Onde os favoritos moram hoje: `~/.config/gitcraque/gitcraque.db`. */
 export function favoritesFile() {
-  return storePath("favorites.json");
+  return dbFile();
 }
 
 /* ------------------------------------------------------------------ *
@@ -52,40 +55,40 @@ function samePath(a, b) {
   }
 }
 
-/** Entrada crua do disco -> entrada saneada. Arquivo editado na mao acontece. */
-function sanitize(raw, index) {
-  const resolved = path.resolve(String(raw.path));
-  return {
-    path: resolved,
-    label: typeof raw.label === "string" ? raw.label : "",
-    name:
-      typeof raw.name === "string" && raw.name.trim()
-        ? raw.name
-        : path.basename(resolved) || resolved,
-    branch: typeof raw.branch === "string" ? raw.branch : null,
-    order: Number.isFinite(Number(raw.order)) ? Number(raw.order) : index,
-    addedAt: Number.isFinite(Number(raw.addedAt)) ? Number(raw.addedAt) : 0,
-  };
+/** A linha crua do banco -> entrada da API. `order` sai denso da leitura. */
+const daLinha = (linha, i) => ({
+  path: linha.path,
+  label: linha.label ?? "",
+  name: linha.name || path.basename(linha.path) || linha.path,
+  branch: linha.branch ?? null,
+  order: i,
+  addedAt: linha.added_at,
+});
+
+/** A lista persistida, na ordem manual. */
+function readFavorites() {
+  return db()
+    .prepare("SELECT * FROM favorites ORDER BY position ASC, added_at ASC")
+    .all()
+    .map(daLinha);
 }
 
-/** A lista persistida, saneada, sem duplicata e ja na ordem manual. */
-async function readFavorites() {
-  const cru = await readStore(favoritesFile());
-  const saneadas = cru
-    .filter((e) => e && typeof e.path === "string" && e.path.trim())
-    .map(sanitize)
-    .sort((a, b) => a.order - b.order || a.addedAt - b.addedAt);
-
-  // Dedup defensivo: o arquivo pode ter sido editado na mao.
-  const vistos = new Set();
-  const entries = [];
-  for (const entry of saneadas) {
-    if (vistos.has(entry.path)) continue;
-    vistos.add(entry.path);
-    entries.push(entry);
+/**
+ * O caminho GRAVADO que corresponde ao alvo pedido, ou null.
+ *
+ * A chave primaria ja garante que nao ha duplicata por texto, mas nao enxerga
+ * symlink: `~/atalho` e `~/code/projeto` sao chaves diferentes para a mesma
+ * pasta. Por isso a busca exata vem primeiro (o caso normal, indexado) e o
+ * `realpath` so entra quando ela falha.
+ * @param {string} alvo ja expandido
+ */
+function encontrarPath(alvo) {
+  const exato = db().prepare("SELECT path FROM favorites WHERE path = ?").get(alvo);
+  if (exato) return exato.path;
+  for (const linha of db().prepare("SELECT path FROM favorites").all()) {
+    if (samePath(linha.path, alvo)) return linha.path;
   }
-  // `order` denso a partir daqui: reordenar depois vira so trocar de posicao.
-  return entries.map((entry, i) => ({ ...entry, order: i }));
+  return null;
 }
 
 /**
@@ -96,7 +99,7 @@ async function readFavorites() {
  * @returns {Promise<import("../types.mjs").FavoritesPayload>}
  */
 export async function getFavorites() {
-  const entries = await readFavorites();
+  const entries = readFavorites();
   const enriquecidos = await Promise.all(
     entries.map(async (entry) => {
       const exists = detectRepoKind(entry.path).isRepo;
@@ -108,20 +111,21 @@ export async function getFavorites() {
   return { entries: enriquecidos, file: favoritesFile() };
 }
 
-/** Grava com `order` denso na ordem do array e devolve o payload ja fresco. */
-async function persist(entries) {
-  await writeStore(
-    favoritesFile(),
-    entries.map((entry, i) => ({
-      path: entry.path,
-      label: entry.label,
-      name: entry.name,
-      branch: entry.branch,
-      order: i,
-      addedAt: entry.addedAt,
-    })),
-  );
-  return getFavorites();
+/**
+ * Toda escrita de favorito passa por aqui. Uma falha de banco vira 500 com a
+ * causa no `detail` — e a operacao que a pessoa pediu, nao um efeito colateral.
+ * @template T
+ * @param {() => T} fn
+ */
+function gravando(fn) {
+  try {
+    return fn();
+  } catch (err) {
+    const error = new Error("error.favoritesWriteFailed");
+    error.status = 500;
+    error.detail = `${dbFile()}: ${err.code ?? err.message}`;
+    throw error;
+  }
 }
 
 /* ------------------------------------------------------------------ *
@@ -148,26 +152,33 @@ export async function addFavorite(body = {}) {
   // Guarda a raiz da worktree, nao a subpasta digitada: senao o mesmo repo
   // entraria duas vezes por dois caminhos diferentes.
   const { root } = await resolveRepoDir(body.path);
+  const nome = path.basename(root) || root;
+  const ramo = await branchOf(root);
 
-  const entries = await readFavorites();
-  const existente = entries.find((entry) => samePath(entry.path, root));
-  if (existente) {
-    // Ja e favorito: NAO reordena (ver o cabecalho). So atualiza o que envelhece.
-    if (rotulo) existente.label = rotulo;
-    existente.name = path.basename(root) || root;
-    existente.branch = await branchOf(root);
-    return persist(entries);
-  }
-
-  entries.push({
-    path: root,
-    label: rotulo,
-    name: path.basename(root) || root,
-    branch: await branchOf(root),
-    order: entries.length,
-    addedAt: Date.now(),
+  gravando(() => {
+    const existente = encontrarPath(root);
+    if (existente) {
+      // Ja e favorito: NAO reordena (ver o cabecalho). So atualiza o que
+      // envelhece, e o rotulo apenas quando veio um novo.
+      db()
+        .prepare(
+          `UPDATE favorites
+              SET name = ?, branch = ?, label = CASE WHEN ? <> '' THEN ? ELSE label END
+            WHERE path = ?`,
+        )
+        .run(nome, ramo, rotulo, rotulo, existente);
+      return;
+    }
+    const fim = db().prepare("SELECT COALESCE(MAX(position), -1) AS m FROM favorites").get().m;
+    db()
+      .prepare(
+        `INSERT INTO favorites (path, label, name, branch, position, added_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+      )
+      .run(root, rotulo, nome, ramo, fim + 1, Date.now());
   });
-  return persist(entries);
+
+  return getFavorites();
 }
 
 /**
@@ -182,12 +193,15 @@ export async function removeFavorite(target) {
     throw error;
   }
   const alvo = expandUserPath(target);
-  const entries = await readFavorites();
-  return persist(entries.filter((entry) => !samePath(entry.path, alvo)));
+  gravando(() => {
+    const gravado = encontrarPath(alvo);
+    if (gravado) db().prepare("DELETE FROM favorites WHERE path = ?").run(gravado);
+  });
+  return getFavorites();
 }
 
 /**
- * POST /api/repos/favorites/reorder — reescreve `order` na ordem recebida.
+ * POST /api/repos/favorites/reorder — reescreve `position` na ordem recebida.
  *
  * Tolerante nas duas pontas, porque a lista do cliente pode estar velha:
  * caminho desconhecido e ignorado, e favorito que a lista nao citou mantem a
@@ -202,15 +216,31 @@ export async function reorderFavorites(paths) {
     throw error;
   }
 
-  const restantes = await readFavorites();
-  const ordenados = [];
-  for (const alvo of paths) {
-    if (!alvo.trim()) continue;
-    const resolvido = expandUserPath(alvo);
-    const i = restantes.findIndex((entry) => samePath(entry.path, resolvido));
-    if (i === -1) continue; // caminho desconhecido: ignorado, nao e erro
-    ordenados.push(restantes.splice(i, 1)[0]);
-  }
-  ordenados.push(...restantes); // os ausentes mantem a ordem relativa, no fim
-  return persist(ordenados);
+  gravando(() => {
+    const restantes = readFavorites().map((f) => f.path);
+    const ordenados = [];
+    for (const alvo of paths) {
+      if (!alvo.trim()) continue;
+      const resolvido = expandUserPath(alvo);
+      const i = restantes.findIndex((p) => samePath(p, resolvido));
+      if (i === -1) continue; // caminho desconhecido: ignorado, nao e erro
+      ordenados.push(restantes.splice(i, 1)[0]);
+    }
+    ordenados.push(...restantes); // os ausentes mantem a ordem relativa, no fim
+
+    // Numa transacao so: um reorder pela metade deixaria duas linhas com a
+    // mesma posicao, e a lista mudaria de ordem sozinha na proxima leitura.
+    const conexao = db();
+    const mover = conexao.prepare("UPDATE favorites SET position = ? WHERE path = ?");
+    conexao.exec("BEGIN");
+    try {
+      ordenados.forEach((p, i) => mover.run(i, p));
+      conexao.exec("COMMIT");
+    } catch (err) {
+      conexao.exec("ROLLBACK");
+      throw err;
+    }
+  });
+
+  return getFavorites();
 }

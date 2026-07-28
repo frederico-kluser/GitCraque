@@ -86,6 +86,9 @@ export const ROUTES = [
   // num :param sem virar um festival de encoding.
   ["POST", "/repos/recent/remove"],
   ["POST", "/repos/scan"],
+  // Busca no historico de descobertas: le o banco, nao o disco. A varredura
+  // continua sendo a rota acima, explicita e com orcamento.
+  ["GET", "/repos/search"],
   ["POST", "/repos/open"],
   ["POST", "/repos/init"],
 

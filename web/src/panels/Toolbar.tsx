@@ -45,6 +45,7 @@ import {
   loadProjects,
   selectChangesOpen,
   toggleChanges,
+  toggleFavorite,
   toggleTheme,
   useCommitActivity,
   useProjects,
@@ -174,6 +175,45 @@ function ConnectionBadge({ connection }: { connection: ConnectionState }) {
  * sao mecanicas de revelacao e gesto), entao a semantica vem do `Menu` do Base
  * UI — o mesmo caminho que o seletor de worktree ao lado ja percorre.
  */
+/**
+ * A estrela que fixa/desfixa um projeto, aqui dentro do menu.
+ *
+ * CASCATA: o catalogo do Motion UI nao tem botao de alternancia — o
+ * `segmented-toggle` escolhe entre N opcoes visiveis lado a lado, nao liga e
+ * desliga um estado numa linha de lista, e nenhum dos 19 expoe `aria-pressed`.
+ *
+ * A disciplina de eventos e a mesma de `parts.tsx:226-233` e nao e opcional:
+ * este botao vive DENTRO de um `Menu.Item` cujo clique troca de repositorio.
+ * Sem barrar pointer, clique e teclado, fixar um favorito abriria o projeto e
+ * fecharia o menu — que e exatamente o oposto do que a estrela promete.
+ */
+function StarToggle({ path, name, pinned }: { path: string; name: string; pinned: boolean }) {
+  const stop = (event: { stopPropagation: () => void }) => event.stopPropagation();
+  return (
+    <button
+      type="button"
+      aria-pressed={pinned}
+      aria-label={pinned ? t("favorites.unpin", { name }) : t("favorites.pin", { name })}
+      title={pinned ? t("favorites.unpinTitle") : t("favorites.pinTitle")}
+      onPointerDown={stop}
+      onPointerUp={stop}
+      onKeyDown={stop}
+      onClick={(event) => {
+        event.stopPropagation();
+        void toggleFavorite(path, name);
+      }}
+      className={cn(
+        "shrink-0 rounded p-1 outline-none",
+        "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+        "hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+        pinned ? "text-warning" : "text-muted-foreground hover:text-warning",
+      )}
+    >
+      <Star className="size-3.5" fill={pinned ? "currentColor" : "none"} />
+    </button>
+  );
+}
+
 function ProjectRow({
   icon,
   title,
@@ -181,6 +221,7 @@ function ProjectRow({
   branch,
   current,
   missing,
+  pinned,
   onSelect,
 }: {
   icon: ReactNode;
@@ -189,6 +230,7 @@ function ProjectRow({
   branch?: string | null;
   current: boolean;
   missing?: boolean;
+  pinned: boolean;
   onSelect: () => void;
 }) {
   return (
@@ -212,6 +254,7 @@ function ProjectRow({
         </span>
         <span className="block truncate font-mono text-[10px] text-muted-foreground">{path}</span>
       </span>
+      <StarToggle path={path} name={title} pinned={pinned} />
     </Menu.Item>
   );
 }
@@ -268,6 +311,29 @@ function ProjectSelector() {
               </p>
             </div>
 
+            {/* O projeto ABERTO agora, com estrela propria. Sem esta linha, o
+                unico jeito de fixar o projeto em que se esta trabalhando era
+                abrir o seletor e procura-lo numa das quatro abas. */}
+            {cwd && (
+              <div className="mx-1 flex items-center gap-2.5 rounded-sm px-1.5 py-2">
+                <FolderGit2 className="size-3.5 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center gap-1.5">
+                    <span className="truncate text-xs font-medium">{repo?.name ?? cwd}</span>
+                    <Chip tone="success">{t("common.opened")}</Chip>
+                  </span>
+                  <span className="block truncate font-mono text-[10px] text-muted-foreground">
+                    {cwd}
+                  </span>
+                </span>
+                <StarToggle
+                  path={cwd}
+                  name={repo?.name ?? cwd}
+                  pinned={favoritePaths.has(cwd)}
+                />
+              </div>
+            )}
+
             {favorites.length > 0 && (
               <>
                 <Menu.Separator className="my-1 h-px bg-border" />
@@ -283,6 +349,7 @@ function ProjectSelector() {
                     branch={fav.branch}
                     current={fav.path === cwd}
                     missing={!fav.exists}
+                    pinned
                     onSelect={() => void doOpenRepository(fav.path)}
                   />
                 ))}
@@ -304,6 +371,7 @@ function ProjectSelector() {
                     branch={recent.branch}
                     current={recent.path === cwd}
                     missing={!recent.exists}
+                    pinned={favoritePaths.has(recent.path)}
                     onSelect={() => void doOpenRepository(recent.path)}
                   />
                 ))}

@@ -80,6 +80,15 @@ because in a GUI the working tree is almost never clean.
   nonce; it never enters the git process env, argv, or disk
   (`server/src/trampoline/vault.mjs:128-215`).
 
+**Repo-detection trap.** `detectRepoKind` calls a directory a **bare repo**
+whenever it holds `HEAD` + `objects` + `refs` (`server/src/git/discover.mjs:130-134`).
+A project's own `.git` satisfies that, so `listDirectory` reports `.git` with
+`isRepo: true, isBare: true`. Any consumer that reads `isRepo` as "this is a
+project" must filter `.git` by name — `scanForRepos` gets it free via
+`SKIP_DIRS`, the browse path does not. Nothing errors; you just get one junk
+entry per repository (`server/test/repo-memory.test.mjs`, "o proprio .git NAO
+entra no historico").
+
 **Parsing trap.** The log format is mandatory and `%s` may contain `|`. The
 parser takes **four fields from the left and two from the right**; whatever
 remains in the middle is the subject (`server/src/git/log.mjs:17-51`). A plain
