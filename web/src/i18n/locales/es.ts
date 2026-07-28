@@ -334,6 +334,9 @@ export const es: Messages = {
   "detail.viewFile": "Ver {path} en el visor",
   "detail.fileCount_one": "{count} archivo",
   "detail.fileCount_other": "{count} archivos",
+  "detail.working.title": "Cambios sin confirmar",
+  "detail.working.hint": "haz clic para ver el diff",
+  "detail.working.stage": "Preparar y confirmar",
 
   "selection.title": "Selección",
   "selection.count_one": "{count} commit",

@@ -28,43 +28,27 @@ import {
 import { doCommit, doDiscard, doStage, doUnstage } from "@/app/actions";
 import { changeFileMenu } from "@/app/menus";
 import { t } from "@/i18n";
-import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
-import type { ChangeStatus, StatusEntry } from "@/types/git";
+import type { StatusEntry } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
-import { Chip, DiffStat, FilePath, FOCUS_RING, SectionLabel, StatusGlyph, ToolButton } from "./parts";
+import {
+  Chip,
+  DiffStat,
+  FilePath,
+  FOCUS_RING,
+  GROUP_TITLE,
+  SectionLabel,
+  StatusGlyph,
+  ToolButton,
+  displayStatus,
+  groupEntries,
+  type GroupKey,
+} from "./parts";
 
 /** Acima disso o git deixa a primeira linha feia em `git log --oneline`. */
 const SUBJECT_LIMIT = 72;
 /** Alto o bastante para o icone + rotulo da acao de swipe caberem. */
 const ROW_HEIGHT = 40;
-
-/* ------------------------------------------------------------------ */
-/* Agrupamento                                                         */
-/* ------------------------------------------------------------------ */
-
-type GroupKey = "conflicted" | "staged" | "untracked" | "modified";
-
-const GROUP_TITLE: Record<GroupKey, MessageKey> = {
-  conflicted: "changes.group.conflicted",
-  staged: "changes.group.staged",
-  untracked: "changes.group.untracked",
-  modified: "changes.group.modified",
-};
-
-function groupOf(entry: StatusEntry): GroupKey {
-  if (entry.conflicted) return "conflicted";
-  if (entry.staged) return "staged";
-  if (entry.untracked) return "untracked";
-  return "modified";
-}
-
-/** O status que a linha mostra: o do index quando preparado, o da arvore fora. */
-function displayStatus(entry: StatusEntry): ChangeStatus {
-  if (entry.conflicted) return "unmerged";
-  if (entry.untracked) return "untracked";
-  return (entry.staged ? entry.indexStatus : entry.worktreeStatus) ?? entry.worktreeStatus ?? "unknown";
-}
 
 /* ------------------------------------------------------------------ */
 /* Linha                                                               */
@@ -440,11 +424,7 @@ export function StatusPanel({ className }: PanelProps) {
   // estar aberto a partir de um commit, e ai a linha nao e esta.
   const openPath = useAppState((s) => (s.openFile?.fromWorkingTree ? s.openFile.path : null));
 
-  const groups = useMemo(() => {
-    const map: Record<GroupKey, StatusEntry[]> = { conflicted: [], staged: [], untracked: [], modified: [] };
-    for (const entry of status?.entries ?? []) map[groupOf(entry)].push(entry);
-    return map;
-  }, [status]);
+  const groups = useMemo(() => groupEntries(status?.entries ?? []), [status]);
 
   const clean = !status || status.clean || (status.entries.length === 0 && !loading);
 

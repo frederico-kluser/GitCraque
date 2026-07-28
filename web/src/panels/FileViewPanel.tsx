@@ -7,8 +7,14 @@
  *
  * O voltar devolve o lugar DE ONDE o arquivo veio, e nao um destino fixo: um
  * arquivo de commit volta para o detalhe daquele commit; um arquivo da arvore de
- * trabalho volta para a gaveta de alteracoes, que foi quem o abriu. Um destino
- * fixo mandaria metade dos cliques para uma tela que a pessoa nao estava vendo.
+ * trabalho volta para a lista de alteracoes que o abriu. Um destino fixo
+ * mandaria metade dos cliques para uma tela que a pessoa nao estava vendo.
+ *
+ * A arvore de trabalho tem DUAS listas desde que o detalhe passou a mostra-la
+ * sem commit selecionado, e a selecao diz qual delas foi: com um commit
+ * selecionado o detalhe estava exibindo aquele commit, entao quem abriu so pode
+ * ter sido a gaveta, e o voltar a reabre; sem commit selecionado o proprio
+ * detalhe e a lista, e fechar o arquivo ja devolve exatamente ela.
  *
  * CASCATA: o catalogo do Motion UI nao tem barra de navegacao com voltar — os 20
  * instalados sao mecanicas de revelacao, gesto e overlay. Sao dez linhas de
@@ -17,7 +23,7 @@
  */
 import { ArrowLeft } from "lucide-react";
 import { FileViewer } from "@/viewer";
-import { closeFile } from "@/state/store";
+import { closeFile, useAppState } from "@/state/store";
 import type { OpenFile } from "@/state/store";
 import { openChanges, openContextMenu } from "@/hooks";
 import { viewerMenu } from "@/app/menus";
@@ -31,14 +37,18 @@ export interface FileViewPanelProps extends PanelProps {
 }
 
 export function FileViewPanel({ className, file }: FileViewPanelProps) {
+  // Booleano, nao o hash: o comparador do `useAppState` e `Object.is`, e so
+  // importa aqui SE ha commit selecionado, nao qual.
+  const hasCommit = useAppState((s) => s.selection.primary !== null);
+
   /**
    * Voltar fecha o arquivo — e o `SidePanel` deriva a tela de `openFile`, entao
-   * fechar E voltar para o detalhe. Quando o arquivo veio da arvore de trabalho,
-   * reabre tambem a gaveta que o mandou abrir.
+   * fechar E voltar para o detalhe. Reabre a gaveta so quando ela e a unica
+   * lista possivel de onde este arquivo pode ter saido.
    */
   const back = () => {
     closeFile();
-    if (file.fromWorkingTree) openChanges();
+    if (file.fromWorkingTree && hasCommit) openChanges();
   };
 
   const backLabel = file.fromWorkingTree ? t("view.back.changes") : t("view.back.detail");

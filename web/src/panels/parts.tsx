@@ -24,7 +24,7 @@ import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/compo
 import { t } from "@/i18n";
 import type { MessageKey } from "@/i18n";
 import { cn } from "@/lib/utils";
-import type { ChangeStatus } from "@/types/git";
+import type { ChangeStatus, StatusEntry } from "@/types/git";
 
 /** Anel de foco unico do app — o mesmo tratamento que o Motion UI usa. */
 export const FOCUS_RING =
@@ -324,6 +324,51 @@ export function StatusGlyph({ status, className }: { status: ChangeStatus; class
   const meta = statusMeta(status);
   const Icon = meta.icon;
   return <Icon aria-label={meta.label} className={cn("size-3.5 shrink-0", meta.className, className)} />;
+}
+
+/* ------------------------------------------------------------------ */
+/* Agrupamento da arvore de trabalho                                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Os quatro grupos em que uma entrada de status cai, e como ela se anuncia.
+ *
+ * Moram aqui, e nao no `StatusPanel`, porque agora sao DOIS os paineis que
+ * listam a arvore de trabalho — a gaveta de staging e a coluna de detalhe
+ * quando nao ha commit selecionado. Duas copias do criterio dariam, mais cedo
+ * ou mais tarde, um arquivo "preparado" num painel e "modificado" no outro.
+ */
+export type GroupKey = "conflicted" | "staged" | "untracked" | "modified";
+
+/** A ordem em que os grupos aparecem: o que trava o commit primeiro. */
+export const GROUP_ORDER: GroupKey[] = ["conflicted", "staged", "modified", "untracked"];
+
+export const GROUP_TITLE: Record<GroupKey, MessageKey> = {
+  conflicted: "changes.group.conflicted",
+  staged: "changes.group.staged",
+  untracked: "changes.group.untracked",
+  modified: "changes.group.modified",
+};
+
+export function groupOf(entry: StatusEntry): GroupKey {
+  if (entry.conflicted) return "conflicted";
+  if (entry.staged) return "staged";
+  if (entry.untracked) return "untracked";
+  return "modified";
+}
+
+/** O status que a linha mostra: o do index quando preparado, o da arvore fora. */
+export function displayStatus(entry: StatusEntry): ChangeStatus {
+  if (entry.conflicted) return "unmerged";
+  if (entry.untracked) return "untracked";
+  return (entry.staged ? entry.indexStatus : entry.worktreeStatus) ?? entry.worktreeStatus ?? "unknown";
+}
+
+/** Distribui as entradas nos quatro grupos, preservando a ordem do git. */
+export function groupEntries(entries: readonly StatusEntry[]): Record<GroupKey, StatusEntry[]> {
+  const map: Record<GroupKey, StatusEntry[]> = { conflicted: [], staged: [], untracked: [], modified: [] };
+  for (const entry of entries) map[groupOf(entry)].push(entry);
+  return map;
 }
 
 /** `+12 −3` com os tokens de diff do tema. */
