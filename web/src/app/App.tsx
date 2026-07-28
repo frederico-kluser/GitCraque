@@ -36,7 +36,6 @@ import {
   setCommitDraft,
   setDetailWidth,
   setRailWidth,
-  togglePalette,
   useHotkeys,
   useRepoPoll,
   useShellState,
@@ -155,19 +154,6 @@ export function App() {
     if (lastCwd.current && lastCwd.current !== repoCwd) setCommitDraft({ message: "", amend: false });
     lastCwd.current = repoCwd;
   }, [repoCwd]);
-
-  // O ⌘K e instalado pelo proprio `useCommandK` do Motion UI; este e o gatilho
-  // de reserva para quem chega pelo menu do navegador em tela estreita.
-  useEffect(() => {
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "F1") {
-        e.preventDefault();
-        togglePalette();
-      }
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, []);
 
   if (fatal) {
     return (

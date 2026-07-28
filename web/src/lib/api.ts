@@ -26,6 +26,7 @@ import type {
   SquashResult,
   StatusPayload,
   TranscriptionPayload,
+  UndoStatePayload,
   WorktreesPayload,
 } from "@/types/git";
 import { getLocale } from "@/i18n";
@@ -185,6 +186,15 @@ export const api = {
     post<GitCommandResult>("/ops/abort", body),
   continueOp: (body: { kind: "rebase" | "merge" | "cherry-pick" | "revert" }) =>
     post<GitCommandResult>("/ops/continue", body),
+
+  /* ---- desfazer / refazer ----
+   * Nenhuma das tres manda sha: o passo sai do cursor do servidor sobre o
+   * reflog. Deixar a UI escolher o alvo seria deixar a UI escolher para onde o
+   * `reset --hard` aponta.
+   */
+  undoState: () => get<UndoStatePayload>("/undo/state"),
+  undo: () => post<GitCommandResult>("/undo"),
+  redo: () => post<GitCommandResult>("/redo"),
 
   /* ---- staging / commit ---- */
   stage: (body: { paths: string[] }) => post<GitCommandResult>("/stage", body),

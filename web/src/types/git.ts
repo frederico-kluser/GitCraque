@@ -261,6 +261,23 @@ export interface StatusPayload {
   cwd: string;
 }
 
+/**
+ * Estado dos botoes desfazer/refazer.
+ *
+ * O passo NAO viaja no payload: quem escolhe para onde o HEAD vai e o cursor do
+ * servidor sobre o reflog, nunca a interface. Aqui chega so o suficiente para
+ * pintar os dois botoes — se cada um esta vivo e o rotulo da acao envolvida.
+ */
+export interface UndoStatePayload {
+  canUndo: boolean;
+  canRedo: boolean;
+  /** acao que o desfazer vai desfazer, como o reflog a descreve */
+  undoLabel: string | null;
+  redoLabel: string | null;
+  /** por que os dois botoes estao mortos, quando estao */
+  blocked: "empty" | "pending" | null;
+}
+
 export interface DiffHunk {
   header: string;
   oldStart: number;

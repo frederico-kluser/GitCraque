@@ -27,6 +27,7 @@ import type {
   RepoChangeReason,
   RepoPayload,
   StatusPayload,
+  UndoStatePayload,
   Worktree,
   WorktreesPayload,
 } from "@/types/git";
@@ -85,6 +86,8 @@ export interface AppState {
   refs: RefsPayload | null;
   status: StatusPayload | null;
   worktrees: WorktreesPayload | null;
+  /** estado dos botoes desfazer/refazer — cursor do servidor sobre o reflog */
+  undo: UndoStatePayload | null;
 
   loading: {
     repo: boolean;
@@ -173,6 +176,7 @@ const INITIAL: AppState = {
   refs: null,
   status: null,
   worktrees: null,
+  undo: null,
   loading: { repo: false, log: false, refs: false, status: false, operation: false },
   operationLabel: null,
   fatal: null,
@@ -323,9 +327,26 @@ export async function loadWorktrees() {
   }
 }
 
+/**
+ * Estado dos botoes desfazer/refazer.
+ *
+ * Recarrega junto de tudo que mexe no HEAD: o cursor do servidor e invalidado
+ * por qualquer movimento vindo de fora, entao pedir so no boot deixaria os
+ * botoes mentindo depois do primeiro commit.
+ */
+export async function loadUndo() {
+  try {
+    const undo = await api.undoState();
+    set({ undo });
+    return undo;
+  } catch {
+    return null;
+  }
+}
+
 /** Recarrega TUDO. E o que roda no boot e depois de cada `cwd:changed`. */
 export async function refreshAll() {
-  await Promise.all([loadRepo(), loadLog(), loadRefs(), loadStatus(), loadWorktrees()]);
+  await Promise.all([loadRepo(), loadLog(), loadRefs(), loadStatus(), loadWorktrees(), loadUndo()]);
 }
 
 /**
@@ -343,13 +364,14 @@ export async function refreshFor(reason: RepoChangeReason) {
       await loadStatus();
       break;
     case "head":
-      await Promise.all([loadRepo(), loadRefs(), loadStatus(), loadWorktrees()]);
+      await Promise.all([loadRepo(), loadRefs(), loadStatus(), loadWorktrees(), loadUndo()]);
       break;
     case "refs":
-      await Promise.all([loadLog(), loadRefs(), loadWorktrees()]);
+      await Promise.all([loadLog(), loadRefs(), loadWorktrees(), loadUndo()]);
       break;
+    // Entrar ou sair de um merge/rebase parado liga e desliga os dois botoes.
     case "rebase-state":
-      await Promise.all([loadRepo(), loadStatus(), loadLog()]);
+      await Promise.all([loadRepo(), loadStatus(), loadLog(), loadUndo()]);
       break;
     case "config":
       await Promise.all([loadRepo(), loadRefs()]);
@@ -798,6 +820,7 @@ export const selectRemotes = (s: AppState) => s.repo?.remotes ?? s.refs?.remotes
 export const selectStashes = (s: AppState) => s.refs?.stashes ?? EMPTY_ARR;
 export const selectWorktrees = (s: AppState) => s.worktrees?.worktrees ?? EMPTY_ARR;
 export const selectHead = (s: AppState) => s.repo?.head ?? null;
+export const selectUndo = (s: AppState) => s.undo;
 export const selectPending = (s: AppState) => s.repo?.head.pending ?? null;
 
 const EMPTY_ARR: never[] = [];

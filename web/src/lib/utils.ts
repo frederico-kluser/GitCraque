@@ -26,6 +26,16 @@ export function remoteHost(url: string): string | undefined {
 
 export const isHttpsRemote = (url: string) => /^https?:\/\//.test(url)
 
+/** Abre a url de um remoto no navegador, convertendo scp-like em https.
+ * Morava em `app/commands.ts`; veio para ca quando a paleta foi removida, porque
+ * quem usa e o menu de contexto de remoto. */
+export function browseUrl(raw: string): string | null {
+  if (/^https?:\/\//.test(raw)) return raw.replace(/\.git$/, "")
+  const scp = /^(?:([^@]+)@)?([^:/]+):(.+)$/.exec(raw)
+  if (scp) return `https://${scp[2]}/${scp[3].replace(/\.git$/, "")}`
+  return null
+}
+
 /* `plural(n, "arquivo", "arquivos")` saiu daqui: ele carregava as duas formas
  * cravadas na chamada, que e exatamente o que o catalogo resolve. Agora e
  * `t("changes.filesChanged", { count: n })`, com as variantes `_one`/`_other`

@@ -68,72 +68,12 @@ export const pt = {
   "app.reconnecting": "Reconectando ao servidor…",
 
   /* ---------------------------------------------------------------- */
-  /* Paleta de comandos                                                */
+  /* Restos da paleta de comandos, ainda usados fora dela            */
   /* ---------------------------------------------------------------- */
-  "palette.trigger": "Buscar comando…",
-  "palette.placeholder": "fetch, checkout, worktree, squash…",
-  "palette.inputLabel": "Buscar comando do GitCraque",
-  "palette.dialogLabel": "Comandos do GitCraque",
-  "palette.hint.navigate": "navegar",
-  "palette.hint.run": "executar",
-  "palette.hint.close": "fechar",
-  "palette.empty": "Nenhum comando casa com “{query}”.",
-
-  "commands.group.repository": "Repositório",
-  "commands.group.worktrees": "Worktrees",
-  "commands.group.branches": "Branches",
-  "commands.group.network": "Rede",
-  "commands.group.history": "Histórico",
-  "commands.group.remotes": "Remotos",
-  "commands.group.appearance": "Aparência",
-
-  "commands.repo.refresh": "Recarregar o repositório",
-  "commands.repo.refresh.keywords": "refresh, recarregar, atualizar",
-  "commands.repo.open": "Abrir outro repositório…",
-  "commands.repo.open.keywords": "abrir, trocar, repositório, repo, projeto, pasta",
-  "commands.repo.favorite": "Abrir {name}",
-  "commands.repo.favorite.missing": "{path} — pasta não encontrada",
-  "commands.repo.favorite.keywords": "favorito, projeto, abrir, trocar",
-  "commands.repo.favorite.gone": "{name} não está mais no disco",
-  "commands.worktree.switch": "Trocar para a worktree {label}",
-  "commands.worktree.keywords": "worktree, chdir",
-  "commands.worktree.list": "Ver worktrees no rail",
-  "commands.worktree.list.hint_one": "{count} registrada",
-  "commands.worktree.list.hint_other": "{count} registradas",
-  "commands.branch.create": "Criar branch",
-  "commands.branch.create.keywords": "branch, nova",
-  "commands.branch.checkout": "Checkout {name}",
   "commands.branch.checkout.pinned": "presa em {worktree}",
-  "commands.branch.checkout.keywords": "checkout",
-  "commands.branch.inUse": "{name} já está em uso",
-  "commands.branch.inUse.detail":
-    "A branch está checada em {worktree}. Troque de worktree em vez de fazer checkout.",
-  "commands.net.fetch": "Fetch --all --prune",
-  "commands.net.fetch.keywords": "fetch, buscar",
-  "commands.net.pull": "Pull",
-  "commands.net.pull.keywords": "pull, puxar",
-  "commands.net.pullRebase": "Pull --rebase",
-  "commands.net.pullRebase.keywords": "pull, rebase",
-  "commands.net.push": "Push…",
-  "commands.net.push.keywords": "push, enviar",
-  "commands.stash.push": "Guardar alterações (stash)",
-  "commands.stash.push.keywords": "stash, guardar",
-  "commands.tag.create": "Criar tag",
-  "commands.tag.create.keywords": "tag",
-  "commands.stash.applyLatest": "Aplicar {ref}",
-  "commands.stash.apply.keywords": "stash, apply, aplicar",
-  "commands.history.squash": "Squash dos {count} commits selecionados",
-  "commands.history.squash.needs": "Squash da seleção (selecione 2 ou mais)",
-  "commands.history.squash.keywords": "squash, rebase, juntar",
   "commands.remote.add": "Adicionar Origin",
-  "commands.remote.add.keywords": "remote, origin, adicionar",
-  "commands.remote.browse": "Abrir {name} no navegador",
-  "commands.remote.browse.keywords": "remote, abrir, navegador",
   "commands.theme.light": "Tema claro",
   "commands.theme.dark": "Tema escuro",
-  "commands.theme.keywords": "tema, theme, dark, light, claro, escuro",
-  "commands.language.set": "Idioma: {name}",
-  "commands.language.keywords": "idioma, language, lingua, locale, traducao",
 
   /* ---------------------------------------------------------------- */
   /* Toolbar                                                           */
@@ -624,6 +564,21 @@ export const pt = {
     "Desfaz a operação em curso e volta o repositório ao estado anterior.",
   "action.abort.confirm": "Abortar",
   "action.abort.op": "Abortar {kind}",
+
+  /* Desfazer/refazer. O {step} vem do reflog e chega em inglês, como o git o
+   * escreveu — mesma regra que deixa o stderr do git passar intacto. */
+  "action.undo": "Desfazer",
+  "action.redo": "Refazer",
+  "action.undo.step": "Desfazer: {step}",
+  "action.redo.step": "Refazer: {step}",
+  "action.undo.nothing": "Nada para desfazer",
+  "action.redo.nothing": "Nada para refazer",
+  "action.undo.blocked.pending": "Termine ou aborte a operação em andamento antes de desfazer",
+  "action.undo.blocked.empty": "O repositório ainda não tem commits",
+  "action.undo.op": "Desfazer",
+  "action.redo.op": "Refazer",
+  "action.undo.done": "Desfeito",
+  "action.redo.done": "Refeito",
 
   /* ---------------------------------------------------------------- */
   /* Store — toasts e console                                          */

@@ -112,6 +112,11 @@ const MESSAGES = {
     "error.argsDash": "{field} cannot start with \"-\"",
     "error.argsDashDetail": "git would read the value as a command-line option",
     "error.opInteractive": "it opens its own interface and would hang the server",
+
+    "error.undoEmptyRepo": "there is nothing to undo in a repository with no commits",
+    "error.undoPending": "finish or abort the operation in progress before undoing",
+    "error.undoNothing": "there is nothing left to undo",
+    "error.redoNothing": "there is nothing to redo",
   },
 
   pt: {
@@ -189,6 +194,11 @@ const MESSAGES = {
     "error.argsDash": "{field} não pode começar com \"-\"",
     "error.argsDashDetail": "o git leria o valor como opção de linha de comando",
     "error.opInteractive": "abre interface própria e travaria o servidor",
+
+    "error.undoEmptyRepo": "não há o que desfazer num repositório sem commits",
+    "error.undoPending": "termine ou aborte a operação em andamento antes de desfazer",
+    "error.undoNothing": "não há mais nada para desfazer",
+    "error.redoNothing": "não há nada para refazer",
   },
 
   es: {
@@ -266,6 +276,11 @@ const MESSAGES = {
     "error.argsDash": "{field} no puede empezar por \"-\"",
     "error.argsDashDetail": "git leería el valor como una opción de línea de comandos",
     "error.opInteractive": "abre su propia interfaz y bloquearía el servidor",
+
+    "error.undoEmptyRepo": "no hay nada que deshacer en un repositorio sin commits",
+    "error.undoPending": "termina o aborta la operación en curso antes de deshacer",
+    "error.undoNothing": "ya no queda nada que deshacer",
+    "error.redoNothing": "no hay nada que rehacer",
   },
 
   zh: {
@@ -342,6 +357,11 @@ const MESSAGES = {
     "error.argsDash": "{field} 不能以 \"-\" 开头",
     "error.argsDashDetail": "git 会把该值当作命令行选项来读取",
     "error.opInteractive": "它会打开自己的界面，从而卡住服务器",
+
+    "error.undoEmptyRepo": "仓库中没有提交，无法撤销",
+    "error.undoPending": "请先完成或中止正在进行的操作，然后再撤销",
+    "error.undoNothing": "没有可以撤销的操作了",
+    "error.redoNothing": "没有可以重做的操作",
   },
 };
 
