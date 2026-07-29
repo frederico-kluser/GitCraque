@@ -19,6 +19,11 @@
  */
 import { useMemo } from "react";
 import { FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
+/* Arte da marca, recorte de `docs/logo.png` em 400px. Mora em `src/assets` e
+ * nao em `public/`: importada, o Vite versiona o nome e o arquivo cai no ramo
+ * `immutable` de `server/src/static.mjs:100-105` — na raiz do `dist` levaria
+ * `no-cache` e revalidaria por ETag a cada carga. */
+import logoMark from "@/assets/logo-mark.webp";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
@@ -481,15 +486,42 @@ export function DetailPanel({ className }: DetailPanelProps) {
   if (!primary) {
     return (
       <section className={cn("flex flex-col", className)} aria-label={t("detail.label")}>
-        <StaggerReveal className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-          <StaggerRevealItem>
-            <GitCommitHorizontal className="size-6 text-muted-foreground" />
-          </StaggerRevealItem>
-          <StaggerRevealHeadline as="h3" className="font-heading text-sm font-medium text-foreground">
-            {t("detail.empty.title")}
-          </StaggerRevealHeadline>
-          <StaggerRevealItem as="p" className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-            {t("detail.empty.body")}
+        {/* `pb-16`, e nao `pb-6`: a area de IA flutua em `fixed ... bottom-6`
+            com ~46px de altura (`app/AiBar.tsx:244`) e passa POR CIMA desta
+            coluna. Com a folga de rodape normal, a faixa cortava o selo ao
+            meio. 4rem sobem a marca para acima da barra. */}
+        <StaggerReveal className="flex h-full flex-col items-center px-6 pb-16 text-center">
+          {/* O aviso continua centralizado no espaco que sobra ACIMA do selo:
+              a marca no rodape nao pode empurrar o texto para cima. */}
+          <div className="flex min-h-0 flex-1 flex-col items-center justify-center gap-2">
+            <StaggerRevealItem>
+              <GitCommitHorizontal className="size-6 text-muted-foreground" />
+            </StaggerRevealItem>
+            <StaggerRevealHeadline as="h3" className="font-heading text-sm font-medium text-foreground">
+              {t("detail.empty.title")}
+            </StaggerRevealHeadline>
+            <StaggerRevealItem as="p" className="max-w-xs text-xs leading-relaxed text-muted-foreground">
+              {t("detail.empty.body")}
+            </StaggerRevealItem>
+          </div>
+          {/* Selo da marca — so existe nesta tela, o unico momento em que a
+              coluna nao tem trabalho nenhum para mostrar. Fica dentro do
+              `StaggerReveal` de proposito: o container acha os seguidores pelo
+              atributo `data-stagger-item`, entao aninhar nao tira o item da
+              coreografia. `alt` vazio porque a imagem e decorativa — quem
+              anuncia a tela e `detail.empty.title`. */}
+          <StaggerRevealItem as="div" className="shrink-0 pt-6">
+            <img
+              src={logoMark}
+              alt=""
+              width={400}
+              height={289}
+              draggable={false}
+              className={cn(
+                "w-full max-w-[12.5rem] opacity-60 hover:opacity-100",
+                "transition-opacity duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+              )}
+            />
           </StaggerRevealItem>
         </StaggerReveal>
       </section>
