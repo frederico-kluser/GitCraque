@@ -94,6 +94,20 @@ is the literal argv shown before running — the product's core promise.
 `destructive: true` is the **only** switch that swaps `MultiStateButton` for
 `HoldToConfirmButton` (`web/src/app/ConfirmHost.tsx:250-262`).
 
+**A background routine cannot be made silent just by skipping `runOperation`.**
+That envelope is the noisy half (toast on every exit, `loading.operation` on,
+which also gates the toolbar progress bar), but the backend emits `op:progress`
+from the git command itself and does not know who asked: `gitFetch` runs with
+`progressOp: "fetch"` (`server/src/git/remotes.mjs:95-102`) and the store handler
+writes `operationLabel` from it. A silent path therefore needs **both** halves —
+its own `api.*` call outside `runOperation`, and a module flag the `op:progress`
+handler consults before writing the label (`web/src/state/store.ts`,
+`silentFetch`). Keep `git:command` flowing to the audit console either way:
+silent means no toast and no spinner, never a hidden argv. Applies to anything
+on a timer in `hooks/**` — `useAutoFetch` is the worked example, and its guards
+(interval `0`, tab hidden, `loading.operation`, socket not `open`, no remotes)
+plus chained `setTimeout` are the shape to copy from `useRepoPoll`.
+
 **Known defect, do not copy the pattern:** `openPushDialog`
 (`web/src/app/actions.ts:143-192`) exposes `--force-with-lease` but never sets
 `destructive: true`, so that path renders a plain click button. The drag path
