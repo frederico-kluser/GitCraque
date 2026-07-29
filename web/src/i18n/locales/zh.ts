@@ -94,6 +94,14 @@ export const zh: Messages = {
   "app.reconnecting": "正在重新连接服务器…",
 
   /* ---------------------------------------------------------------- */
+  /* 恢复 — RecoveryBoundary.tsx                                        */
+  /* ---------------------------------------------------------------- */
+  "recovery.title": "界面停止响应",
+  "recovery.body": "绘制界面时出错。重新加载即可恢复应用——仓库没有被改动。",
+  "recovery.reloading": "正在重新加载 GitCraque…",
+  "recovery.reload": "立即重新加载",
+
+  /* ---------------------------------------------------------------- */
   /* 命令面板的遗留键，仍在别处使用                                                 */
   /* ---------------------------------------------------------------- */
   "commands.branch.checkout.pinned": "被 {worktree} 占用",
@@ -600,6 +608,8 @@ export const zh: Messages = {
   "store.repo.initFailed": "git init 失败",
   "store.ws.connected": "已连接 —— gitcraque {version}（pid {pid}），位于 {cwd}",
   "store.ws.cwdChanged": "服务器目录现在是 {cwd}",
+  "store.lifecycle.resumed": "标签页已返回 — 正在重连并重新加载状态",
+  "store.lifecycle.restored": "浏览器丢弃标签页后已恢复视图",
 
   /* ---------------------------------------------------------------- */
   /* 提示                                                              */

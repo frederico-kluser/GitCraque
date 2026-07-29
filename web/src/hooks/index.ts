@@ -14,6 +14,7 @@ export type { AsyncResource } from "./useCommitDetail";
 
 export { useRepoPoll, REPO_POLL_MS } from "./useRepoPoll";
 export { useAutoFetch } from "./useAutoFetch";
+export { useLifecycleRecovery, REVIVE_AFTER_HIDDEN_MS } from "./useLifecycleRecovery";
 export { useTrickle } from "./useTrickle";
 /* O microfone saiu da interface (a area de IA virou so texto), mas o hook
  * continua exportado e intacto — ver o cabecalho dele e a secao "Voz" de

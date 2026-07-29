@@ -14,6 +14,12 @@
  */
 import { useCallback, useSyncExternalStore } from "react";
 import { api, ApiRequestError } from "@/lib/api";
+import {
+  clearViewSnapshot,
+  readViewSnapshot,
+  saveViewSnapshot,
+  wasDiscarded,
+} from "@/lib/recovery";
 import { socket, type ConnectionState } from "@/lib/ws";
 import { t } from "@/i18n";
 import type {
@@ -709,6 +715,85 @@ export function cancelCredentialPrompt() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Retomada da aba (congelamento, descarte, bfcache)                   */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Duas retomadas mais proximas que isto sao o MESMO retorno visto duas vezes:
+ * voltar para a aba dispara `visibilitychange`, `resume` e as vezes `pageshow`
+ * quase juntos, e cada um deles chamaria um `refreshAll` completo.
+ */
+const REVIVE_COOLDOWN_MS = 1_000;
+
+let reviving: Promise<void> | null = null;
+let revivedAt = 0;
+
+/**
+ * Traz a aba de volta a vida depois que o navegador a congelou ou a devolveu do
+ * bfcache.
+ *
+ * Sonda o socket antes de confiar nele, reconecta na hora se a sonda falhar e
+ * recarrega TUDO. Nao e o poll de meio segundo: aquele so cuida de status e
+ * worktrees, e depois de minutos dormindo o log e as refs tambem estao velhos.
+ *
+ * Serializada e com carencia: os eventos de retomada chegam em rajada, e disparar
+ * uma leva de `git log` por evento seria pior que o problema.
+ */
+export function reviveSession(): Promise<void> {
+  if (reviving) return reviving;
+  if (Date.now() - revivedAt < REVIVE_COOLDOWN_MS) return Promise.resolve();
+  const run = doRevive()
+    .catch(() => {})
+    .finally(() => {
+      reviving = null;
+      revivedAt = Date.now();
+    });
+  reviving = run;
+  return run;
+}
+
+async function doRevive() {
+  const alive = state.connection === "open" && (await socket.probe());
+  if (!alive) socket.reconnectNow();
+  pushConsole({ kind: "info", text: t("store.lifecycle.resumed") });
+  await refreshAll();
+}
+
+/**
+ * Guarda onde a pessoa estava, para o caso de o navegador descartar a aba.
+ *
+ * Chamado quando a aba fica escondida, nunca na saida: o descarte do Memory
+ * Saver nao dispara `beforeunload` nem `unload`, entao esperar pela saida seria
+ * gravar exatamente nunca.
+ */
+export function snapshotView() {
+  const cwd = state.repo?.cwd;
+  if (!cwd) return;
+  saveViewSnapshot({ cwd, selection: state.selection, openFile: state.openFile });
+}
+
+/**
+ * Volta ao lugar depois que o navegador descartou a aba.
+ *
+ * O descarte apaga a pagina da memoria e recarrega tudo quando a pessoa volta: o
+ * app renasce correto e no lugar errado — topo do log, painel de detalhe vazio,
+ * arquivo fechado. So restaura se o servidor ainda estiver no mesmo diretorio,
+ * porque o retrato e de um repositorio, nao de uma tela.
+ */
+function restoreDiscardedView() {
+  const snapshot = readViewSnapshot();
+  clearViewSnapshot();
+  if (!snapshot || !wasDiscarded()) return;
+  if (!state.repo || state.repo.cwd !== snapshot.cwd) return;
+
+  // `revealCommit` primeiro, `set` depois: ele reduz a selecao a um commit so, e
+  // quem tinha varios marcados para um squash quer os varios de volta.
+  if (snapshot.selection.primary) revealCommit(snapshot.selection.primary, "command");
+  set({ selection: snapshot.selection, openFile: snapshot.openFile });
+  pushConsole({ kind: "info", text: t("store.lifecycle.restored") });
+}
+
+/* ------------------------------------------------------------------ */
 /* Boot: WebSocket + carga inicial                                     */
 /* ------------------------------------------------------------------ */
 
@@ -920,7 +1005,10 @@ export function bootstrap() {
   });
 
   socket.connect();
-  void refreshAll();
+  // A restauracao espera a carga: sem `repo.cwd` nao da para saber se o retrato
+  // guardado e deste repositorio, e sem o log carregado o reveal nao tem onde
+  // rolar.
+  void refreshAll().then(restoreDiscardedView);
   // Independente do repositorio: a chave e da maquina, nao do projeto aberto.
   void loadAiStatus();
 }
