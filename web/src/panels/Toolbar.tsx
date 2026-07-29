@@ -22,14 +22,12 @@ import {
   GitCommitHorizontal,
   FolderGit2,
   GitBranchPlus,
-  Languages,
   Loader2,
-  Moon,
   Plug,
   PlugZap,
   RefreshCw,
+  Settings,
   Star,
-  Sun,
   TriangleAlert,
   X,
 } from "lucide-react";
@@ -43,10 +41,10 @@ import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { selectCommits, selectHead, selectPending, selectWorktrees, useAppState } from "@/state/store";
 import {
   loadProjects,
+  openSettings,
   selectChangesOpen,
   toggleChanges,
   toggleFavorite,
-  toggleTheme,
   useCommitActivity,
   useProjects,
   useShellState,
@@ -66,7 +64,7 @@ import {
   openStashPush,
 } from "@/app/actions";
 import { UndoRedo } from "./UndoRedo";
-import { LOCALE_OPTIONS, Rich, chooseLocale, t, useLocale } from "@/i18n";
+import { Rich, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { ConnectionState } from "@/lib/ws";
 import type { MessageKey } from "@/i18n";
@@ -550,70 +548,6 @@ function WorktreeSelector() {
 }
 
 /* ------------------------------------------------------------------ */
-/* Seletor de idioma                                                   */
-/* ------------------------------------------------------------------ */
-
-/**
- * Os quatro idiomas, cada um escrito NO PROPRIO idioma — quem abre este menu
- * pode nao ler o idioma corrente, e "Portugues" traduzido para chines nao
- * ajudaria ninguem a encontrar o proprio.
- *
- * CASCATA: mesma escolha dos dois seletores acima — o catalogo do Motion UI nao
- * tem menu ancorado, entao a semantica vem do `Menu` do Base UI.
- */
-function LanguageSelector() {
-  const locale = useLocale();
-  const current = LOCALE_OPTIONS.find((o) => o.value === locale);
-
-  return (
-    <Menu.Root>
-      <Menu.Trigger
-        aria-label={t("language.change")}
-        title={`${t("language.label")}: ${current?.label ?? locale}`}
-        className={cn(
-          "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-transparent px-2.5 text-xs font-medium text-muted-foreground",
-          "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
-          "hover:bg-accent hover:text-accent-foreground data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground",
-          FOCUS_RING,
-        )}
-      >
-        <Languages className="size-3.5" />
-        <span className="uppercase">{locale}</span>
-      </Menu.Trigger>
-
-      <Menu.Portal>
-        <Menu.Positioner sideOffset={8} align="end" className="z-50 outline-none">
-          <Menu.Popup className="min-w-52 overflow-hidden rounded-lg border border-border bg-popover p-1 text-popover-foreground shadow-2xl">
-            <div className="px-2.5 pt-2 pb-1.5">
-              <SectionLabel>{t("language.label")}</SectionLabel>
-            </div>
-            {LOCALE_OPTIONS.map((option) => (
-              <Menu.Item
-                key={option.value}
-                onClick={() => chooseLocale(option.value)}
-                className={cn(
-                  "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-xs outline-none select-none",
-                  "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
-                )}
-              >
-                <Check
-                  className={cn(
-                    "size-3.5 shrink-0",
-                    option.value === locale ? "text-primary" : "opacity-0",
-                  )}
-                />
-                <span className="flex-1 font-medium">{option.label}</span>
-                <span className="font-mono text-[10px] text-muted-foreground">{option.tag}</span>
-              </Menu.Item>
-            ))}
-          </Menu.Popup>
-        </Menu.Positioner>
-      </Menu.Portal>
-    </Menu.Root>
-  );
-}
-
-/* ------------------------------------------------------------------ */
 /* Aviso de operacao pendente no .git                                  */
 /* ------------------------------------------------------------------ */
 
@@ -667,7 +601,6 @@ export function Toolbar({ className }: PanelProps) {
   const connection = useAppState((s) => s.connection);
   const busy = useAppState((s) => s.loading.operation);
   const operationLabel = useAppState((s) => s.operationLabel);
-  const theme = useShellState((s) => s.theme);
 
   const activity = useCommitActivity(commits);
   const progress = useTrickle(busy);
@@ -798,13 +731,15 @@ export function Toolbar({ className }: PanelProps) {
             icon={<RefreshCw className="size-3.5" />}
             onClick={() => void doRefresh()}
           />
-          <LanguageSelector />
+          {/* Uma engrenagem no lugar do seletor de idioma e do sol/lua: os dois
+              viraram secao do modal de configuracoes, junto da rotina de fetch
+              e da chave de IA. */}
           <ToolButton
             tone="ghost"
-            aria-label={theme === "dark" ? t("commands.theme.light") : t("commands.theme.dark")}
-            title={theme === "dark" ? t("commands.theme.light") : t("commands.theme.dark")}
-            icon={theme === "dark" ? <Sun className="size-3.5" /> : <Moon className="size-3.5" />}
-            onClick={toggleTheme}
+            aria-label={t("settings.open")}
+            title={t("settings.open")}
+            icon={<Settings className="size-3.5" />}
+            onClick={openSettings}
           />
         </div>
 

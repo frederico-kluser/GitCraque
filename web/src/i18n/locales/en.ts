@@ -11,6 +11,7 @@ export const en: Messages = {
   "common.cancel": "Cancel",
   "common.close": "Close",
   "common.create": "Create",
+  "common.save": "Save",
   "common.add": "Add",
   "common.remove": "Remove",
   "common.open": "Open",
@@ -42,6 +43,38 @@ export const en: Messages = {
   "language.switchTo": "Interface in {name}",
   "language.changed": "Language changed",
   "language.changedTo": "The interface is now in {name}.",
+
+  /* ---------------------------------------------------------------- */
+  /* Settings — language, theme, fetch routine and the AI key          */
+  /* ---------------------------------------------------------------- */
+  "settings.title": "Settings",
+  "settings.subtitle": "Your preferences, for every repository you open.",
+  "settings.open": "Settings",
+  "settings.close": "Close settings",
+  "settings.theme": "Theme",
+  "settings.theme.light": "Light",
+  "settings.theme.dark": "Dark",
+  "settings.autoFetch": "Fetch from the remote automatically",
+  "settings.autoFetch.hint":
+    "Runs git fetch --all --prune every so often, silently. Nothing is pulled: your local branch only moves when you say so. A tick is skipped while a git command is running or the tab is hidden.",
+  "settings.autoFetch.off": "Off",
+  "settings.autoFetch.seconds_one": "Every {count} second",
+  "settings.autoFetch.seconds_other": "Every {count} seconds",
+  "settings.autoFetch.minutes_one": "Every {count} minute",
+  "settings.autoFetch.minutes_other": "Every {count} minutes",
+  "settings.ai.title": "AI features",
+  "settings.ai.hint":
+    "A single OpenRouter key pays for the agent. It stays on the server, in ~/.config/gitcraque/openrouter.json, and never comes back to the browser.",
+  "settings.ai.envHint":
+    "This key came from the server's environment. Save one here and it takes priority — the variable left behind in your shell is usually the stale one.",
+  "settings.ai.absent": "no key",
+  "settings.ai.add": "Add",
+  "settings.ai.change": "Replace",
+  "settings.ai.remove": "Remove",
+  "settings.ai.source.stored": "saved",
+  "settings.ai.source.env": "OPENROUTER_API_KEY",
+  "settings.ai.source.envFile": "OPENROUTER_API_KEY_FILE",
+  "settings.ai.source.none": "—",
 
   /* ---------------------------------------------------------------- */
   /* Shell                                                             */
@@ -1157,7 +1190,7 @@ export const en: Messages = {
   "agent.state.running": "Working…",
   "agent.heard": "You said",
   "agent.typed": "You asked",
-  "agent.placeholder": "Or type what you want to do…",
+  "agent.placeholder": "Tell me what you want done in the repository…",
   "agent.send": "Send",
   "agent.stop": "Stop",
   "agent.close": "Close",
@@ -1172,4 +1205,13 @@ export const en: Messages = {
   "agent.noKey": "The OpenRouter key is missing.",
   "agent.noKey.hint": "Set OPENROUTER_API_KEY or save the key in the settings.",
   "agent.piDownload": "pi will be downloaded on the first run — that takes a moment.",
+
+  /* ---- AI area locked: no OpenRouter key ---- */
+  "ai.locked.title": "AI features locked",
+  "ai.locked.body":
+    "The server found no OpenRouter key. Paste one here to unlock the agent.",
+  "ai.locked.placeholder": "sk-or-v1-…",
+  "ai.locked.unlock": "Unlock",
+  "ai.locked.hint":
+    "The key goes straight to the server and stays there, with 0600 permissions. The browser never gets it back.",
 };

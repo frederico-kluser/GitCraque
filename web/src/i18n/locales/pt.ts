@@ -20,6 +20,7 @@ export const pt = {
   "common.cancel": "Cancelar",
   "common.close": "Fechar",
   "common.create": "Criar",
+  "common.save": "Salvar",
   "common.add": "Adicionar",
   "common.remove": "Remover",
   "common.open": "Abrir",
@@ -51,6 +52,38 @@ export const pt = {
   "language.switchTo": "Interface em {name}",
   "language.changed": "Idioma alterado",
   "language.changedTo": "A interface agora está em {name}.",
+
+  /* ---------------------------------------------------------------- */
+  /* Configurações — idioma, tema, rotina de fetch e chave de IA       */
+  /* ---------------------------------------------------------------- */
+  "settings.title": "Configurações",
+  "settings.subtitle": "Suas preferências, válidas para qualquer repositório que você abrir.",
+  "settings.open": "Configurações",
+  "settings.close": "Fechar configurações",
+  "settings.theme": "Tema",
+  "settings.theme.light": "Claro",
+  "settings.theme.dark": "Escuro",
+  "settings.autoFetch": "Buscar do remoto automaticamente",
+  "settings.autoFetch.hint":
+    "Roda git fetch --all --prune de tempos em tempos, em silêncio. Nada é puxado: sua branch local só se move quando você mandar. O tique é pulado enquanto houver comando git em andamento ou a aba estiver escondida.",
+  "settings.autoFetch.off": "Desligado",
+  "settings.autoFetch.seconds_one": "A cada {count} segundo",
+  "settings.autoFetch.seconds_other": "A cada {count} segundos",
+  "settings.autoFetch.minutes_one": "A cada {count} minuto",
+  "settings.autoFetch.minutes_other": "A cada {count} minutos",
+  "settings.ai.title": "Funções de IA",
+  "settings.ai.hint":
+    "Uma única chave da OpenRouter paga o agente. Ela fica no servidor, em ~/.config/gitcraque/openrouter.json, e nunca volta para o navegador.",
+  "settings.ai.envHint":
+    "Esta chave veio do ambiente do servidor. Se você gravar uma aqui, ela passa a valer no lugar — a variável esquecida no shell costuma ser a antiga.",
+  "settings.ai.absent": "nenhuma chave",
+  "settings.ai.add": "Adicionar",
+  "settings.ai.change": "Trocar",
+  "settings.ai.remove": "Remover",
+  "settings.ai.source.stored": "gravada",
+  "settings.ai.source.env": "OPENROUTER_API_KEY",
+  "settings.ai.source.envFile": "OPENROUTER_API_KEY_FILE",
+  "settings.ai.source.none": "—",
 
   /* ---------------------------------------------------------------- */
   /* Shell — App.tsx                                                   */
@@ -1175,7 +1208,7 @@ export const pt = {
   "agent.state.running": "Trabalhando…",
   "agent.heard": "Você disse",
   "agent.typed": "Você pediu",
-  "agent.placeholder": "Ou digite o que você quer fazer…",
+  "agent.placeholder": "Diga o que você quer fazer no repositório…",
   "agent.send": "Enviar",
   "agent.stop": "Parar",
   "agent.close": "Fechar",
@@ -1190,4 +1223,13 @@ export const pt = {
   "agent.noKey": "Falta a chave da OpenRouter.",
   "agent.noKey.hint": "Configure OPENROUTER_API_KEY ou grave a chave nas configurações.",
   "agent.piDownload": "O pi vai ser baixado na primeira execução — isso demora um pouco.",
+
+  /* ---- área de IA trancada: falta a chave da OpenRouter ---- */
+  "ai.locked.title": "Funções de IA bloqueadas",
+  "ai.locked.body":
+    "O servidor não encontrou nenhuma chave da OpenRouter. Cole uma aqui para liberar o agente.",
+  "ai.locked.placeholder": "sk-or-v1-…",
+  "ai.locked.unlock": "Desbloquear",
+  "ai.locked.hint":
+    "A chave vai direto para o servidor e fica só lá, com permissão 0600. O navegador nunca a recebe de volta.",
 } as const;

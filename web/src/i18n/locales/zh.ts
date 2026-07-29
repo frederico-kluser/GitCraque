@@ -13,6 +13,7 @@ export const zh: Messages = {
   "common.cancel": "取消",
   "common.close": "关闭",
   "common.create": "创建",
+  "common.save": "保存",
   "common.add": "添加",
   "common.remove": "移除",
   "common.open": "打开",
@@ -44,6 +45,38 @@ export const zh: Messages = {
   "language.switchTo": "界面语言：{name}",
   "language.changed": "语言已切换",
   "language.changedTo": "界面现在使用{name}。",
+
+  /* ---------------------------------------------------------------- */
+  /* 设置 — 语言、主题、自动抓取与 AI 密钥                              */
+  /* ---------------------------------------------------------------- */
+  "settings.title": "设置",
+  "settings.subtitle": "你的偏好设置，对打开的每个仓库都生效。",
+  "settings.open": "设置",
+  "settings.close": "关闭设置",
+  "settings.theme": "主题",
+  "settings.theme.light": "浅色",
+  "settings.theme.dark": "深色",
+  "settings.autoFetch": "自动从远程抓取",
+  "settings.autoFetch.hint":
+    "每隔一段时间静默执行 git fetch --all --prune。不会拉取：本地分支只有你下令时才移动。有 git 命令正在运行或标签页隐藏时，这一轮会跳过。",
+  "settings.autoFetch.off": "关闭",
+  "settings.autoFetch.seconds_one": "每 {count} 秒",
+  "settings.autoFetch.seconds_other": "每 {count} 秒",
+  "settings.autoFetch.minutes_one": "每 {count} 分钟",
+  "settings.autoFetch.minutes_other": "每 {count} 分钟",
+  "settings.ai.title": "AI 功能",
+  "settings.ai.hint":
+    "一把 OpenRouter 密钥支付整个代理。它只保存在服务器的 ~/.config/gitcraque/openrouter.json 中，绝不回到浏览器。",
+  "settings.ai.envHint":
+    "这把密钥来自服务器的环境变量。在此保存一把新的即可覆盖它 — 留在 shell 里的变量往往是旧的那把。",
+  "settings.ai.absent": "没有密钥",
+  "settings.ai.add": "添加",
+  "settings.ai.change": "更换",
+  "settings.ai.remove": "删除",
+  "settings.ai.source.stored": "已保存",
+  "settings.ai.source.env": "OPENROUTER_API_KEY",
+  "settings.ai.source.envFile": "OPENROUTER_API_KEY_FILE",
+  "settings.ai.source.none": "—",
 
   /* ---------------------------------------------------------------- */
   /* 外壳                                                              */
@@ -1116,7 +1149,7 @@ export const zh: Messages = {
   "agent.state.running": "正在执行…",
   "agent.heard": "你说了",
   "agent.typed": "你要求",
-  "agent.placeholder": "或者输入你想做的事…",
+  "agent.placeholder": "告诉我你想在仓库里做什么…",
   "agent.send": "发送",
   "agent.stop": "停止",
   "agent.close": "关闭",
@@ -1131,4 +1164,11 @@ export const zh: Messages = {
   "agent.noKey": "缺少 OpenRouter 密钥。",
   "agent.noKey.hint": "请设置 OPENROUTER_API_KEY，或在设置中保存密钥。",
   "agent.piDownload": "首次运行会下载 pi — 需要稍等片刻。",
+
+  /* ---- AI 区域已锁定：缺少 OpenRouter 密钥 ---- */
+  "ai.locked.title": "AI 功能已锁定",
+  "ai.locked.body": "服务器没有找到 OpenRouter 密钥。在这里粘贴一把即可解锁代理。",
+  "ai.locked.placeholder": "sk-or-v1-…",
+  "ai.locked.unlock": "解锁",
+  "ai.locked.hint": "密钥直接送到服务器并只留在那里，权限为 0600。浏览器永远拿不回它。",
 };

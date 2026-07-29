@@ -1,6 +1,22 @@
 /**
  * Captura de microfone pelo `MediaRecorder`.
  *
+ * ┌──────────────────────────────────────────────────────────────────┐
+ * │ PARADO desde 2026-07-29. NINGUEM CONSUME ESTE HOOK.              │
+ * │                                                                  │
+ * │ A area de IA (`web/src/app/AiBar.tsx`, que ate entao se chamava  │
+ * │ `VoiceBubble.tsx`) virou uma faixa larga so de texto. O caminho  │
+ * │ de voz foi desligado da INTERFACE, e nao removido: este hook,    │
+ * │ a rota `POST /ai/transcribe`, `api.transcribe`, as fases         │
+ * │ `recording`/`transcribing` do store e `server/src/ai/            │
+ * │ openrouter.mjs` continuam inteiros e testados.                   │
+ * │                                                                  │
+ * │ Para religar, ver a secao "Voz" de `docs/ARCHITECTURE.md`.       │
+ * │ Nao apague nada daqui achando que e codigo morto: e codigo em    │
+ * │ espera, e o teste que garante o par modelo/formato de audio      │
+ * │ (`server/test/ai.test.mjs`) depende do outro lado dele.          │
+ * └──────────────────────────────────────────────────────────────────┘
+ *
  * O audio NUNCA vai direto para a OpenRouter: ele sobe para o backend, que
  * guarda a chave. E a mesma disciplina do cofre de credenciais do git — o
  * navegador nunca ve o segredo.

@@ -105,6 +105,15 @@ export interface ShellState {
   railWidth: number;
   detailWidth: number;
   /**
+   * Intervalo da rotina automatica de `git fetch`, em ms. `0` desliga.
+   *
+   * Mora aqui, e nao no store do repositorio, porque e preferencia da pessoa e
+   * nao estado do projeto: vale para qualquer repo que ela abrir.
+   */
+  autoFetchMs: number;
+  /** modal de configuracoes aberto. Efemero, como a gaveta de alteracoes. */
+  settingsOpen: boolean;
+  /**
    * Gaveta de alteracoes (staging + commit) aberta por cima da tela.
    *
    * Efemera de proposito: nao volta aberta depois de um reload. Antes isto era
@@ -122,12 +131,23 @@ const STORAGE_KEY = "gitcraque.shell";
 
 const EMPTY_DRAFT: CommitDraft = { message: "", amend: false, signoff: false };
 
+/**
+ * As escolhas de intervalo do fetch automatico. `0` e "Desligado", e por isso
+ * nao ha um liga/desliga separado: a lista ja diz tudo.
+ *
+ * Constante de modulo — a lista alimenta um `<select>` e re-criar o array a
+ * cada render faria o seletor remontar a toa.
+ */
+export const AUTO_FETCH_OPTIONS = [0, 30_000, 60_000, 300_000, 900_000] as const;
+
 const DEFAULTS: ShellState = {
   theme: "dark",
   railWidth: 264,
   // O sidebar direito passou a abrigar TAMBEM o visualizador de arquivo, entao
   // ele nasce bem mais largo do que quando so tinha os metadados do commit.
   detailWidth: 560,
+  autoFetchMs: 60_000,
+  settingsOpen: false,
   changesOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
@@ -135,7 +155,7 @@ const DEFAULTS: ShellState = {
 };
 
 /** So o que faz sentido sobreviver ao reload. */
-type Persisted = Pick<ShellState, "theme" | "railWidth" | "detailWidth">;
+type Persisted = Pick<ShellState, "theme" | "railWidth" | "detailWidth" | "autoFetchMs">;
 
 function readPersisted(): Partial<Persisted> {
   if (typeof localStorage === "undefined") return {};
@@ -153,6 +173,7 @@ function writePersisted(s: ShellState) {
     theme: s.theme,
     railWidth: s.railWidth,
     detailWidth: s.detailWidth,
+    autoFetchMs: s.autoFetchMs,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slice));
@@ -167,12 +188,26 @@ function initialTheme(stored: Partial<Persisted>): ThemeMode {
   return DEFAULTS.theme;
 }
 
+/**
+ * `localStorage` e editavel a mao e sobrevive a versoes antigas do app. Um
+ * valor fora da lista viraria um `setTimeout` de intervalo arbitrario batendo
+ * na rede — entao so o que esta no cardapio passa.
+ */
+function initialAutoFetch(stored: Partial<Persisted>): number {
+  const value = stored.autoFetchMs;
+  return AUTO_FETCH_OPTIONS.includes(value as (typeof AUTO_FETCH_OPTIONS)[number])
+    ? (value as number)
+    : DEFAULTS.autoFetchMs;
+}
+
 const stored = readPersisted();
 const INITIAL: ShellState = {
   ...DEFAULTS,
   ...stored,
   theme: initialTheme(stored),
+  autoFetchMs: initialAutoFetch(stored),
   // nunca restaura estado efemero
+  settingsOpen: false,
   changesOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
@@ -227,6 +262,13 @@ export function setTheme(theme: ThemeMode) {
 }
 
 export const toggleTheme = () => setTheme(state.theme === "dark" ? "light" : "dark");
+
+/** Intervalo do fetch automatico. `0` desliga a rotina. */
+export const setAutoFetchMs = (autoFetchMs: number) => set({ autoFetchMs });
+
+/* ---- modal de configuracoes ---- */
+export const openSettings = () => set({ settingsOpen: true });
+export const closeSettings = () => set({ settingsOpen: false });
 
 /** Limites para as colunas nao sumirem nem engolirem o grafo. */
 export const RAIL_RANGE = { min: 200, max: 460 } as const;
@@ -337,3 +379,4 @@ export const selectConfirm = (s: ShellState) => s.confirm;
 export const selectCommitDraft = (s: ShellState) => s.commitDraft;
 export const selectContextMenu = (s: ShellState) => s.contextMenu;
 export const selectChangesOpen = (s: ShellState) => s.changesOpen;
+export const selectSettingsOpen = (s: ShellState) => s.settingsOpen;

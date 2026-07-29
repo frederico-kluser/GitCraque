@@ -18,6 +18,7 @@ import { socket, type ConnectionState } from "@/lib/ws";
 import { t } from "@/i18n";
 import type {
   AgentSource,
+  AiKeySource,
   ConsoleLine,
   CredentialPrompt,
   DragIntent,
@@ -121,9 +122,28 @@ export interface AppState {
 
   /** sessao do agente de voz/texto */
   agent: AgentSlice;
+  /** ACRESCENTADO: o que se sabe da chave da OpenRouter, sem nunca ve-la */
+  ai: AiSlice;
 
   /** paginacao do log */
   limit: number;
+}
+
+/**
+ * O que a area de IA precisa saber para decidir se esta liberada.
+ *
+ * A chave em si NUNCA chega aqui — `masked` e a impressao digital que
+ * `server/src/ai/key.mjs:111-116` produz, boa para distinguir duas chaves e
+ * inutil para usar qualquer uma. `keySource` existe porque um 401 sem ela vira
+ * adivinhacao sobre qual das tres camadas de resolucao o servidor usou.
+ */
+export interface AiSlice {
+  /** false ate a primeira resposta de `/ai/status` chegar */
+  checked: boolean;
+  hasKey: boolean;
+  keySource: AiKeySource;
+  /** impressao digital exibivel; jamais a chave */
+  masked: string;
 }
 
 /**
@@ -170,6 +190,9 @@ const AGENT_IDLE: AgentSlice = {
   cost: 0,
 };
 
+/** Antes da primeira resposta do servidor, "nao sei" — nao "nao tem". */
+const AI_UNKNOWN: AiSlice = { checked: false, hasKey: false, keySource: "none", masked: "" };
+
 const INITIAL: AppState = {
   repo: null,
   log: null,
@@ -189,6 +212,7 @@ const INITIAL: AppState = {
   pendingIntent: null,
   credentialPrompt: null,
   agent: AGENT_IDLE,
+  ai: AI_UNKNOWN,
   limit: 2000,
 };
 
@@ -403,6 +427,53 @@ export async function pollRepo() {
   ]);
   if (status) set({ status });
   if (worktrees) set({ worktrees });
+}
+
+/**
+ * O tick da rotina automatica: `git fetch --all --prune`, sem barulho nenhum.
+ *
+ * Irmao do `pollRepo` acima na disciplina, oposto no custo: aquele le, este
+ * fala com a rede. Por isso NAO passa por `runOperation` — o envelope liga
+ * `loading.operation` e emite toast em toda saida, e uma vez por minuto isso
+ * seria uma barra de progresso piscando sozinha e uma chuva de avisos. O unico
+ * sinal legitimo do fetch automatico e o que ele trouxe: ref nova muda o rail.
+ *
+ * O backend nao sabe que este fetch e discreto. `gitFetch` roda com
+ * `progressOp: "fetch"` (`server/src/git/remotes.mjs:95-102`) e emite
+ * `op:progress` como qualquer outro comando de rede — dai a flag abaixo, que o
+ * handler daquele evento consulta antes de escrever `operationLabel`.
+ *
+ * O argv CONTINUA indo para o console de auditoria pelo `git:command`. Mudo
+ * aqui e sobre toast e indicador; esconder o comando do painel que existe para
+ * mostrar comando seria outra coisa, e contra o produto.
+ *
+ * Nunca puxa nada: `fetch` so move `refs/remotes/**`. O ponteiro local so anda
+ * por decisao explicita de quem esta usando o app.
+ */
+let silentFetching = false;
+
+/** Para o handler de `op:progress` saber que o rotulo em voo nao e da pessoa. */
+export const isSilentFetching = () => silentFetching;
+
+export async function silentFetch(): Promise<boolean> {
+  // Rede lenta faz o tick anterior atravessar o proximo; a rotina ja espaca as
+  // chamadas, esta guarda cobre quem chamar de outro lugar.
+  if (silentFetching) return false;
+  silentFetching = true;
+  try {
+    const result = await api.fetch({ all: true, prune: true });
+    // `git fetch` fala (em stderr, com `--progress`) quando atualizou alguma
+    // ref, e cala quando nao havia nada. Sem novidade, nao ha o que recarregar.
+    const changed = result.ok && (result.stderr || result.stdout).trim() !== "";
+    if (changed) await refreshFor("refs");
+    return changed;
+  } catch {
+    // Rede fora, credencial recusada, servidor reiniciando: o proximo tick
+    // tenta de novo. Um toast de erro por minuto seria intoleravel.
+    return false;
+  } finally {
+    silentFetching = false;
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -687,6 +758,10 @@ export async function runAgent(utterance: string, source: AgentSource, cost = 0)
     await api.runAgent({ utterance: text, source });
   } catch (e) {
     patchAgent({ phase: "failed", error: describe(e) });
+    // 401 e `error.aiKeyMissing` (`server/src/routes/ai.mjs:28-32`): a chave
+    // sumiu entre o boot e agora. Reler o status devolve a area ao convite de
+    // desbloqueio em vez de deixar um input que so sabe falhar.
+    if (e instanceof ApiRequestError && e.status === 401) void loadAiStatus();
   }
 }
 
@@ -697,6 +772,51 @@ export async function abortAgent() {
   } catch (e) {
     toast("error", describe(e));
   }
+}
+
+/* ------------------------------------------------------------------ */
+/* Chave da OpenRouter — o status dela, nunca ela                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Le `/ai/status`. Sem chave, a area de IA vira o convite para desbloquear.
+ *
+ * Falha nao vira toast: no boot o servidor pode ainda nem estar de pe, e a
+ * fatia continua `checked: false` — que a interface trata como "ainda nao
+ * sei", diferente de "nao tem". Mostrar o convite por causa de uma requisicao
+ * que nao voltou seria acusar o usuario de nao ter chave sem ter perguntado.
+ */
+export async function loadAiStatus() {
+  try {
+    const status = await api.aiStatus();
+    set({
+      ai: {
+        checked: true,
+        hasKey: status.hasKey,
+        keySource: status.keySource,
+        masked: status.masked,
+      },
+    });
+    return status;
+  } catch {
+    return null;
+  }
+}
+
+/** Grava a chave e rele o status: a mascara so pode vir do servidor. */
+export async function saveAiKey(key: string) {
+  await api.aiSaveKey(key);
+  await loadAiStatus();
+}
+
+/**
+ * Apaga a chave gravada — o que pode NAO bloquear nada. Havendo
+ * `OPENROUTER_API_KEY` no ambiente, a resolucao cai para ela
+ * (`server/src/ai/key.mjs:93-104`), e so o status relido conta essa historia.
+ */
+export async function clearAiKey() {
+  await api.aiClearKey();
+  await loadAiStatus();
 }
 
 export function bootstrap() {
@@ -754,6 +874,10 @@ export function bootstrap() {
   });
 
   socket.on("op:progress", (e) => {
+    // O fetch da rotina automatica tambem emite progresso, porque o backend
+    // nao distingue quem pediu. Enquanto ele for o unico em voo, o rotulo nao
+    // vai para a tela — o automatico foi combinado para ser mudo.
+    if (silentFetching && !state.loading.operation) return;
     set({ operationLabel: e.message });
   });
 
@@ -797,6 +921,8 @@ export function bootstrap() {
 
   socket.connect();
   void refreshAll();
+  // Independente do repositorio: a chave e da maquina, nao do projeto aberto.
+  void loadAiStatus();
 }
 
 /* ------------------------------------------------------------------ */
@@ -812,6 +938,7 @@ function describe(e: unknown): string {
 /* ------------------------------------------------------------------ */
 
 export const selectAgent = (s: AppState) => s.agent;
+export const selectAi = (s: AppState) => s.ai;
 export const selectCommits = (s: AppState) => s.log?.commits ?? EMPTY_COMMITS;
 export const selectBranches = (s: AppState) => s.refs?.branches ?? EMPTY_ARR;
 export const selectRemoteBranches = (s: AppState) => s.refs?.remoteBranches ?? EMPTY_ARR;

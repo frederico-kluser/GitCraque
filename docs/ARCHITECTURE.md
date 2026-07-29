@@ -394,6 +394,74 @@ por `askConfirm` antes de tocar o repositorio, com `HoldToConfirmButton` no que
 for destrutivo. Teclado tem a mesma porta: `ContextMenu`/`Shift+F10` sobre a
 linha focada da View Tree abre o mesmo menu.
 
+### Duas rotinas de tempo, com alvos diferentes
+
+`useRepoPoll` e `useAutoFetch` parecem irmaos e nao sao: um le disco, o outro
+fala com a rede.
+
+| | `useRepoPoll` | `useAutoFetch` |
+|---|---|---|
+| cobre | arquivo editado fora do app, que nao toca no `.git` e nao gera evento | commit empurrado por outra pessoa, que nao gera evento em maquina nenhuma daqui |
+| roda | `status` + `worktrees` | `git fetch --all --prune` |
+| intervalo | 500 ms, fixo | configuravel; padrao 1 min, `0` desliga |
+| custo | duas leituras locais | uma ida a rede e o lock serial do backend |
+
+As duas usam `setTimeout` encadeado, nunca `setInterval`: o intervalo so comeca
+a contar depois que a resposta chega, entao uma chamada lenta afasta a proxima
+em vez de empilhar pedidos em cima de si mesma.
+
+O fetch automatico e **mudo por decisao de produto**. Ele nao passa por
+`runOperation` — aquele envelope emite toast em toda saida e acende
+`loading.operation` — e o store ignora o `op:progress` que o backend emite
+enquanto ele esta em voo (`gitFetch` roda com `progressOp: "fetch"` e nao sabe
+quem pediu). O argv continua indo para o console de auditoria: mudo e sobre
+toast e indicador, nunca sobre esconder comando.
+
+E `fetch`, nunca `pull`. So `refs/remotes/**` se move; a branch local nao anda,
+nao nasce commit de merge e nao ha conflito possivel com trabalho em andamento.
+O contador de "atras" no rail e que conta a novidade, e puxar continua sendo
+decisao explicita.
+
+### Voz — desligada da interface, inteira no codigo
+
+A area de IA (`app/AiBar.tsx`) ja gravou audio pelo microfone: `MediaRecorder`
+no navegador → base64 → `POST /ai/transcribe` → texto → o mesmo agente. Em
+2026-07-29 ela virou uma faixa larga **so de texto**, e o caminho de voz foi
+desligado da UI **sem ser removido do projeto**.
+
+O que continua no lugar, intacto e testado:
+
+- `web/src/hooks/useVoiceRecorder.ts` — o hook inteiro, ainda exportado por
+  `hooks/index.ts`, sem nenhum consumidor;
+- `POST /ai/transcribe`, `api.transcribe` e `TranscriptionPayload` — contrato
+  congelado, remocao proibida;
+- `server/src/ai/openrouter.mjs` e o teste que garante o par modelo/formato de
+  audio (`server/test/ai.test.mjs`);
+- as fases `recording` e `transcribing` de `AgentPhase`, e as acoes
+  `agentRecordingStarted`/`agentTranscribing`/`agentCancelled` do store;
+- as chaves `agent.state.*`, `agent.heard`, `agent.micDenied`, `agent.micMissing`
+  nos quatro idiomas.
+
+**Para religar, tres passos**, todos dentro de `app/AiBar.tsx`:
+
+1. `const recorder = useVoiceRecorder()` e um botao de microfone ao lado do
+   input, alternando `recorder.start()` e `recorder.stop()`;
+2. no `stop`, `agentTranscribing()` → `api.transcribe({ audio, format,
+   language: getLocale() })` → `runAgent(result.text, "voice", result.cost)`;
+3. no `Escape`, `recorder.cancel()` antes de `agentClosed()` — sem isso o
+   indicador de gravacao do navegador fica aceso.
+
+O que **nao** voltar a ser: "segurar para falar". A escolha de produto e um
+clique para comecar e outro para mandar; o `MultiStateButton` do catalogo ja
+cobre os estados, e o `HoldToConfirmButton` existe para operacao destrutiva, nao
+para captura de audio.
+
+Uma armadilha para nao repetir: o formato gravado e `webm/opus` porque e o que
+Chrome e Firefox produzem sem transcodificar, e **nem todo modelo de
+transcricao aceita webm**. Quem garante o par e `MODEL_AUDIO_FORMATS` em
+`server/src/ai/openrouter.mjs`. Trocar o modelo sem olhar aquela tabela quebra a
+voz com um erro do provedor, nao da API.
+
 ## 5. Idioma — `web/src/i18n/`, `server/src/i18n.mjs`
 
 Quatro idiomas: **ingles (padrao), portugues, espanhol e chines**. O idioma sai

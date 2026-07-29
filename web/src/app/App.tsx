@@ -36,6 +36,7 @@ import {
   setCommitDraft,
   setDetailWidth,
   setRailWidth,
+  useAutoFetch,
   useHotkeys,
   useRepoPoll,
   useShellState,
@@ -43,12 +44,13 @@ import {
 import type { CommitRef } from "@/types/git";
 import { doActivateRef, doRefresh } from "./actions";
 import { commitMenu, refMenu } from "./menus";
+import { AiBar } from "./AiBar";
 import { ConfirmHost } from "./ConfirmHost";
 import { ContextMenuHost } from "./ContextMenuHost";
+import { SettingsDialog } from "./SettingsDialog";
 import { Splitter } from "./Splitter";
 import { StatusFooter } from "./StatusFooter";
 import { Toasts } from "./Toasts";
-import { VoiceBubble } from "./VoiceBubble";
 
 /* ------------------------------------------------------------------ */
 /* Menus da View Tree                                                  */
@@ -145,6 +147,8 @@ export function App() {
 
   // O que muda no editor nao toca no `.git` e por isso nao chega pelo watcher.
   useRepoPoll();
+  // O que muda no REMOTO nao toca em maquina nenhuma daqui: so um fetch conta.
+  useAutoFetch();
 
   // Trocar de projeto ou de worktree e trocar o diretorio do servidor: o
   // rascunho do commit era daquele repositorio, nao deste. Mora aqui, e nao no
@@ -273,14 +277,17 @@ export function App() {
       {/* Confirmacoes vindas do DND (outro modulo) e dos paineis (este). */}
       <DialogHost intent={pendingIntent} onClose={() => setPendingIntent(null)} />
       <ConfirmHost />
+      {/* Preferencias da pessoa (idioma, tema, rotina de fetch, chave de IA),
+          chamadas pela engrenagem da toolbar. */}
+      <SettingsDialog />
       {/* Um menu de contexto para a tela inteira — e o fim do menu do navegador
           em tudo o que nao e campo de texto. */}
       <ContextMenuHost />
       <Toasts />
 
-      {/* Microfone flutuante do bottom center. Fica em z-40, abaixo de tudo o
-          que vem acima, para que um dialogo sempre o cubra. */}
-      <VoiceBubble />
+      {/* Area de IA: faixa larga no bottom center. Fica em z-40, abaixo de tudo
+          o que vem acima, para que um dialogo sempre a cubra. */}
+      <AiBar />
 
       {/* Reconexao: banner fixo, para nao depender do scroll da toolbar. */}
       {connection === "reconnecting" && (

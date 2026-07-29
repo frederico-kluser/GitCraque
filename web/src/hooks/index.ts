@@ -13,7 +13,11 @@ export { useCommitDetail, useCommitDiff } from "./useCommitDetail";
 export type { AsyncResource } from "./useCommitDetail";
 
 export { useRepoPoll, REPO_POLL_MS } from "./useRepoPoll";
+export { useAutoFetch } from "./useAutoFetch";
 export { useTrickle } from "./useTrickle";
+/* O microfone saiu da interface (a area de IA virou so texto), mas o hook
+ * continua exportado e intacto — ver o cabecalho dele e a secao "Voz" de
+ * `docs/ARCHITECTURE.md` para religar. */
 export { useVoiceRecorder } from "./useVoiceRecorder";
 export type { MicSupport, VoiceRecorder } from "./useVoiceRecorder";
 export { useProjects, loadProjects, getProjects, toggleFavorite } from "./useProjects";
@@ -29,6 +33,9 @@ export {
   applyTheme,
   setTheme,
   toggleTheme,
+  setAutoFetchMs,
+  openSettings,
+  closeSettings,
   setRailWidth,
   setDetailWidth,
   openChanges,
@@ -47,8 +54,10 @@ export {
   selectCommitDraft,
   selectContextMenu,
   selectChangesOpen,
+  selectSettingsOpen,
   RAIL_RANGE,
   DETAIL_RANGE,
+  AUTO_FETCH_OPTIONS,
 } from "./useShellStore";
 export type {
   ShellState,
