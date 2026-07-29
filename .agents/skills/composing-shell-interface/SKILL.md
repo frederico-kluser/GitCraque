@@ -63,6 +63,18 @@ from `@/lib/utils` is graph-only; the shell never uses it. Hex, numbered Tailwin
 palettes and `transition-all` are now caught by
 `node .agents/skills/scripts/check-project-rules.mjs`.
 
+**Static assets live in `web/public/`, and only `assets/` is cached hard.**
+`web/vite.config.ts` declares no `publicDir`, so Vite's default applies: whatever
+sits in `web/public/` is copied verbatim into `dist/` and is referenced from
+`web/index.html` by absolute path (`/favicon.png`), identically in dev and in
+build. `server/src/static.mjs` then serves it with no registration step — the
+mime map already covers `.png`, `.svg`, `.ico`, `.woff2`. What is easy to get
+wrong is the caching: it branches on the path, so **only** files under
+`dist/assets/` — the ones Vite versions by name — get `immutable`; a root-level
+asset gets `no-cache` and is ETag-revalidated on every load
+(`server/src/static.mjs:100-105`). Right for an icon, wrong place for anything
+big you expect to stay in the browser cache.
+
 **Animate `transform`, `opacity`, `filter` only.** Box changes use the `layout`
 prop. The theme sets `reducedMotion: "calm"`, but any continuous or
 scroll-linked effect you write still needs `useReducedMotion()`.
