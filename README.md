@@ -1,12 +1,9 @@
 <p align="center">
-  <img src="docs/logo.png" alt="GitCraque" width="640">
+  <img src="https://raw.githubusercontent.com/frederico-kluser/GitCraque/main/docs/logo.png" alt="GitCraque" width="640">
 </p>
 
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/logo.svg">
-    <img src="docs/logo.svg" alt="GitCraque" width="340">
-  </picture>
+  <img src="https://raw.githubusercontent.com/frederico-kluser/GitCraque/main/docs/logo.svg" alt="GitCraque" width="340">
 </p>
 
 <p align="center">
@@ -16,11 +13,15 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/node-%3E%3D22.5-brightgreen" alt="Node >= 22.5">
+  <img src="https://img.shields.io/badge/node-%3E%3D22.13-brightgreen" alt="Node >= 22.13">
   <img src="https://img.shields.io/badge/license-MIT-blue" alt="MIT">
   <img src="https://img.shields.io/badge/plataforma-linux%20%7C%20macos-lightgrey" alt="Linux | macOS">
   <img src="https://img.shields.io/badge/backend-1%20depend%C3%AAncia-success" alt="Backend com uma dependência">
   <img src="https://img.shields.io/badge/electron-n%C3%A3o%20convocado-critical" alt="Electron não convocado">
+</p>
+
+<p align="center">
+  <a href="README.en.md">🇬🇧 Read this in English</a>
 </p>
 
 ---
@@ -76,12 +77,18 @@ servidor** é quem "está" no repositório: trocar de worktree é um
 É mudar de posição em campo sem pedir substituição ao quarto árbitro.
 
 ```bash
-npm install
-npm run build
 npx gitcraque                     # no diretório do repositório
-npx gitcraque --repo ~/code/projeto --port 5271
-npx gitcraque --repo ~            # fora de um repo: abre o seletor
+npx gitcraque ~/code/projeto      # ou aponte o caminho, como o `git -C`
+npx gitcraque --repo ~ --port 5271
+npx gitcraque --no-open           # sem abrir o navegador
 ```
+
+Subiu dentro de um repositório? Ele abre já escalado nele — e entra na sua lista
+de recentes. Subiu fora? A tela é o seletor, não um aviso de erro.
+
+O navegador abre sozinho. Se a 5271 estiver ocupada, ele testa as dez seguintes
+e diz no banner em qual subiu — dá para deixar mais de um repositório aberto ao
+mesmo tempo sem escolher porta na mão.
 
 ---
 
@@ -185,15 +192,37 @@ Joelho reconstruído, artilharia da Copa. Funciona.
 
 ## Pré-temporada
 
+Contrata pelo npm e escala no terminal:
+
+```bash
+npm install -g gitcraque
+cd ~/code/projeto && gitcraque
+```
+
+Ou sem assinar contrato — o `npx` baixa, roda e devolve:
+
+```bash
+npx gitcraque
+```
+
+**Requisitos:** Node >= 22.13 e `git` no PATH. Chuteira é opcional.
+
+> O piso de Node não é chute: a memória de projetos usa o `node:sqlite`, que só
+> dispensa a flag `--experimental-sqlite` a partir do 22.13.
+
+### Para contribuir
+
 ```bash
 git clone https://github.com/frederico-kluser/GitCraque.git
 cd GitCraque
 npm install
 npm run build
-npm start                        # ou npx gitcraque no diretório do repo
+npm start
 ```
 
-**Requisitos:** Node >= 22.5 e `git` no PATH. Chuteira é opcional.
+Instalar por `npm i github:frederico-kluser/GitCraque` **não funciona**: o
+pacote publicado leva a SPA já compilada, e o build só roda no `npm pack`. Do
+código-fonte, é clone e `npm run build`.
 
 ---
 
@@ -204,8 +233,8 @@ npm run dev          # backend --watch em :5271 + vite em :5273 (proxy /api e /w
 npm run typecheck    # tsc --noEmit
 npm run build        # vite build → web/dist
 
-npm test             # server + graph + dnd + viewer (465 testes)
-npm run test:server  # 312 testes
+npm test             # server + graph + dnd + viewer (468 testes)
+npm run test:server  # 315 testes
 npm run test:graph   # 51 testes
 npm run test:dnd     # 20 testes
 npm run test:viewer  # 82 testes

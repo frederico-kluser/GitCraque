@@ -171,8 +171,9 @@ hold-to-confirm, and the drag path does it correctly
 - `docs/ARCHITECTURE.md:259-277` describes lane allocation as "lowest index among
   waiting lanes". The code prefers the lowest *branch-child* lane even when a
   merge-child holds a lower index (`web/src/graph/layout.ts:109-118`).
-- `docs/UI.md:21,32,38` lists `sheet`, `expand-card` and `terminal-session` as in
-  use. All three have **zero consumers**. Only `border-beam` is marked unused.
+- `docs/UI.md` lists `sheet` and `expand-card` as in use. Both have **zero
+  consumers**. Only `border-beam` is marked unused. (`terminal-session` was a
+  third case and has since been deleted with the `motion-plus` dependency.)
 - `web/src/dialogs/requests.ts:7` cites a test file
   `dnd/__tests__/api-contract.test.mjs` that **does not exist**. The 12 endpoints
   in `REQUEST_ENDPOINTS` are untested; the real contract test covers only the 5

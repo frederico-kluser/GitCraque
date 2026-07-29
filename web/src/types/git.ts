@@ -644,7 +644,7 @@ export interface ScanPayload {
   elapsedMs: number;
 }
 
-/** Um repositorio ja aberto antes, persistido em ~/.config/gitcraque/recent.json */
+/** Um repositorio ja aberto antes, persistido em ~/.config/gitcraque/gitcraque.db */
 export interface RecentRepo {
   path: string;
   name: string;

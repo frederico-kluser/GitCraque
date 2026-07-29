@@ -123,6 +123,18 @@ includes a pipe-subject commit, a merge, tags and a second worktree) and
 typecheck` never touches the backend, so a typo here is a runtime error only.
 The tests are the entire safety net.
 
+**The CLI entry guard must compare REALPATHS.** `server/bin/gitcraque.mjs` runs
+`main()` only when it was invoked as a command rather than imported by a test.
+That check has to be `fs.realpathSync(process.argv[1]) === fs.realpathSync(self)`
+— `path.resolve` does **not** undo a symlink. `npm i -g` installs the bin as a
+symlink at `<prefix>/bin/gitcraque` pointing into
+`lib/node_modules/gitcraque/server/bin/`, so `argv[1]` is the link and
+`import.meta.url` is the target. With `path.resolve` the two never matched,
+`main()` never ran, and the installed command exited **0 with no output at all**
+— no help, no version, no server. Nothing in the repo catches this: it only
+appears once the package is packed and installed, which is why
+`server/test/cli.test.mjs` now runs the binary through a symlink on purpose.
+
 ## Procedure
 
 1. **Read `server/src/contract.mjs` first.** It is the frozen mirror of the API.
