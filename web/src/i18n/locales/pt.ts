@@ -68,6 +68,15 @@ export const pt = {
   "app.reconnecting": "Reconectando ao servidor…",
 
   /* ---------------------------------------------------------------- */
+  /* Recuperação — RecoveryBoundary.tsx                                */
+  /* ---------------------------------------------------------------- */
+  "recovery.title": "A interface parou de responder",
+  "recovery.body":
+    "Algo quebrou ao desenhar a tela. Recarregar devolve o app ao normal — nada foi feito no repositório.",
+  "recovery.reloading": "Recarregando o GitCraque…",
+  "recovery.reload": "Recarregar agora",
+
+  /* ---------------------------------------------------------------- */
   /* Restos da paleta de comandos, ainda usados fora dela            */
   /* ---------------------------------------------------------------- */
   "commands.branch.checkout.pinned": "presa em {worktree}",
@@ -597,6 +606,8 @@ export const pt = {
   "store.repo.initFailed": "git init falhou",
   "store.ws.connected": "conectado — gitcraque {version} (pid {pid}) em {cwd}",
   "store.ws.cwdChanged": "diretório do servidor agora é {cwd}",
+  "store.lifecycle.resumed": "aba de volta — reconectando e recarregando o estado",
+  "store.lifecycle.restored": "view restaurada depois de o navegador descartar a aba",
 
   /* ---------------------------------------------------------------- */
   /* Toasts                                                            */

@@ -37,6 +37,7 @@ import {
   setDetailWidth,
   setRailWidth,
   useHotkeys,
+  useLifecycleRecovery,
   useRepoPoll,
   useShellState,
 } from "@/hooks";
@@ -145,6 +146,10 @@ export function App() {
 
   // O que muda no editor nao toca no `.git` e por isso nao chega pelo watcher.
   useRepoPoll();
+
+  // Aba de fundo que o navegador congelou ou descartou volta desatualizada — e
+  // as vezes vazia. Aqui e onde ela e trazida de volta a vida.
+  useLifecycleRecovery();
 
   // Trocar de projeto ou de worktree e trocar o diretorio do servidor: o
   // rascunho do commit era daquele repositorio, nao deste. Mora aqui, e nao no

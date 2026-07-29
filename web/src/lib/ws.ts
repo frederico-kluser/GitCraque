@@ -34,6 +34,74 @@ export class GitCraqueSocket {
     this.open();
   }
 
+  /**
+   * Reconecta AGORA, sem esperar o backoff.
+   *
+   * Existe por causa da aba congelada: o navegador para as filas de tarefa, o
+   * `setTimeout` do backoff nao dispara enquanto ela estiver de fundo, e ao
+   * voltar ainda restam ate cinco segundos de espera com a tela mostrando dados
+   * de antes. Quem volta para a aba quer o repositorio de agora.
+   */
+  reconnectNow() {
+    this.closedByUser = false;
+    if (this.timer) {
+      clearTimeout(this.timer);
+      this.timer = null;
+    }
+    if (this.heartbeat) {
+      clearInterval(this.heartbeat);
+      this.heartbeat = null;
+    }
+    this.attempt = 0;
+
+    const stale = this.ws;
+    this.ws = null;
+    if (stale) {
+      // Desarmar os handlers ANTES de fechar: o `onclose` agendaria outra
+      // reconexao por backoff e ficariamos com dois sockets vivos disputando os
+      // mesmos eventos.
+      stale.onopen = null;
+      stale.onmessage = null;
+      stale.onclose = null;
+      stale.onerror = null;
+      try {
+        stale.close();
+      } catch {
+        /* socket ja morto: fechar de novo nao muda nada */
+      }
+    }
+    this.open();
+  }
+
+  /**
+   * Ida e volta de `ping`/`pong` para saber se a conexao esta MESMO viva.
+   *
+   * `readyState === OPEN` mente depois de um congelamento: o servidor derruba a
+   * conexao enquanto a aba dorme, o FIN nunca e processado, e o socket volta
+   * meio-aberto — anunciando-se aberto, engolindo tudo o que se manda e nunca
+   * mais entregando nada. Sem esta sonda o app fica parado com cara de
+   * conectado, que e o pior dos dois mundos.
+   *
+   * Usa o `ping` que ja esta no contrato (`server/src/ws/hub.mjs`): nenhum
+   * evento novo, nenhuma rota nova.
+   */
+  probe(timeoutMs = 2_000): Promise<boolean> {
+    if (this.ws?.readyState !== WebSocket.OPEN) return Promise.resolve(false);
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = (alive: boolean) => {
+        if (settled) return;
+        settled = true;
+        off();
+        clearTimeout(timer);
+        resolve(alive);
+      };
+      const off = this.on("pong", () => finish(true));
+      const timer = setTimeout(() => finish(false), timeoutMs);
+      this.send({ type: "ping", ts: Date.now() });
+    });
+  }
+
   private setState(s: ConnectionState) {
     if (this._state === s) return;
     this._state = s;

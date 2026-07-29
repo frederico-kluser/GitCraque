@@ -4,6 +4,7 @@ import { MotionUIThemeProvider } from "@/components/motion-ui/ui-theme";
 import motionTheme from "../motion.theme";
 import { LocaleBoundary } from "@/i18n";
 import { App } from "@/app/App";
+import { RecoveryBoundary } from "@/app/RecoveryBoundary";
 import "@/styles/theme.css";
 
 const root = document.getElementById("root");
@@ -28,7 +29,13 @@ createRoot(root).render(
           de componente (acoes, toasts, motor de DND) e nao re-renderizaria
           sozinho. Ver `i18n/store.ts`. */}
       <LocaleBoundary>
-        <App />
+        {/* Por dentro do LocaleBoundary, para a tela de recuperacao sair no
+            idioma escolhido; por fora do App, que e tudo o que pode estourar.
+            Sem esta rede, um throw de render desmonta a arvore inteira e deixa
+            `#root` vazio para sempre — a tela em branco ao voltar para a aba. */}
+        <RecoveryBoundary>
+          <App />
+        </RecoveryBoundary>
       </LocaleBoundary>
     </MotionUIThemeProvider>
   </StrictMode>,

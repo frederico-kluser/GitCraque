@@ -13,6 +13,7 @@ export { useCommitDetail, useCommitDiff } from "./useCommitDetail";
 export type { AsyncResource } from "./useCommitDetail";
 
 export { useRepoPoll, REPO_POLL_MS } from "./useRepoPoll";
+export { useLifecycleRecovery, REVIVE_AFTER_HIDDEN_MS } from "./useLifecycleRecovery";
 export { useTrickle } from "./useTrickle";
 export { useVoiceRecorder } from "./useVoiceRecorder";
 export type { MicSupport, VoiceRecorder } from "./useVoiceRecorder";
