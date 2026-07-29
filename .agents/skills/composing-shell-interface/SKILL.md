@@ -75,15 +75,29 @@ wrong is the caching: it branches on the path, so **only** files under
 `dist/assets/` — the ones Vite versions by name — get `immutable`; a root-level
 asset gets `no-cache` and is ETag-revalidated on every load
 (`server/src/static.mjs:100-105`). Right for an icon, wrong place for anything
-big you expect to stay in the browser cache.
+big you expect to stay in the browser cache — import those from `web/src/`
+instead (`web/src/assets/logo-mark.webp`, imported by `panels/DetailPanel.tsx`):
+Vite emits them hashed into `dist/assets/`, which is the branch that gets
+`immutable`, and `web/tsconfig.json` already lists `vite/client`, so `*.png` and
+`*.webp` type-check with no config change.
 
 **Animate `transform`, `opacity`, `filter` only.** Box changes use the `layout`
 prop. The theme sets `reducedMotion: "calm"`, but any continuous or
 scroll-linked effect you write still needs `useReducedMotion()`.
 
-**Overlay z-ladder — memorise before adding one:** ActionMenu `z-50` → confetti
-`z-[55]` → confirm dialog `z-[60]` → reconnect banner `z-[70]` → context menu
-`z-[80]` (`web/src/app/ContextMenuHost.tsx:117`, which must beat the dialog).
+**Overlay z-ladder — memorise before adding one:** AI area `z-40` → ActionMenu
+`z-50` → confetti `z-[55]` → confirm dialog `z-[60]` → reconnect banner `z-[70]`
+→ context menu `z-[80]` (`web/src/app/ContextMenuHost.tsx:117`, which must beat
+the dialog).
+
+**The bottom of that ladder is a layout trap, not just a paint order.** The AI
+area is `fixed inset-x-0 bottom-6` centred on the VIEWPORT, ~46px tall collapsed
+(`web/src/app/AiBar.tsx:244`), so it floats over the bottom of the rail, the
+graph and the detail column alike — no panel reserves room for it. Scrolling
+content passing under it is fine; anything ANCHORED to the bottom of a panel
+needs ~4rem of bottom padding or the bar cuts it in half. Measured at 1100,
+1400 and 1920px: with the ordinary `pb-6` the overlap was 26px at every width,
+which is why the empty state in `panels/DetailPanel.tsx` pads `pb-16`.
 
 **`app` and `panels` are one bidirectional unit, not a layer stack.**
 `panels/SidePanel.tsx:33` imports `@/app/Splitter`; `app/ConfirmHost.tsx:30`
