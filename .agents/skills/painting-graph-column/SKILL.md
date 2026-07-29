@@ -180,6 +180,20 @@ and `shell.ts` reach it legally. No `enum`, no `namespace`, no decorators.
    `matchMedia("(hover: hover)")` stayed false; only the Blink flag flipped it.
    The media wrapper is also why the growth correctly does nothing on a
    touch-only device.
+
+   **That flag buys CSS `:hover` only — it does not buy JS hover.** A Base UI
+   popup (tooltip, menu, preview-card) opens through Floating UI's `useHover`,
+   and `Input.dispatchMouseEvent` never opens one, no matter the flags: the
+   element reports `:hover`, `pointerenter`/`pointermove` arrive with
+   `pointerType: "mouse"`, `isTrusted: true` and real `movementX/Y`, and the
+   popup still stays shut. Before concluding your wiring is broken, put Base
+   UI's own canonical example on a scratch page and hover it — it fails
+   identically, which is how you tell the harness apart from your code. What
+   *does* work is forcing `open` on the Root and reading the popup: that
+   exercises Portal, Positioner, Popup, the `handle` and the `payload` — every
+   part you actually wrote — leaving only the library's own open-on-hover
+   unverified. Budget for this: mistaking it for a real bug is a multi-hour
+   detour.
 5. `git status`: a diff in `docs/graph-sample.svg` is the runner, and it is the
    evidence of the change. Commit it deliberately.
 6. `npm run typecheck` and

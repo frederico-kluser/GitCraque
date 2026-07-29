@@ -104,8 +104,14 @@ with the other suites, and it gets worse under CPU contention. Consequence:
 **one red linearity run is not evidence of a regression.** Re-run it, and compare
 against a HEAD worktree before believing it. The
 tightest assertion in the module is `virtualization.domtest.ts:74-77`: DOM node
-count may vary under 15% between 200 and 20 000 commits, and it currently sits at
-11.8%. Adding one element per row can break it.
+count may vary under 15% between 200 and 20 000 commits. The suite prints the
+three counts it measured, so read them instead of trusting a number quoted here —
+they are 473 / 453 / 432 today, i.e. 8.7%. What eats that headroom is anything
+scaling with **edge density**, not a constant element per row: a constant one
+grows the denominator and makes the assertion easier. When a per-row wrapper is
+genuinely unwanted, Base UI's `render` prop fuses the behaviour into the existing
+element and costs zero nodes — `CommitRow.tsx` attaches its tooltip trigger that
+way and the three counts did not move.
 
 ## Procedure
 
