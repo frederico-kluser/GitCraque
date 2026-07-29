@@ -134,18 +134,25 @@ export const CommitRow = memo(function CommitRow({
        nos de DOM e verificado em `__tests__/virtualization.domtest.ts`.
 
        `disabled` enquanto arrasta: o cartao seguindo o ponteiro no meio de um
-       arraste atrapalharia a leitura do alvo do drop. */
+       arraste atrapalharia a leitura do alvo do drop.
+
+       O `id` vai NO GATILHO, nunca no <div> de dentro. O Base UI usa o id como
+       a IDENTIDADE do gatilho no seu registro; posto so no elemento do `render`
+       ele sobrescreve o id do DOM sem o registro saber, e o balao nunca abre —
+       falha muda, com o ponteiro em cima e `data-base-ui-tooltip-trigger` no
+       lugar. Bisseccao por CDP: o mesmo id no <div> quebra um gatilho que
+       funcionava; movido para ca, volta a abrir. */
     <Tooltip.Trigger
       handle={commitTooltip}
       payload={commit}
       delay={TOOLTIP_DELAY}
       disabled={draggable.isDragging}
+      id={rowDomId(commit.hash)}
       render={
         <div
           {...draggable.attributes}
           {...(draggable.listeners ?? {})}
           ref={draggable.setNodeRef}
-          id={rowDomId(commit.hash)}
           role="row"
           tabIndex={-1}
           aria-pressed={undefined}
