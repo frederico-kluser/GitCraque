@@ -13,6 +13,24 @@ terminal ──► server/bin/gitcraque.mjs
                 └─ fs.watch(.git) ── repo:changed   ─┘
 ```
 
+## Como o pacote publicado e montado
+
+O npm publica a RAIZ do workspace como `gitcraque`, e o `files` do
+`package.json` leva so `server/bin`, `server/src` e `web/dist`.
+
+**`server/` e `web/dist/` tem de continuar irmaos.** `server/src/server.mjs`
+resolve `WEB_DIST` como `resolve(dirname(import.meta.url), "..", "..", "web",
+"dist")` — a partir do arquivo, nao do cwd, porque o `process.chdir()` do boot
+tornaria qualquer caminho relativo ao cwd invalido. Mudar o `files` de forma que
+quebre essa vizinhanca faz o servidor devolver a pagina 503 de `static.mjs` no
+lugar do app, sem erro nenhum antes disso.
+
+O `web/dist` e ignorado pelo git; quem o constroi na hora de empacotar e o
+`prepack`. E `prepack`, e nao `prepare`, de proposito: `prepare` rodaria tambem
+no `npm install` de quem consome, e ninguem alem do mantenedor precisa compilar
+a SPA. `server/package.json` fica de fora do tarball — por isso `readVersion()`
+no CLI le a raiz primeiro.
+
 ## Regras que nao se negociam
 
 1. **Nenhuma biblioteca de gitgraph.** O layout do grafo e algoritmo proprio, em
@@ -156,9 +174,15 @@ muda e quem autoriza o caminho — a de worktree confere contra
 por uma subpasta entra pela raiz da worktree (`--show-toplevel`), senao o status
 e o log sairiam parciais.
 
-Os recentes ficam em `~/.config/gitcraque/recent.json` (respeita
-`XDG_CONFIG_HOME`), gravados por arquivo temporario + rename para nunca ficarem
-pela metade, com `exists` recalculado a cada leitura.
+Os recentes ficam em `~/.config/gitcraque/gitcraque.db` (SQLite pelo
+`node:sqlite`, respeita `XDG_CONFIG_HOME`), com `exists` recalculado a cada
+leitura. Os antigos `recent.json` e `favorites.json` continuam no disco, mas so
+sao lidos uma vez, na criacao do banco, e nunca mais escritos.
+
+Subir pelo terminal tambem chama `rememberRepo()` e tambem entra pela raiz da
+worktree: `gitcraque` num projeto conta como abrir o projeto. Antes disso o
+`chdir` do boot era cru, e um repositorio aberto pelo terminal so aparecia nos
+recentes depois de ser reaberto pela interface.
 
 **Nao estar num repositorio deixou de ser erro.** `GET /log` e `GET /status`
 devolvem payload vazio em vez de 500 quando o git responde *"not a git

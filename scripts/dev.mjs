@@ -71,9 +71,9 @@ subir(
   ROOT,
 );
 
-// Caminho direto para o binario do Vite em vez de `npx`: o `.npmrc` do projeto
-// referencia ${MOTION_TOKEN}, e todo comando npm falha quando a variavel nao
-// esta no ambiente. Chamando o arquivo, o npm nem entra na jogada.
+// Caminho direto para o binario do Vite em vez de `npx`. Nasceu como contorno
+// do `.npmrc` que pedia ${MOTION_TOKEN} — esse arquivo ja nao existe —, mas
+// segue valendo: chamar o arquivo pula a resolucao do npx a cada `npm run dev`.
 subir(
   "vite",
   process.execPath,

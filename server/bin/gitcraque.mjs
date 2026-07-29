@@ -18,6 +18,7 @@ import { fileURLToPath } from "node:url";
 
 import { DEFAULT_HOST, DEFAULT_PORT } from "../src/contract.mjs";
 import { detectGitVersion, readGitLine } from "../src/git/exec.mjs";
+import { rememberRepo } from "../src/git/discover.mjs";
 import { createServer } from "../src/server.mjs";
 import { listWorktrees } from "../src/git/worktree.mjs";
 
@@ -115,9 +116,12 @@ export function parseArgs(argv) {
 }
 
 function readVersion() {
+  // A RAIZ primeiro. No pacote publicado `server/package.json` nem vai junto, e
+  // no repo ele existe mas carrega a versao do workspace — ler o do server
+  // antes fazia `--version` reportar um numero que ninguem publica.
   for (const candidate of [
-    path.resolve(HERE, "..", "package.json"),
     path.resolve(HERE, "..", "..", "package.json"),
+    path.resolve(HERE, "..", "package.json"),
   ]) {
     try {
       return JSON.parse(fs.readFileSync(candidate, "utf8")).version ?? "0.0.0";
@@ -209,6 +213,23 @@ async function main() {
     process.stderr.write(
       `gitcraque: ${repo} nao e um repositorio git — abrindo o seletor de repositorios\n`,
     );
+  } else {
+    // Entra pela RAIZ da worktree, como `POST /repos/open` ja fazia. Subir de
+    // uma subpasta deixava o servidor nela, e o selo "Aberto" do seletor
+    // compara o caminho do recente com o cwd: nunca casava. Repo bare nao tem
+    // toplevel, e ai fica onde esta.
+    const top = await readGitLine(["rev-parse", "--show-toplevel"]);
+    if (top) process.chdir(top);
+
+    // Subir pelo terminal TAMBEM e abrir o projeto. Sem isto o repositorio nao
+    // entrava nos recentes nem no menu de projetos ate ser reaberto pela
+    // interface, porque `rememberRepo` so era chamado por `openRepository`.
+    // Efeito colateral de bookkeeping: falhar aqui nao pode derrubar o boot.
+    try {
+      await rememberRepo(process.cwd());
+    } catch {
+      /* o historico e conveniencia; o app sobe sem ele */
+    }
   }
 
   const gitVersion = await detectGitVersion();
@@ -272,8 +293,28 @@ async function main() {
   process.on("SIGHUP", () => shutdown("SIGHUP"));
 }
 
-const invokedDirectly =
-  process.argv[1] && path.resolve(process.argv[1]) === path.resolve(fileURLToPath(import.meta.url));
+/**
+ * Rodou como comando, ou foi importado por um teste?
+ *
+ * Compara por REALPATH, nao por `path.resolve`. Instalado global, o npm poe em
+ * `<prefix>/bin/gitcraque` um SYMLINK para este arquivo: o `argv[1]` e o link e
+ * o `import.meta.url` e o alvo, e `path.resolve` nao desfaz symlink. A
+ * comparacao dava falso, `main()` nunca rodava e o `gitcraque` instalado saia
+ * calado, com codigo 0 — o binario existia e nao fazia nada.
+ */
+function foiChamadoDireto() {
+  const arg = process.argv[1];
+  if (!arg) return false;
+  const self = fileURLToPath(import.meta.url);
+  try {
+    return fs.realpathSync(arg) === fs.realpathSync(self);
+  } catch {
+    // Caminho que sumiu no meio: cai na comparacao literal.
+    return path.resolve(arg) === path.resolve(self);
+  }
+}
+
+const invokedDirectly = foiChamadoDireto();
 
 if (invokedDirectly) {
   main().catch((err) => {

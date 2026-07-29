@@ -1,8 +1,19 @@
 # Regras de UI — Motion UI primeiro, CSS por ultimo
 
-O projeto ja tem **19 componentes Motion UI instalados** em
+O projeto ja tem **18 componentes Motion UI instalados** em
 `web/src/components/motion-ui/`. Escrever componente do zero e o **ultimo**
 recurso, nao o primeiro reflexo.
+
+> **Nao reinstale `stagger-reveal` nem `skeleton` sem ler isto.** As versoes do
+> registry importam `motion-plus`, que e alias do `@motionplus/core` — pacote do
+> registro privado, que faz `npm install` devolver 401 para quem nao tem
+> `MOTION_TOKEN`. O repo foi despublicado dessa amarra: `stagger-reveal` importa
+> `splitText` do `motion-plus-dom` (publico, MIT, o mesmo codigo — `motion-plus`
+> so reexporta ele), e o bloco `SkeletonReveal`, que usava `AnimateView`, foi
+> removido por ser codigo morto e quebrado (React 19 nao exporta
+> `ViewTransition`). Rodar `add @motion/stagger-reveal` ou `add @motion/skeleton`
+> traz o import pago de volta e quebra o build — a falha e barulhenta, mas o
+> conserto e refazer estas duas edicoes.
 
 ## A cascata, na ordem
 
@@ -35,7 +46,6 @@ recurso, nao o primeiro reflexo.
 | `stagger-reveal` | entrada dos paineis e dos estados vazios |
 | `sparkline` | atividade de commits no cabecalho do repositorio |
 | `confetti` | push bem-sucedido |
-| `terminal-session` | estetica do console de comandos crus |
 
 ## O que o catalogo nao tem (e por isso e proprio)
 
@@ -51,8 +61,14 @@ nenhum**, exceto em campo de texto. Alvo sem acao util nao mostra caixa vazia e
 tambem nao devolve o menu nativo — ver `docs/ARCHITECTURE.md`.
 
 Instalar mais, se realmente faltar:
-`cd web && npx shadcn@4.16.0 add --yes @motion/<nome>` (o `.npmrc` e o
-`components.json` ja estao configurados; o token vem do ambiente).
+`cd web && npx shadcn@4.16.0 add --yes @motion/<nome>` (o `components.json` ja
+esta configurado; o token vem do ambiente, em `MOTION_TOKEN`).
+
+O `.npmrc` nao existe mais: **instalar e compilar o projeto nao pede token
+nenhum**. So ADICIONAR componente novo do registry `@motion` pede, porque o
+`components.json` manda o `Authorization: Bearer ${MOTION_TOKEN}`. Se o
+componente que voce trouxer importar `motion-plus`, veja o aviso do topo antes
+de commitar.
 
 ## Regras duras
 

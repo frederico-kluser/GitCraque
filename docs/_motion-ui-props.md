@@ -422,7 +422,7 @@ interface SheetCloseProps {
 
 ## `@/components/motion-ui/skeleton`
 
-exports: `useSkeletonSweep`, `Skeleton`, `SkeletonReveal`, `useSkeletonResolve`, `SkeletonResolveList`, `SkeletonResolveRow`
+exports: `useSkeletonSweep`, `Skeleton`, `useSkeletonResolve`, `SkeletonResolveList`, `SkeletonResolveRow`
 
 ```ts
 interface SkeletonProps {
@@ -434,19 +434,6 @@ interface SkeletonProps {
   style?: CSSProperties
   /** Rendered invisibly to size the bone to the exact geometry of the real
   children?: ReactNode
-}
-
-interface SkeletonRevealProps {
-  /** Whether the skeleton is showing (`true`) or the loaded content has taken
-  loading: boolean
-  /** The skeleton placeholder, shown while `loading`. Build it from `Skeleton`
-  skeleton: ReactNode
-  /** The loaded content, shown once `loading` is `false`. Give it and the
-  children: ReactNode
-  /** The shared view-transition name the skeleton and loaded layers hand off
-  name?: string
-  /** Merged onto the wrapper around the handoff (size the stage here). */
-  className?: string
 }
 
 interface SkeletonResolveListProps {
@@ -674,27 +661,6 @@ interface SwipeActionProps {
   ariaLabel: string
   /** Fired when the action is tapped, and - for a `primary` action - when a
   onActivate: () => void
-}
-```
-
-## `@/components/motion-ui/terminal-session`
-
-exports: `useTerminalSession`, `TerminalSession`
-
-```ts
-interface TerminalSessionProps {
-  /** The session to play, top to bottom. Content, not feel. */
-  lines: TerminalLine[]
-  /** Base milliseconds per keystroke for command lines. Lower is faster.
-  typingSpeedMs?: number
-  /** Milliseconds before the first line starts typing. Defaults to `400`. */
-  startDelayMs?: number
-  /** Milliseconds an output line rests after fading in before the session
-  outputDelayMs?: number
-  /** The lead-in for the `sr-only` spoken transcript, read as
-  label?: string
-  /** Merged onto the scrolling body wrapper. */
-  className?: string
 }
 ```
 

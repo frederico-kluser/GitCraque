@@ -34,9 +34,11 @@ Never run `add @motion/motion-theme` — it would overwrite the customised
 `motion.theme.ts`. `<MotionUIThemeProvider>` is already mounted in
 `web/src/main.tsx`; do not mount a second one.
 
-**Three installed components have zero consumers:** `sheet`, `expand-card`,
-`terminal-session`. Treat `docs/UI.md`'s table as a catalogue of what is
-*available*, not proof of what is wired — grep before believing a row.
+**Two installed components have zero consumers:** `sheet` and `expand-card`.
+Treat `docs/UI.md`'s table as a catalogue of what is *available*, not proof of
+what is wired — grep before believing a row. (`terminal-session` used to be the
+third; it was deleted along with the `motion-plus` dependency — see the warning
+at the top of `docs/UI.md` before reinstalling anything from `@motion`.)
 `border-beam` is wired: the toolbar's commit button, gated on `active={dirty}`
 (`web/src/panels/Toolbar.tsx`).
 

@@ -1,5 +1,9 @@
 import { animate } from "motion"
-import { splitText } from "motion-plus"
+// `motion-plus-dom`, nao `motion-plus`: o segundo e alias do @motionplus/core,
+// que so existe no registro privado e trava o `npm install` de quem nao tem
+// token. O primeiro e publico e MIT, e o `splitText` e literalmente o mesmo
+// codigo — `motion-plus` apenas reexporta este pacote.
+import { splitText } from "motion-plus-dom"
 import {
   createElement,
   useLayoutEffect,

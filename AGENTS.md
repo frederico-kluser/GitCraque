@@ -8,7 +8,7 @@ process *is* the thing that sits in the repository — switching worktree is
 **Read before writing code:** `docs/ARCHITECTURE.md` (the whole architecture,
 module by module — the source of truth), `docs/UI.md` (the Motion UI cascade and
 style rules, mandatory for front-end), `docs/_motion-ui-props.md` (exports and
-props of the 19 installed components).
+props of the 18 installed components).
 
 ## Commands
 
@@ -19,8 +19,8 @@ npm run build            # vite build -> web/dist
 npm start                # serve web/dist
 npm run typecheck        # tsc --noEmit  (web only -- server/** has no tsconfig)
 
-npm test                 # server + graph + dnd + viewer  (465 tests)
-npm run test:server      # 312   node --test "server/test/*.test.mjs"
+npm test                 # server + graph + dnd + viewer  (468 tests)
+npm run test:server      # 315   node --test "server/test/*.test.mjs"
 npm run test:graph       # 51    custom runner, 3 phases
 npm run test:dnd         # 20
 npm run test:viewer      # 82

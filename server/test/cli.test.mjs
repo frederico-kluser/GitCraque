@@ -1,7 +1,14 @@
 /**
  * CLI: parser de flags e o processo de verdade subindo contra um repositorio.
+ *
+ * `XDG_CONFIG_HOME` aponta para um temporario, e os processos filhos herdam:
+ * subir num repositorio agora registra ele nos recentes, e sem isto a suite
+ * encheria o historico de verdade de quem roda os testes com fixtures que ela
+ * mesma apaga em seguida.
  */
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
 import test from "node:test";
 import path from "node:path";
 import { spawn, execFile } from "node:child_process";
@@ -11,6 +18,9 @@ import { promisify } from "node:util";
 import { DEFAULT_HOST, DEFAULT_PORT } from "../src/contract.mjs";
 import { parseArgs } from "../bin/gitcraque.mjs";
 import { makeFixtureRepo } from "./helpers/repo.mjs";
+
+const CONFIG_TMP = fs.mkdtempSync(path.join(os.tmpdir(), "gitcraque-config-cli-"));
+process.env.XDG_CONFIG_HOME = CONFIG_TMP;
 
 const execFileAsync = promisify(execFile);
 const CLI = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "bin", "gitcraque.mjs");
@@ -63,6 +73,25 @@ test("--help e --version nao sobem servidor", async () => {
 
   const versao = await execFileAsync(process.execPath, [CLI, "--version"], { encoding: "utf8" });
   assert.match(versao.stdout.trim(), /^\d+\.\d+\.\d+/);
+});
+
+test("chamado por um SYMLINK continua rodando", async () => {
+  // E assim que o npm instala o binario: `<prefix>/bin/gitcraque` e um link
+  // para este arquivo. Comparar `argv[1]` com `import.meta.url` por
+  // `path.resolve` dava falso, `main()` nao rodava, e o comando instalado saia
+  // calado com codigo 0 — sem ajuda, sem versao, sem servidor.
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "gitcraque-link-"));
+  const link = path.join(dir, "gitcraque");
+  fs.symlinkSync(CLI, link);
+
+  try {
+    const { stdout } = await execFileAsync(process.execPath, [link, "--version"], {
+      encoding: "utf8",
+    });
+    assert.match(stdout.trim(), /^\d+\.\d+\.\d+/, "a versao tem de sair pelo link");
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 test("diretorio que nao e repositorio git falha com mensagem clara", async () => {
@@ -123,6 +152,75 @@ test("sobe de verdade, responde a API e fecha em SIGTERM", async () => {
   } finally {
     if (child.exitCode === null) child.kill("SIGKILL");
     fixture.cleanup();
+  }
+});
+
+test("subir de uma subpasta entra pela raiz e registra nos recentes", async () => {
+  const fixture = makeFixtureRepo("gitcraque-boot-");
+  const porta = 5396;
+  // `src/` existe na fixture: subir de dentro dela e o caso que deixava o
+  // servidor na subpasta.
+  const subpasta = path.join(fixture.root, "src");
+
+  const child = spawn(
+    process.execPath,
+    [CLI, "--repo", subpasta, "--port", String(porta), "--no-open"],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+
+  let saida = "";
+  child.stdout.setEncoding("utf8");
+  child.stdout.on("data", (c) => {
+    saida += c;
+  });
+
+  try {
+    const inicio = Date.now();
+    while (!saida.includes("GitCraque") && Date.now() - inicio < 15_000) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    const repo = await (await fetch(`http://127.0.0.1:${porta}/api/repo`)).json();
+    assert.equal(repo.cwd, fixture.root, "o cwd e a RAIZ, nao a subpasta de onde subiu");
+
+    const recentes = await (await fetch(`http://127.0.0.1:${porta}/api/repos/recent`)).json();
+    const achado = recentes.entries.find((e) => e.path === fixture.root);
+    assert.ok(achado, "subir pelo terminal tambem e abrir o projeto: tem de entrar nos recentes");
+  } finally {
+    child.kill("SIGKILL");
+    fixture.cleanup();
+  }
+});
+
+test("pasta que nao e repositorio nao suja os recentes", async () => {
+  const vazia = fs.mkdtempSync(path.join(os.tmpdir(), "gitcraque-vazia-"));
+  const porta = 5395;
+  const child = spawn(
+    process.execPath,
+    [CLI, "--repo", vazia, "--port", String(porta), "--no-open"],
+    { stdio: ["ignore", "pipe", "pipe"] },
+  );
+
+  let saida = "";
+  child.stdout.setEncoding("utf8");
+  child.stdout.on("data", (c) => {
+    saida += c;
+  });
+
+  try {
+    const inicio = Date.now();
+    while (!saida.includes("GitCraque") && Date.now() - inicio < 15_000) {
+      await new Promise((r) => setTimeout(r, 100));
+    }
+
+    const recentes = await (await fetch(`http://127.0.0.1:${porta}/api/repos/recent`)).json();
+    assert.ok(
+      !recentes.entries.some((e) => e.path === vazia),
+      "o seletor tem de subir, mas a pasta nao virou projeto aberto",
+    );
+  } finally {
+    child.kill("SIGKILL");
+    fs.rmSync(vazia, { recursive: true, force: true });
   }
 });
 

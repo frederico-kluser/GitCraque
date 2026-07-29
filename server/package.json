@@ -4,7 +4,6 @@
   "private": true,
   "type": "module",
   "description": "Backend Node.js puro: orquestracao de git via child_process, REST nativo (node:http) e WebSocket",
-  "main": "src/index.mjs",
   "bin": {
     "gitcraque": "bin/gitcraque.mjs"
   },

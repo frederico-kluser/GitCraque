@@ -1,6 +1,4 @@
-import { AnimateView } from "motion-plus/animate-view"
 import { motion, useInView } from "motion/react"
-import type { TargetAndTransition } from "motion/react"
 import {
   createContext,
   useContext,
@@ -26,11 +24,6 @@ import { useMotionUITheme, useMotionUITransition } from "@/components/motion-ui/
  *    handoff has zero layout shift.
  *  - `useSkeletonSweep` is that gate on its own (the token-derived tween + the
  *    in-view / reduced-motion shimmering flag), for building a custom bone.
- *  - `SkeletonReveal` is the single-card handoff: skeleton and loaded card
- *    share one view-transition name and the old skeleton layer wipes away
- *    left-to-right under a `--wipe`-driven mask crossfade (motion-plus
- *    `AnimateView`). The `@property --wipe` registration and the
- *    `::view-transition-*` mask CSS ship with it.
  *  - `SkeletonResolveList` / `SkeletonResolveRow` / `useSkeletonResolve` are
  *    the row-by-row handoff: each row stacks its real content (in normal flow,
  *    defining the box) under a bones overlay, and the two crossfade on a
@@ -183,102 +176,6 @@ export function Skeleton({
         }
         transition={shimmering ? sweepTransition : undefined}
       />
-    </div>
-  )
-}
-
-/**
- * ==============   SkeletonReveal   ================
- */
-
-/** Injects the view-transition CSS a `SkeletonReveal` needs: the `@property
- *  --wipe` registration and the `::view-transition-*` mask rules for one
- *  handoff `name`. These pseudo-elements are generated on the document root,
- *  OUTSIDE any themed subtree, so shadcn vars do NOT resolve here - the rules
- *  use structural values only (a black/transparent mask, z-index). Rendered
- *  plain so it ships and applies identically under SSR and in the browser; a
- *  second reveal with the same `name` re-declares identical rules, which is
- *  harmless. */
-function SkeletonRevealStyle({ name }: { name: string }) {
-  const css = `@property --wipe {
-  syntax: "<percentage>";
-  inherits: true;
-  initial-value: -100%;
-}
-::view-transition-group(${name}) {
-  overflow: hidden;
-}
-::view-transition-image-pair(${name}) {
-  mix-blend-mode: normal;
-}
-::view-transition-old(${name}) {
-  z-index: 2;
-  mask-image: linear-gradient(to right, black var(--wipe), transparent calc(var(--wipe) + 100%));
-  -webkit-mask-image: linear-gradient(to right, black var(--wipe), transparent calc(var(--wipe) + 100%));
-}`
-  return <style dangerouslySetInnerHTML={{ __html: css }} />
-}
-
-export interface SkeletonRevealProps {
-  /** Whether the skeleton is showing (`true`) or the loaded content has taken
-   *  over (`false`). Flip it to run the handoff; you own the load timer. */
-  loading: boolean
-  /** The skeleton placeholder, shown while `loading`. Build it from `Skeleton`
-   *  bones sized to your loaded content so the wipe has no layout shift. */
-  skeleton: ReactNode
-  /** The loaded content, shown once `loading` is `false`. Give it and the
-   *  skeleton the same shell so `AnimateView` morphs shell-to-shell and only
-   *  their contents crossfade. */
-  children: ReactNode
-  /** The shared view-transition name the skeleton and loaded layers hand off
-   *  across. Must be unique per independent reveal on the page. Defaults to
-   *  `velocity-skeleton-card`. */
-  name?: string
-  /** Merged onto the wrapper around the handoff (size the stage here). */
-  className?: string
-}
-
-/**
- * The single-card load handoff. While `loading`, it shows your `skeleton`;
- * when `loading` flips to `false`, the skeleton and loaded layers - which
- * share the `name` view-transition name - crossfade, and the old skeleton
- * layer wipes away left-to-right under a `--wipe`-driven mask at the `gentle`
- * token's duration. Under reduced motion the wipe degrades: "calm" keeps a
- * plain opacity crossfade at the same perceived length, "off" is instant. The
- * `@property --wipe` and `::view-transition-*` CSS ship with the component, so
- * there is nothing extra to install.
- */
-export function SkeletonReveal({
-  loading,
-  skeleton,
-  children,
-  name = "velocity-skeleton-card",
-  className,
-}: SkeletonRevealProps) {
-  const { motionMode } = useMotionUITheme()
-  const calm = motionMode === "calm"
-  const motionAllowed = motionMode === "full"
-  const gentle = useMotionUITransition("gentle")
-  const wipeTransition = {
-    type: "tween" as const,
-    duration: gentle.duration,
-    ease: gentle.ease,
-  }
-  // Full motion runs the mask wipe (--wipe drives the ::view-transition-old
-  // mask); calm drops it to a plain opacity crossfade at the same perceived
-  // length; "off" is instant.
-  const update: TargetAndTransition = motionAllowed
-    ? { "--wipe": ["100%", "-100%"], transition: wipeTransition }
-    : calm
-      ? { transition: wipeTransition }
-      : { transition: { duration: 0 } }
-
-  return (
-    <div className={className}>
-      <SkeletonRevealStyle name={name} />
-      <AnimateView name={name} update={update}>
-        {loading ? skeleton : children}
-      </AnimateView>
     </div>
   )
 }
