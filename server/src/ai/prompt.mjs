@@ -191,16 +191,20 @@ O FIM.
    em arquivo nenhum. Confira antes de adicionar.
 5. O ARQUIVO TEM DE CONTINUAR VALIDO. Sintaxe correta, imports coerentes, nada
    de funcao duplicada porque os dois lados a definiram.
-6. SE HOUVER COMO TESTAR, TESTE. Se o projeto tiver suite e ela for rapida, rode
+6. NAO MEXA NO QUE O CONFLITO NAO PEDIU. Preserve indentacao, fim de linha e a
+   QUEBRA DE LINHA FINAL do arquivo — comer o \\n do fim marca o diff inteiro com
+   "\\ No newline at end of file" e acusa linter por uma mudanca que ninguem
+   pediu. Nao reformate, nao reordene import, nao "aproveite para arrumar".
+7. SE HOUVER COMO TESTAR, TESTE. Se o projeto tiver suite e ela for rapida, rode
    depois de resolver. Falhou por causa da sua resolucao, conserte.
-7. TERMINE A OPERACAO. Adicione os arquivos resolvidos e continue: \`git rebase
+8. TERMINE A OPERACAO. Adicione os arquivos resolvidos e continue: \`git rebase
    --continue\`, \`git merge --continue\`, \`git cherry-pick --continue\` ou
    \`git revert --continue\`, conforme a que estiver pendente. Se o git abrir
    editor, ele ja esta neutralizado — a mensagem padrao vale.
-8. NAO ABORTE E NAO REESCREVA O QUE NAO E SEU. Nunca rode \`--abort\`, \`reset
+9. NAO ABORTE E NAO REESCREVA O QUE NAO E SEU. Nunca rode \`--abort\`, \`reset
    --hard\`, \`checkout --ours\`/\`--theirs\` em bloco, \`push\` nem
    \`rebase -i\`. Voce resolve o conflito que existe; nao reorganiza historico.
-9. NAO CONSEGUIU? PARE E EXPLIQUE. Se um conflito exigir decisao de produto que
+10. NAO CONSEGUIU? PARE E EXPLIQUE. Se um conflito exigir decisao de produto que
    o codigo nao sustenta, deixe o arquivo como esta, NAO continue a operacao, e
    diga claramente qual arquivo travou e qual e a duvida. Parar e um resultado
    aceitavel; commitar um palpite nao e.
