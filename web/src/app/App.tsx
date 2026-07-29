@@ -37,6 +37,7 @@ import {
   setDetailWidth,
   setRailWidth,
   useAutoFetch,
+  useDocumentTitle,
   useHotkeys,
   useLifecycleRecovery,
   useRepoPoll,
@@ -145,6 +146,12 @@ export function App() {
     onCommit: requestCommit,
     onEscape: clearSelection,
   });
+
+  // A aba diz em que worktree e em que ramo voce esta. Fica aqui em cima, junto
+  // dos outros hooks, porque os retornos antecipados abaixo (fatal, sem repo)
+  // nao podem pular uma chamada de hook — e nesses dois casos o titulo tambem
+  // tem de voltar a ser so "GitCraque".
+  useDocumentTitle();
 
   // O que muda no editor nao toca no `.git` e por isso nao chega pelo watcher.
   useRepoPoll();

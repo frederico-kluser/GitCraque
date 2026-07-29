@@ -12,6 +12,8 @@ export type { HotkeyHandlers } from "./useHotkeys";
 export { useCommitDetail, useCommitDiff } from "./useCommitDetail";
 export type { AsyncResource } from "./useCommitDetail";
 
+export { useDocumentTitle, buildDocumentTitle } from "./useDocumentTitle";
+
 export { useRepoPoll, REPO_POLL_MS } from "./useRepoPoll";
 export { useAutoFetch } from "./useAutoFetch";
 export { useLifecycleRecovery, REVIVE_AFTER_HIDDEN_MS } from "./useLifecycleRecovery";
