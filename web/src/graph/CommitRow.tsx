@@ -16,6 +16,7 @@
  */
 import { memo } from "react";
 import type { MouseEvent } from "react";
+import { Tooltip } from "@base-ui/react/tooltip";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { areEqual } from "react-window";
 import type { ListChildComponentProps } from "react-window";
@@ -25,6 +26,7 @@ import { formatGitRelativeDate, t } from "@/i18n";
 import { cn, laneVar, short } from "@/lib/utils";
 import { toast } from "@/state/store";
 import { clipEdgePath, laneX } from "./bezier.ts";
+import { commitTooltip, TOOLTIP_DELAY } from "./CommitTooltip.tsx";
 import { commitNodeShapes, EDGE, NODE, SURFACE, TEXT } from "./paint.ts";
 import type { PaintTone } from "./paint.ts";
 import { RefChips } from "./RefChip.tsx";
@@ -126,29 +128,44 @@ export const CommitRow = memo(function CommitRow({
   };
 
   return (
-    <div
-      {...draggable.attributes}
-      {...(draggable.listeners ?? {})}
-      ref={draggable.setNodeRef}
-      id={rowDomId(commit.hash)}
-      role="row"
-      tabIndex={-1}
-      aria-pressed={undefined}
-      aria-rowindex={row + 2 /* 1 e o cabecalho */}
-      aria-selected={isSelected}
-      data-dragging={draggable.isDragging || undefined}
-      data-revealed={isMarked || undefined}
-      /* `style` vem do react-window e ja traz position/top/height — e o que faz
-         a linha ser um bloco de posicionamento para o realce abaixo. */
-      style={style}
-      className={cn(
-        ROW_GRID,
-        "group cursor-default select-none text-foreground",
-        "data-[dragging]:opacity-40",
-      )}
-      onMouseDown={data.onFocusGrid}
-      onClick={handleClick}
-      onContextMenu={handleContextMenu}
+    /* O balao do hover entra como GATILHO da propria linha, pela prop `render`:
+       o Base UI funde os seus handlers no <div> que ja existia em vez de
+       embrulha-lo. Um elemento a mais por linha aqui seria caro — o orcamento de
+       nos de DOM e verificado em `__tests__/virtualization.domtest.ts`.
+
+       `disabled` enquanto arrasta: o cartao seguindo o ponteiro no meio de um
+       arraste atrapalharia a leitura do alvo do drop. */
+    <Tooltip.Trigger
+      handle={commitTooltip}
+      payload={commit}
+      delay={TOOLTIP_DELAY}
+      disabled={draggable.isDragging}
+      render={
+        <div
+          {...draggable.attributes}
+          {...(draggable.listeners ?? {})}
+          ref={draggable.setNodeRef}
+          id={rowDomId(commit.hash)}
+          role="row"
+          tabIndex={-1}
+          aria-pressed={undefined}
+          aria-rowindex={row + 2 /* 1 e o cabecalho */}
+          aria-selected={isSelected}
+          data-dragging={draggable.isDragging || undefined}
+          data-revealed={isMarked || undefined}
+          /* `style` vem do react-window e ja traz position/top/height — e o que faz
+             a linha ser um bloco de posicionamento para o realce abaixo. */
+          style={style}
+          className={cn(
+            ROW_GRID,
+            "group cursor-default select-none text-foreground",
+            "data-[dragging]:opacity-40",
+          )}
+          onMouseDown={data.onFocusGrid}
+          onClick={handleClick}
+          onContextMenu={handleContextMenu}
+        />
+      }
     >
       {/* As tres camadas de realce sao a MESMA pilula (`SURFACE.pill`): mesmo
           recuo, mesmo raio. Fossem caixas diferentes, hover e selecao juntos
@@ -284,18 +301,12 @@ export const CommitRow = memo(function CommitRow({
       </div>
 
       {/* ---- metadados: colunas de largura fixa ------------------------ */}
-      <div
-        role="gridcell"
-        className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}
-        title={`${commit.authorName} <${commit.authorEmail}>`}
-      >
+      {/* Sem `title=` nas colunas de autor e data: o balao do hover ja mostra os
+          dois, e o tooltip nativo do navegador subiria por cima dele. */}
+      <div role="gridcell" className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}>
         {commit.authorName}
       </div>
-      <div
-        role="gridcell"
-        className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}
-        title={commit.relativeDate}
-      >
+      <div role="gridcell" className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}>
         {/* O `%ar` do git chega sempre em ingles (LC_ALL=C): a exibicao muda de
             idioma, o payload nao — `useCommitActivity` depende do original. */}
         {formatGitRelativeDate(commit.relativeDate)}
@@ -319,6 +330,6 @@ export const CommitRow = memo(function CommitRow({
           {short(commit.hash)}
         </button>
       </div>
-    </div>
+    </Tooltip.Trigger>
   );
 }, areEqual);

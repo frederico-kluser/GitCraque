@@ -10,6 +10,7 @@
  */
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, HTMLAttributes, KeyboardEvent } from "react";
+import { Tooltip } from "@base-ui/react/tooltip";
 import { motion } from "motion/react";
 import { FixedSizeList } from "react-window";
 import type { ListOnScrollProps } from "react-window";
@@ -24,6 +25,7 @@ import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { GraphMetrics, GraphViewProps } from "@/types/modules";
 import { CommitRow } from "./CommitRow.tsx";
+import { CommitTooltip } from "./CommitTooltip.tsx";
 import { computeGraphLayout, DEFAULT_METRICS } from "./layout.ts";
 import { applyRevealPlan, MARK_DURATION_MS, planReveal } from "./reveal.ts";
 import type { RevealSurface, RevealTarget } from "./reveal.ts";
@@ -372,59 +374,72 @@ export function GraphView({
   const showSkeleton = isEmpty && loading === true;
 
   return (
-    <div
-      ref={gridRef}
-      role="grid"
-      tabIndex={0}
-      aria-label={t("graph.label")}
-      aria-colcount={5}
-      aria-rowcount={commits.length + 1}
-      aria-activedescendant={primary !== null ? rowDomId(primary) : undefined}
-      data-graph-lanes={layout.laneCount}
-      data-graph-edges={layout.edges.length}
-      data-graph-elapsed={layout.elapsedMs.toFixed(2)}
-      onKeyDown={handleKeyDown}
-      style={graphVars(graphWidth, metrics) as CSSProperties}
-      className={cn(
-        "flex h-full min-h-0 flex-col bg-surface-graph outline-none",
-        "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
-        className,
-      )}
-    >
-      <ColumnHeader />
-
-      {/* o container medido fica SEMPRE montado, para o ResizeObserver nao
-          perder o no quando o estado troca de esqueleto para arvore. */}
-      <div ref={bodyRef} className="min-h-0 flex-1">
-        {showSkeleton ? (
-          <LoadingRows metrics={metrics} />
-        ) : isEmpty ? (
-          <EmptyState />
-        ) : (
-          /* a arvore entra com o token "ui" quando o log chega */
-          <motion.div
-            className="h-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={ui}
-          >
-            <FixedSizeList<GraphRowData>
-              ref={listRef}
-              height={viewportHeight}
-              width="100%"
-              itemCount={commits.length}
-              itemSize={metrics.rowHeight}
-              overscanCount={OVERSCAN}
-              onScroll={handleListScroll}
-              itemData={itemData}
-              itemKey={(index, data) => data.layout.nodes[index].commit.hash}
-              innerElementType={ListInner}
-            >
-              {CommitRow}
-            </FixedSizeList>
-          </motion.div>
+    /* O `Provider` do Base UI e OBRIGATORIO aqui, e nao e enfeite: gatilho e
+       balao moram em arvores diferentes (a linha esta dentro da lista
+       virtualizada, o cartao esta fora dela) e e o provider que os liga. Sem
+       ele o gatilho recebe o ponteiro, marca `data-base-ui-tooltip-trigger` no
+       DOM e simplesmente nunca abre — falha muda, verificada por CDP.
+       Nao emite elemento nenhum: e so contexto, entao o grid nao sente. */
+    <Tooltip.Provider>
+      <div
+        ref={gridRef}
+        role="grid"
+        tabIndex={0}
+        aria-label={t("graph.label")}
+        aria-colcount={5}
+        aria-rowcount={commits.length + 1}
+        aria-activedescendant={primary !== null ? rowDomId(primary) : undefined}
+        data-graph-lanes={layout.laneCount}
+        data-graph-edges={layout.edges.length}
+        data-graph-elapsed={layout.elapsedMs.toFixed(2)}
+        onKeyDown={handleKeyDown}
+        style={graphVars(graphWidth, metrics) as CSSProperties}
+        className={cn(
+          "flex h-full min-h-0 flex-col bg-surface-graph outline-none",
+          "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
+          className,
         )}
+      >
+        <ColumnHeader />
+
+        {/* o container medido fica SEMPRE montado, para o ResizeObserver nao
+            perder o no quando o estado troca de esqueleto para arvore. */}
+        <div ref={bodyRef} className="min-h-0 flex-1">
+          {showSkeleton ? (
+            <LoadingRows metrics={metrics} />
+          ) : isEmpty ? (
+            <EmptyState />
+          ) : (
+            /* a arvore entra com o token "ui" quando o log chega */
+            <motion.div
+              className="h-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={ui}
+            >
+              <FixedSizeList<GraphRowData>
+                ref={listRef}
+                height={viewportHeight}
+                width="100%"
+                itemCount={commits.length}
+                itemSize={metrics.rowHeight}
+                overscanCount={OVERSCAN}
+                onScroll={handleListScroll}
+                itemData={itemData}
+                itemKey={(index, data) => data.layout.nodes[index].commit.hash}
+                innerElementType={ListInner}
+              >
+                {CommitRow}
+              </FixedSizeList>
+            </motion.div>
+          )}
+        </div>
+
+        {/* UMA instancia de balao para a lista inteira, fora da virtualizacao: as
+            linhas sao so gatilhos ligados a ela pelo handle. Montado aqui, e nao
+            por linha, para nao custar um no de DOM e um fetch por linha visivel. */}
+        <CommitTooltip />
       </div>
-    </div>
+    </Tooltip.Provider>
   );
 }

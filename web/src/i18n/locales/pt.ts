@@ -1162,6 +1162,8 @@ export const pt = {
   "graph.copyHash": "Copiar o hash completo",
   "graph.copyHash.aria": "Copiar o hash {hash}",
   "graph.copyHash.failed": "Não deu para copiar o hash",
+  "graph.tooltip.files_one": "{count} arquivo alterado",
+  "graph.tooltip.files_other": "{count} arquivos alterados",
   "argv.name": "<nome>",
   "argv.newName": "<novo-nome>",
   "argv.url": "<url>",

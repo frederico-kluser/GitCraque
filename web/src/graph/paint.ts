@@ -259,3 +259,37 @@ export const SURFACE = {
   /** a barra fina que marca a linha focada, na sangria da esquerda */
   primaryBar: "inset-y-1 left-0 w-[3px] rounded-full bg-primary",
 } as const;
+
+/* ================================================================== *
+ * 6. O BALAO DO HOVER — o cartao que segue o ponteiro
+ * ================================================================== */
+
+/**
+ * O cartao que aparece sob o ponteiro com foto, nome, data e quantos arquivos
+ * o commit mexeu.
+ *
+ * Ele NAO e desenho de grafo, mas mora aqui pelo mesmo motivo que o resto: e
+ * aparencia, e aparencia do modulo do grafo tem um endereco so. `CommitTooltip`
+ * le estes valores e nao decide nenhum tamanho por conta propria.
+ *
+ * `avatarPx` e o tamanho EXIBIDO; o pedido ao Gravatar sai no dobro
+ * (`avatarPx * 2`, em `CommitTooltip`) para nao borrar em tela retina.
+ */
+export const TOOLTIP = {
+  /** a caixa do cartao */
+  popup: "rounded-xl border border-border bg-popover px-3 py-2 shadow-lg",
+  /** lado do retrato, em px — o pedido ao Gravatar sai no dobro disto */
+  avatarPx: 36,
+  /** a moldura do retrato, foto ou iniciais */
+  avatar: "size-9 shrink-0 rounded-full object-cover",
+  /** as iniciais quando nao ha foto: a cor de fundo vem da lane, nao daqui */
+  initials: "grid place-items-center text-[13px] font-medium text-white",
+  /** o nome do autor */
+  name: "text-sm font-medium text-popover-foreground",
+  /** data absoluta e contagem de arquivos */
+  meta: "text-xs text-muted-foreground",
+  /** o esqueleto que ocupa a contagem enquanto ela nao chegou */
+  countSkeleton: "h-3 w-24 rounded",
+  /** folga entre o ponteiro e o cartao */
+  offset: 14,
+} as const;
