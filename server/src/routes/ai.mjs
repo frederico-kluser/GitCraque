@@ -13,7 +13,12 @@ import { HttpError } from "../router.mjs";
 import * as key from "../ai/key.mjs";
 import * as pi from "../ai/pi.mjs";
 import * as session from "../ai/session.mjs";
-import { buildSystemPrompt, buildUserMessage } from "../ai/prompt.mjs";
+import {
+  buildConflictMessage,
+  buildConflictSystemPrompt,
+  buildSystemPrompt,
+  buildUserMessage,
+} from "../ai/prompt.mjs";
 import { TRANSCRIBE_MODEL, transcribe } from "../ai/openrouter.mjs";
 
 import { bodyOf } from "./_util.mjs";
@@ -109,6 +114,61 @@ export function registerAiRoutes(router) {
           cost: result.cost,
           // O motivo que o pi deu ganha do codigo de saida: "401 User not
           // found." explica; "exit 1" nao explica nada.
+          error: result.ok ? "" : result.error || `exit ${result.code}`,
+        });
+      } catch (err) {
+        session.finish({ ok: false, error: String(err?.message ?? err) });
+      }
+    })();
+
+    return { id: state.id, startedAt: state.startedAt };
+  });
+
+  /**
+   * Irma de `/ai/run`, com tres diferencas: o prompt e o de conflito, o
+   * raciocinio vai no maximo (`MAX_THINKING`) porque o resultado desta sessao
+   * vira commit, e a entrada nao e uma fala — e o estado pendente que o git ja
+   * deixou no disco. Mesmo desenho de resposta: devolve na hora e transmite o
+   * andamento por `ai:event` / `ai:done` / `ai:error`.
+   */
+  router.add("POST", "/ai/resolve-conflicts", async () => {
+    const apiKey = await requireKey();
+
+    const cwd = process.cwd();
+    const [refs, status] = await Promise.all([
+      getRefsPayload(cwd),
+      getStatus(cwd).catch(() => ({ clean: true, entries: [] })),
+    ]);
+
+    // Sem operacao pendente nao ha o que resolver, e mandar o agente
+    // "resolver conflitos" num repo limpo e pagar por uma sessao que vai
+    // mexer no que ninguem pediu.
+    const pending = refs?.head?.pending ?? null;
+    if (!pending) throw new HttpError(400, "error.noPendingOperation");
+    if (!pending.conflicts?.length) throw new HttpError(400, "error.noConflicts");
+
+    const state = session.begin({
+      utterance: buildConflictMessage(pending),
+      source: "text",
+    });
+    const systemPrompt = buildConflictSystemPrompt({ ...refs, cwd, status });
+    const message = buildConflictMessage(pending);
+
+    void (async () => {
+      try {
+        const result = await pi.runAgent({
+          apiKey,
+          systemPrompt,
+          message,
+          cwd,
+          thinking: pi.MAX_THINKING,
+          onEvent: (event) => session.emit(event),
+          onSpawn: (child) => session.attachChild(child),
+        });
+        session.finish({
+          ok: result.ok,
+          text: result.text,
+          cost: result.cost,
           error: result.ok ? "" : result.error || `exit ${result.code}`,
         });
       } catch (err) {

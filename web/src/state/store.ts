@@ -850,6 +850,28 @@ export async function runAgent(utterance: string, source: AgentSource, cost = 0)
   }
 }
 
+/**
+ * Manda o agente resolver os conflitos da operacao pendente e leva-la ate o
+ * fim. Sem argumento: o que resolver o servidor ja sabe, do estado pendente que
+ * o git deixou no disco.
+ *
+ * Mesma maquinaria de `runAgent` — POST volta na hora, andamento pelos eventos
+ * `ai:*`, e o `ai:done` ja dispara `refreshAll()`, que e como o commit feito
+ * pelo agente aparece na interface.
+ */
+export async function resolveConflictsWithAgent() {
+  const rotulo = t("conflict.ai.utterance");
+  set({
+    agent: { ...AGENT_IDLE, phase: "running", utterance: rotulo, source: "text", cost: 0 },
+  });
+  try {
+    await api.resolveConflictsWithAgent();
+  } catch (e) {
+    patchAgent({ phase: "failed", error: describe(e) });
+    if (e instanceof ApiRequestError && e.status === 401) void loadAiStatus();
+  }
+}
+
 /** Mata a sessao em voo. O repositorio fica como estiver — a UI ja sabe mostrar. */
 export async function abortAgent() {
   try {

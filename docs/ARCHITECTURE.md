@@ -446,6 +446,33 @@ nao nasce commit de merge e nao ha conflito possivel com trabalho em andamento.
 O contador de "atras" no rail e que conta a novidade, e puxar continua sendo
 decisao explicita.
 
+### Resolver conflito com o agente
+
+`POST /ai/resolve-conflicts` e irma de `POST /ai/run` e reusa a mesma
+maquinaria: responde na hora com o id da sessao, trabalha em segundo plano e
+transmite por `ai:event` / `ai:done` / `ai:error`. Tres diferencas:
+
+1. **Nao tem corpo.** O que resolver sai de `head.pending`, que o servidor ja le.
+   Sem operacao pendente e 400 (`error.noPendingOperation`); pendente sem
+   arquivo em conflito tambem (`error.noConflicts`). Mandar o agente "resolver
+   conflitos" num repo limpo seria pagar uma sessao para ele mexer no que
+   ninguem pediu.
+2. **Prompt proprio.** `CONFLICT_DOCTRINE` em `ai/prompt.mjs`, separada da
+   `GIT_DOCTRINE` porque a tarefa e outra: aqui nao ha intencao em linguagem
+   natural para interpretar, o estado no disco diz tudo.
+3. **Raciocinio no maximo.** `--thinking xhigh` (`pi.MAX_THINKING`), o teto que
+   o pi 0.73.x aceita. O resultado desta sessao vira commit, entao ela paga o
+   nivel mais caro. `buildPiArgs` so emite a flag quando o nivel esta em
+   `THINKING_LEVELS` — nivel inventado faria o pi sair com erro de uso depois de
+   a sessao ja ter aberto.
+
+O agente vai ate o fim sozinho: resolve, adiciona e continua a operacao. Ele
+fica com as ferramentas todas do pi, inclusive `bash`, por decisao de produto —
+o custo declarado e que o commit sai sem revisao humana. A saida e o
+`POST /ops/abort`, que continua valendo. A entrada e o botao "Resolver com IA"
+no `dialogs/ConflictDialog.tsx`, oferecido so quando ha conflito, ha chave e
+nenhuma sessao esta em voo.
+
 ### Voz — desligada da interface, inteira no codigo
 
 A area de IA (`app/AiBar.tsx`) ja gravou audio pelo microfone: `MediaRecorder`

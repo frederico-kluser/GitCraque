@@ -33,6 +33,27 @@ export const PI_PACKAGE = "@mariozechner/pi-coding-agent@0.73.1";
 /** O modelo que roda o agente, pela OpenRouter. */
 export const AGENT_MODEL = "deepseek/deepseek-v4-pro";
 
+/**
+ * Niveis de raciocinio que o pi aceita em `--thinking`, do menor para o maior.
+ * Confirmado em `pi --help` da 0.73.x. Nao inventar nivel: valor desconhecido
+ * faz o pi sair com erro de uso, e a sessao morre antes de gastar token.
+ */
+export const THINKING_LEVELS = /** @type {const} */ ([
+  "off",
+  "minimal",
+  "low",
+  "medium",
+  "high",
+  "xhigh",
+]);
+
+/**
+ * O teto. Resolver conflito e a tarefa mais cara de errar que o agente faz aqui
+ * — o resultado vira commit —, entao ela paga o raciocinio maximo.
+ * `deepseek/deepseek-v4-pro` suporta thinking (1M de contexto, 384K de saida).
+ */
+export const MAX_THINKING = "xhigh";
+
 /** Teto de uma sessao. Acima disso algo travou e ninguem esta esperando mais. */
 export const SESSION_TIMEOUT_MS = 15 * 60_000;
 
@@ -213,9 +234,15 @@ export function buildPiEnv(apiKey) {
  * @param {string} params.systemPrompt
  * @param {string} params.message
  * @param {string} [params.model]
+ * @param {typeof THINKING_LEVELS[number]} [params.thinking] omitido = padrao do pi
  * @returns {string[]}
  */
-export function buildPiArgs({ systemPrompt, message, model = AGENT_MODEL }) {
+export function buildPiArgs({ systemPrompt, message, model = AGENT_MODEL, thinking }) {
+  // Nivel invalido nao vira argv: o pi sairia com erro de uso e a sessao
+  // morreria depois de ja ter aberto. Sem `thinking`, o argv sai identico ao
+  // que sempre foi — a chamada de voz nao muda de comportamento.
+  const pensar = thinking && THINKING_LEVELS.includes(thinking) ? ["--thinking", thinking] : [];
+
   return [
     "--print",
     "--mode",
@@ -224,6 +251,7 @@ export function buildPiArgs({ systemPrompt, message, model = AGENT_MODEL }) {
     "openrouter",
     "--model",
     model,
+    ...pensar,
     // Sem sessao: o pi gravaria a transcricao em disco e, rodando dentro do
     // repositorio do usuario, ela poderia acabar num commit.
     "--no-session",
@@ -242,6 +270,7 @@ export function buildPiArgs({ systemPrompt, message, model = AGENT_MODEL }) {
  * @param {string} params.message
  * @param {string} params.cwd
  * @param {string} [params.model]
+ * @param {typeof THINKING_LEVELS[number]} [params.thinking]
  * @param {(event: object) => void} params.onEvent
  * @param {(child: import("node:child_process").ChildProcess) => void} [params.onSpawn]
  * @param {typeof spawn} [params.spawnImpl] injetado no teste
@@ -253,12 +282,16 @@ export async function runAgent({
   message,
   cwd,
   model,
+  thinking,
   onEvent,
   onSpawn,
   spawnImpl = spawn,
 }) {
   const launcher = await discoverPi();
-  const args = [...launcher.prefixArgs, ...buildPiArgs({ systemPrompt, message, model })];
+  const args = [
+    ...launcher.prefixArgs,
+    ...buildPiArgs({ systemPrompt, message, model, thinking }),
+  ];
 
   const child = spawnImpl(launcher.command, args, {
     cwd,

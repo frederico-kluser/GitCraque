@@ -274,6 +274,9 @@ export const api = {
     post<TranscriptionPayload>("/ai/transcribe", body),
   runAgent: (body: { utterance: string; source: AgentSource }) =>
     post<AgentRunPayload>("/ai/run", body),
+  /* Irma de `runAgent`, sem corpo: o que resolver sai do estado pendente que o
+   * servidor ja tem. Roda com o raciocinio no maximo — o resultado vira commit. */
+  resolveConflictsWithAgent: () => post<AgentRunPayload>("/ai/resolve-conflicts", {}),
   abortAgent: () => post<{ ok: true; aborted: boolean }>("/ai/abort", {}),
 };
 

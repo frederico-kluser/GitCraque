@@ -15,7 +15,14 @@ import { api } from "@/lib/api";
 import { Rich, t } from "@/i18n";
 import type { MessageKey } from "@/i18n";
 import { short } from "@/lib/utils";
-import { runOperation, selectPending, useAppState } from "@/state/store";
+import {
+  resolveConflictsWithAgent,
+  runOperation,
+  selectAgent,
+  selectAi,
+  selectPending,
+  useAppState,
+} from "@/state/store";
 import type { PendingOperation } from "@/types/git";
 import {
   Button,
@@ -50,6 +57,8 @@ const signatureOf = (p: PendingOperation | null) =>
 
 export function ConflictDialog() {
   const pending = useAppState(selectPending);
+  const ai = useAppState(selectAi);
+  const agent = useAppState(selectAgent);
   const spec = useDialogState();
   const [dismissed, setDismissed] = useState<string | null>(null);
 
@@ -87,6 +96,16 @@ export function ConflictDialog() {
     );
   };
 
+  // O agente so e oferecido quando ha o que resolver E ha chave: um botao que
+  // so sabe devolver 401 e pior que botao nenhum. Enquanto uma sessao roda, ele
+  // fica desabilitado — `session.begin` recusa a segunda com `error.aiBusy`.
+  const podeIA = shown.conflicts.length > 0 && ai.hasKey && agent.phase !== "running";
+
+  const resolverComIA = () => {
+    close();
+    void resolveConflictsWithAgent();
+  };
+
   const progress =
     shown.step && shown.total ? t("conflict.progress", { step: shown.step, total: shown.total }) : "";
 
@@ -107,6 +126,11 @@ export function ConflictDialog() {
           <Button variant="ghost" onClick={close}>
             {t("common.close")}
           </Button>
+          {podeIA ? (
+            <Button variant="ghost" onClick={resolverComIA}>
+              {t("conflict.ai.action")}
+            </Button>
+          ) : null}
           {kind ? (
             <>
               <HoldToConfirmButton

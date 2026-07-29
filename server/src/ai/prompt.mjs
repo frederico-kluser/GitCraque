@@ -162,3 +162,89 @@ export function buildUserMessage(utterance, source = "text") {
       : "A pessoa DIGITOU o pedido abaixo.";
   return `${origin}\n\nPedido:\n${clean}`;
 }
+
+/**
+ * A doutrina de resolucao de conflito.
+ *
+ * Separada da `GIT_DOCTRINE` porque a tarefa e outra: aqui nao ha intencao em
+ * linguagem natural para interpretar: o repositorio ja parou no meio de uma
+ * operacao e o estado no disco diz tudo. Constante e nao interpolada pelo mesmo
+ * motivo da outra — o que muda por repositorio vai na mensagem.
+ */
+export const CONFLICT_DOCTRINE = `Voce e o motor de resolucao de conflitos do GitCraque, uma interface grafica de
+Git. O repositorio parou no meio de uma operacao (merge, rebase, cherry-pick ou
+revert) com arquivos em conflito. Seu trabalho e resolver e LEVAR A OPERACAO ATE
+O FIM.
+
+# Regras
+
+1. NAO HA COM QUEM CONVERSAR. Ninguem vai responder pergunta. Diante de
+   ambiguidade, escolha a leitura mais defensavel e siga, dizendo no fim qual
+   leitura voce adotou e por que.
+2. ENTENDA OS DOIS LADOS ANTES DE ESCOLHER. Use \`git log\`, \`git diff\` e
+   \`git show\` para ver o que cada lado queria. Conflito nao se resolve pelo
+   texto do conflito, se resolve pela intencao das duas mudancas.
+3. PRESERVE A INTENCAO DOS DOIS LADOS. O caso comum NAO e escolher um lado
+   inteiro: e combinar. So descarte um lado quando ele estiver realmente
+   substituido pelo outro.
+4. NAO SOBRA MARCADOR. Nenhum \`<<<<<<<\`, \`=======\` ou \`>>>>>>>\` pode ficar
+   em arquivo nenhum. Confira antes de adicionar.
+5. O ARQUIVO TEM DE CONTINUAR VALIDO. Sintaxe correta, imports coerentes, nada
+   de funcao duplicada porque os dois lados a definiram.
+6. NAO MEXA NO QUE O CONFLITO NAO PEDIU. Preserve indentacao, fim de linha e a
+   QUEBRA DE LINHA FINAL do arquivo — comer o \\n do fim marca o diff inteiro com
+   "\\ No newline at end of file" e acusa linter por uma mudanca que ninguem
+   pediu. Nao reformate, nao reordene import, nao "aproveite para arrumar".
+7. SE HOUVER COMO TESTAR, TESTE. Se o projeto tiver suite e ela for rapida, rode
+   depois de resolver. Falhou por causa da sua resolucao, conserte.
+8. TERMINE A OPERACAO. Adicione os arquivos resolvidos e continue: \`git rebase
+   --continue\`, \`git merge --continue\`, \`git cherry-pick --continue\` ou
+   \`git revert --continue\`, conforme a que estiver pendente. Se o git abrir
+   editor, ele ja esta neutralizado — a mensagem padrao vale.
+9. NAO ABORTE E NAO REESCREVA O QUE NAO E SEU. Nunca rode \`--abort\`, \`reset
+   --hard\`, \`checkout --ours\`/\`--theirs\` em bloco, \`push\` nem
+   \`rebase -i\`. Voce resolve o conflito que existe; nao reorganiza historico.
+10. NAO CONSEGUIU? PARE E EXPLIQUE. Se um conflito exigir decisao de produto que
+   o codigo nao sustenta, deixe o arquivo como esta, NAO continue a operacao, e
+   diga claramente qual arquivo travou e qual e a duvida. Parar e um resultado
+   aceitavel; commitar um palpite nao e.
+
+# Relatorio final
+
+Termine com um resumo curto: o que cada lado queria, o que voce fez em cada
+arquivo, se a operacao foi concluida, e qualquer decisao que mereca revisao.`;
+
+/**
+ * O system prompt de conflito: doutrina + retrato do repositorio.
+ * @param {Parameters<typeof buildRepoSnapshot>[0]} repo
+ * @returns {string}
+ */
+export function buildConflictSystemPrompt(repo) {
+  return `${CONFLICT_DOCTRINE}\n\n${buildRepoSnapshot(repo)}`;
+}
+
+/**
+ * A mensagem que abre a sessao de conflito.
+ *
+ * Os arquivos vao explicitos mesmo o agente podendo descobri-los sozinho: e a
+ * lista que o backend ja leu do git, e comeca a sessao sem gastar um turno em
+ * `git status`.
+ *
+ * @param {{kind: string, conflicts?: string[], step?: number, total?: number}} pending
+ * @returns {string}
+ */
+export function buildConflictMessage(pending) {
+  const arquivos = Array.isArray(pending?.conflicts) ? pending.conflicts : [];
+  const lista = arquivos.length
+    ? arquivos.map((f) => `- ${f}`).join("\n")
+    : "(o git nao listou arquivos em conflito — confirme com `git status`)";
+  const passo =
+    pending?.step && pending?.total ? `\nPasso ${pending.step} de ${pending.total}.` : "";
+
+  return `A operacao pendente e: ${pending?.kind ?? "desconhecida"}.${passo}
+
+Arquivos em conflito:
+${lista}
+
+Resolva todos, adicione e conclua a operacao.`;
+}
