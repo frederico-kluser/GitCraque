@@ -1136,6 +1136,8 @@ export const zh: Messages = {
   "graph.copyHash": "复制完整哈希",
   "graph.copyHash.aria": "复制哈希 {hash}",
   "graph.copyHash.failed": "无法复制哈希",
+  "graph.tooltip.files_one": "变更了 {count} 个文件",
+  "graph.tooltip.files_other": "变更了 {count} 个文件",
   "argv.name": "<名称>",
   "argv.newName": "<新名称>",
   "argv.url": "<url>",

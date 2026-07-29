@@ -1177,6 +1177,8 @@ export const en: Messages = {
   "graph.copyHash": "Copy the full hash",
   "graph.copyHash.aria": "Copy the hash {hash}",
   "graph.copyHash.failed": "Could not copy the hash",
+  "graph.tooltip.files_one": "{count} file changed",
+  "graph.tooltip.files_other": "{count} files changed",
   "argv.name": "<name>",
   "argv.newName": "<new-name>",
   "argv.url": "<url>",
