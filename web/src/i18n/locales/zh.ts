@@ -701,6 +701,8 @@ export const zh: Messages = {
   "conflict.description.clean": "仓库正处在一次操作的中途。解决完成后继续，或者中止。",
   "conflict.hold": "按住以中止",
   "conflict.continue": "继续",
+  "conflict.ai.action": "用 AI 解决",
+  "conflict.ai.utterance": "解决冲突并完成操作",
   "conflict.applying": "正在应用提交 {hash}。",
   "conflict.files": "冲突文件（{count}）",
   "conflict.files.hint": "在编辑器中解决并暂存；然后回到这里继续。",

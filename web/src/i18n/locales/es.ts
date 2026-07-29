@@ -729,6 +729,8 @@ export const es: Messages = {
     "El repositorio está en mitad de una operación. Continúa cuando termines de resolver, o aborta.",
   "conflict.hold": "Mantén pulsado para abortar",
   "conflict.continue": "Continuar",
+  "conflict.ai.action": "Resolver con IA",
+  "conflict.ai.utterance": "Resolver los conflictos y terminar la operación",
   "conflict.applying": "Aplicando el commit {hash}.",
   "conflict.files": "Archivos en conflicto ({count})",
   "conflict.files.hint": "Resuelve en el editor y haz stage; luego vuelve aquí y continúa.",

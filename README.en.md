@@ -235,8 +235,8 @@ npm run dev          # backend --watch on :5271 + vite on :5273 (proxies /api an
 npm run typecheck    # tsc --noEmit
 npm run build        # vite build → web/dist
 
-npm test             # server + graph + dnd + viewer (468 tests)
-npm run test:server  # 315 tests
+npm test             # server + graph + dnd + viewer (472 tests)
+npm run test:server  # 319 tests
 npm run test:graph   # 51 tests
 npm run test:dnd     # 20 tests
 npm run test:viewer  # 82 tests

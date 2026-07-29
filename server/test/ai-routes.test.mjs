@@ -105,6 +105,28 @@ test("sem chave, /ai/run recusa antes de abrir sessao", async () => {
   assert.equal(session.isAgentBusy(), false, "a sessao nao pode ter sido aberta");
 });
 
+test("sem chave, /ai/resolve-conflicts recusa antes de abrir sessao", async () => {
+  const res = await api.post("/api/ai/resolve-conflicts", {});
+  assert.equal(res.status, 401);
+  assert.equal(res.json.error, translate("pt", "error.aiKeyMissing"));
+  assert.equal(session.isAgentBusy(), false, "a sessao nao pode ter sido aberta");
+});
+
+test("com chave e sem operacao pendente, /ai/resolve-conflicts recusa com 400", async () => {
+  // A fixture esta limpa: nao ha rebase, merge nem cherry-pick no meio. Mandar
+  // o agente "resolver conflitos" aqui seria pagar uma sessao para ele mexer no
+  // que ninguem pediu.
+  await api.post("/api/ai/key", { key: "sk-or-teste-conflito" });
+  try {
+    const res = await api.post("/api/ai/resolve-conflicts", {});
+    assert.equal(res.status, 400);
+    assert.equal(res.json.error, translate("pt", "error.noPendingOperation"));
+    assert.equal(session.isAgentBusy(), false, "nao pode abrir sessao sem conflito");
+  } finally {
+    await api.del("/api/ai/key");
+  }
+});
+
 test("/ai/run sem texto e 400, e a validacao vem antes da chave", async () => {
   const res = await api.post("/api/ai/run", { utterance: "   " });
   assert.equal(res.status, 400);

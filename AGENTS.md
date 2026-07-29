@@ -19,8 +19,8 @@ npm run build            # vite build -> web/dist
 npm start                # serve web/dist
 npm run typecheck        # tsc --noEmit  (web only -- server/** has no tsconfig)
 
-npm test                 # server + graph + dnd + viewer  (468 tests)
-npm run test:server      # 315   node --test "server/test/*.test.mjs"
+npm test                 # server + graph + dnd + viewer  (472 tests)
+npm run test:server      # 319   node --test "server/test/*.test.mjs"
 npm run test:graph       # 51    custom runner, 3 phases
 npm run test:dnd         # 20
 npm run test:viewer      # 82

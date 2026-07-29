@@ -736,6 +736,8 @@ export const pt = {
     "O repositório está no meio de uma operação. Continue quando terminar de resolver, ou aborte.",
   "conflict.hold": "Segure para abortar",
   "conflict.continue": "Continuar",
+  "conflict.ai.action": "Resolver com IA",
+  "conflict.ai.utterance": "Resolver os conflitos e concluir a operação",
   "conflict.applying": "Aplicando o commit {hash}.",
   "conflict.files": "Arquivos em conflito ({count})",
   "conflict.files.hint": "Resolva no editor e faça stage; depois volte aqui e continue.",

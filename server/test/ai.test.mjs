@@ -218,6 +218,26 @@ test("a argv pede modo nao interativo, json e sem sessao em disco", () => {
   assert.equal(args[args.length - 1], "MSG", "a mensagem e o ultimo argumento posicional");
 });
 
+test("sem `thinking` a argv sai identica a de sempre", () => {
+  // A chamada de voz nao pode mudar de comportamento por causa da de conflito.
+  const sem = pi.buildPiArgs({ systemPrompt: "SYS", message: "MSG" });
+  assert.ok(!sem.includes("--thinking"));
+});
+
+test("`thinking` vira --thinking, e nivel invalido nao entra na argv", () => {
+  const args = pi.buildPiArgs({ systemPrompt: "SYS", message: "MSG", thinking: pi.MAX_THINKING });
+  assert.deepEqual(args.slice(args.indexOf("--thinking"), args.indexOf("--thinking") + 2), [
+    "--thinking",
+    "xhigh",
+  ]);
+  assert.equal(pi.MAX_THINKING, "xhigh", "xhigh e o teto que o pi 0.73.x aceita");
+
+  // Nivel inventado faria o pi sair com erro de uso DEPOIS de a sessao abrir.
+  const invalido = pi.buildPiArgs({ systemPrompt: "SYS", message: "MSG", thinking: "maximo" });
+  assert.ok(!invalido.includes("--thinking"));
+  assert.ok(!invalido.includes("maximo"));
+});
+
 test("A CHAVE NUNCA ENTRA NA ARGV", () => {
   // Argumento de processo e legivel por qualquer usuario da maquina. Este teste
   // existe para que ninguem "simplifique" trocando o env por --api-key.

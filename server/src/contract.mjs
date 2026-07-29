@@ -116,6 +116,9 @@ export const ROUTES = [
   ["DELETE", "/ai/key"],
   ["POST", "/ai/transcribe"],
   ["POST", "/ai/run"],
+  // Irma de /ai/run, com prompt proprio e raciocinio no maximo: resolve os
+  // conflitos da operacao pendente e leva ate o commit.
+  ["POST", "/ai/resolve-conflicts"],
   ["POST", "/ai/abort"],
 ];
 
