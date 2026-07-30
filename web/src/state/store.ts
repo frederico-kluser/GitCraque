@@ -88,6 +88,11 @@ export interface OpenFile {
   fromWorkingTree: boolean;
 }
 
+export interface OpenBlame {
+  path: string;
+  hash: string | null;
+}
+
 /** Visualizacao de diff de um stash no DetailPanel. */
 export interface StashViewState {
   ref: string;

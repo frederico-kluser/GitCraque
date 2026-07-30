@@ -45,7 +45,7 @@ import {
 import type { MenuItemSpec } from "@/hooks";
 import { t } from "@/i18n";
 import type { ViewerMode } from "@/viewer";
-import { clearSelection, getState, openFile, selectRef, showStashDiff } from "@/state/store";
+import { clearSelection, getState, openBlame, openFile, selectRef, showStashDiff } from "@/state/store";
 import { browseUrl, short } from "@/lib/utils";
 import type {
   Branch,

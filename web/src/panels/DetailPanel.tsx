@@ -18,7 +18,7 @@
  * (`useCommitDetail`), e o vazio e coberto por `Skeleton` do Motion UI.
  */
 import { useMemo } from "react";
-import { Archive, ArrowLeft, FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
+import { Archive, ArrowLeft, FileSearch, FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
 /* Arte da marca, recorte de `docs/logo.png` em 400px. Mora em `src/assets` e
  * nao em `public/`: importada, o Vite versiona o nome e o arquivo cai no ramo
  * `immutable` de `server/src/static.mjs:100-105` — na raiz do `dist` levaria
@@ -27,7 +27,7 @@ import logoMark from "@/assets/logo-mark.webp";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
-import { clearStashView, openFile, selectCommit, selectCommits, selectStashView, showStashDiff, useAppState } from "@/state/store";
+import { clearStashView, openBlame, openFile, selectCommit, selectCommits, selectStashView, showStashDiff, useAppState } from "@/state/store";
 import { contextMenuFor, openChanges, useCommitDetail, useWorkingDiffStats, type DiffStats } from "@/hooks";
 import { openSquash } from "@/app/actions";
 import { changeFileMenu, commitFileMenu, commitMenu } from "@/app/menus";
