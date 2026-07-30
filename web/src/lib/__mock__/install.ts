@@ -223,6 +223,7 @@ const POST: Record<string, Handler> = {
     state.refs.stashes = state.refs.stashes.filter((s) => s.ref !== body.ref);
     return announce(["stash", "drop", String(body.ref)]);
   },
+  "/stash/show": () => [],
   "/tag/create": (body) => {
     const name = String(body.name);
     state.refs.tags.push({

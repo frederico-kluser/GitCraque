@@ -337,6 +337,11 @@ export const es: Messages = {
   "detail.working.title": "Cambios sin confirmar",
   "detail.working.hint": "haz clic para ver el diff",
   "detail.working.stage": "Preparar y confirmar",
+  "detail.stash.label": "Contenido de {ref}",
+  "detail.stash.back": "Cerrar",
+  "detail.stash.body": "Cambios guardados en este stash. Haz clic para aplicar, o usa el menú para hacer pop.",
+  "detail.stash.empty.title": "Stash vacío",
+  "detail.stash.empty.body": "Este stash no contiene cambios.",
 
   "selection.title": "Selección",
   "selection.count_one": "{count} commit",
@@ -1149,6 +1154,7 @@ export const es: Messages = {
   "menu.remote.fetch": "Fetch --prune de este remoto",
   "menu.remote.copyFetchUrl": "Copiar la url de fetch",
   "menu.remote.browse": "Abrir en el navegador",
+  "menu.stash.show": "Ver contenido",
   "menu.stash.copyMessage": "Copiar el mensaje",
   "menu.worktree.switch": "Cambiar a este worktree",
 

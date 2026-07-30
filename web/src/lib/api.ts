@@ -216,6 +216,8 @@ export const api = {
     post<GitCommandResult>("/stash/push", body),
   stashApply: (body: { ref: string; pop?: boolean }) => post<GitCommandResult>("/stash/apply", body),
   stashDrop: (body: { ref: string }) => post<GitCommandResult>("/stash/drop", body),
+  /** `git stash show -p <ref>` — devolve DiffPayload[] (mesmo formato de /api/diff). */
+  stashShow: (ref: string) => get<DiffPayload[]>(`/stash/show${qs({ ref })}`),
 
   /* ---- tags ---- */
   createTag: (body: { name: string; ref?: string; message?: string }) =>

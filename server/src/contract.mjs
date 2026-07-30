@@ -74,6 +74,7 @@ export const ROUTES = [
   ["POST", "/stash/push"],
   ["POST", "/stash/apply"],
   ["POST", "/stash/drop"],
+  ["GET", "/stash/show"],
 
   ["POST", "/tag/create"],
   ["POST", "/tag/delete"],

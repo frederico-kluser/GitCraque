@@ -27,6 +27,7 @@ import type {
   AiKeySource,
   ConsoleLine,
   CredentialPrompt,
+  DiffPayload,
   DragIntent,
   GitCommandResult,
   LogPayload,
@@ -87,10 +88,12 @@ export interface OpenFile {
   fromWorkingTree: boolean;
 }
 
-/** Arquivo aberto no painel de blame. */
-export interface OpenBlame {
-  path: string;
-  hash: string | null;
+/** Visualizacao de diff de um stash no DetailPanel. */
+export interface StashViewState {
+  ref: string;
+  diffs: DiffPayload[] | null;
+  loading: boolean;
+  error: string | null;
 }
 
 export interface AppState {
@@ -133,6 +136,8 @@ export interface AppState {
   pendingIntent: DragIntent | null;
   /** pedido vivo do trampolim de askpass */
   credentialPrompt: CredentialPrompt | null;
+  /** diff do stash selecionado no rail para o DetailPanel */
+  stashView: StashViewState | null;
 
   /** sessao do agente de voz/texto */
   agent: AgentSlice;
@@ -228,6 +233,7 @@ const INITIAL: AppState = {
   openBlame: null,
   pendingIntent: null,
   credentialPrompt: null,
+  stashView: null,
   agent: AGENT_IDLE,
   ai: AI_UNKNOWN,
   limit: 2000,
@@ -542,6 +548,22 @@ export function selectRef(ref: string | null) {
   if (!ref) return;
   const target = resolveRefTarget(ref);
   if (target) revealCommit(target, "ref");
+}
+
+/** Exibe o diff de um stash no DetailPanel. */
+export async function showStashDiff(ref: string) {
+  set({ stashView: { ref, diffs: null, loading: true, error: null } });
+  try {
+    const diffs = await api.stashShow(ref);
+    set({ stashView: { ref, diffs, loading: false, error: null } });
+  } catch (e) {
+    set({ stashView: { ref, diffs: null, loading: false, error: describe(e) } });
+  }
+}
+
+/** Fecha o diff do stash e volta ao estado normal do DetailPanel. */
+export function clearStashView() {
+  set({ stashView: null });
 }
 
 /** fullName ou nome curto -> hash apontado, olhando branches, remotas e tags. */
@@ -1106,6 +1128,7 @@ export const selectRemoteBranches = (s: AppState) => s.refs?.remoteBranches ?? E
 export const selectTags = (s: AppState) => s.refs?.tags ?? EMPTY_ARR;
 export const selectRemotes = (s: AppState) => s.repo?.remotes ?? s.refs?.remotes ?? EMPTY_ARR;
 export const selectStashes = (s: AppState) => s.refs?.stashes ?? EMPTY_ARR;
+export const selectStashView = (s: AppState) => s.stashView;
 export const selectWorktrees = (s: AppState) => s.worktrees?.worktrees ?? EMPTY_ARR;
 export const selectHead = (s: AppState) => s.repo?.head ?? null;
 export const selectUndo = (s: AppState) => s.undo;

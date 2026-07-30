@@ -331,6 +331,11 @@ export const zh: Messages = {
   "detail.working.title": "未提交的更改",
   "detail.working.hint": "点击查看差异",
   "detail.working.stage": "暂存并提交",
+  "detail.stash.label": "{ref} 的内容",
+  "detail.stash.back": "关闭",
+  "detail.stash.body": "此储藏中的更改。点击应用，或使用菜单弹出。",
+  "detail.stash.empty.title": "空储藏",
+  "detail.stash.empty.body": "此储藏不包含任何更改。",
 
   "selection.title": "选区",
   "selection.count_one": "{count} 个提交",
@@ -1094,6 +1099,7 @@ export const zh: Messages = {
   "menu.remote.fetch": "从此远程执行 Fetch --prune",
   "menu.remote.copyFetchUrl": "复制 fetch 地址",
   "menu.remote.browse": "在浏览器中打开",
+  "menu.stash.show": "查看内容",
   "menu.stash.copyMessage": "复制该信息",
   "menu.worktree.switch": "切换到此工作树",
 

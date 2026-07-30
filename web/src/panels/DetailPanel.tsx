@@ -18,7 +18,7 @@
  * (`useCommitDetail`), e o vazio e coberto por `Skeleton` do Motion UI.
  */
 import { useMemo } from "react";
-import { FileSearch, FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
+import { Archive, ArrowLeft, FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
 /* Arte da marca, recorte de `docs/logo.png` em 400px. Mora em `src/assets` e
  * nao em `public/`: importada, o Vite versiona o nome e o arquivo cai no ramo
  * `immutable` de `server/src/static.mjs:100-105` — na raiz do `dist` levaria
@@ -27,13 +27,13 @@ import logoMark from "@/assets/logo-mark.webp";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
-import { openBlame, openFile, selectCommit, selectCommits, useAppState } from "@/state/store";
+import { clearStashView, openFile, selectCommit, selectCommits, selectStashView, showStashDiff, useAppState } from "@/state/store";
 import { contextMenuFor, openChanges, useCommitDetail, useWorkingDiffStats, type DiffStats } from "@/hooks";
 import { openSquash } from "@/app/actions";
 import { changeFileMenu, commitFileMenu, commitMenu } from "@/app/menus";
 import { Rich, formatDateTime, formatGitRelativeDate, t } from "@/i18n";
 import { cn, short } from "@/lib/utils";
-import type { CommitDetail, StatusEntry } from "@/types/git";
+import type { CommitDetail, DiffPayload, StatusEntry } from "@/types/git";
 import type { PanelProps } from "@/types/modules";
 import {
   Chip,
@@ -468,6 +468,69 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
 }
 
 /* ------------------------------------------------------------------ */
+/* Diff de stash                                                        */
+/* ------------------------------------------------------------------ */
+
+/** Renderiza o diff completo de um stash — mesmo layout do detalhe de commit. */
+function StashDiffView({ ref, diffs, loading, error }: { ref: string; diffs: DiffPayload[] | null; loading: boolean; error: string | null }) {
+  return (
+    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+      <header className="flex flex-col gap-2 border-b border-border p-3">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={clearStashView}
+            className="rounded-sm p-0.5 hover:bg-accent"
+            title={t("detail.stash.back")}
+          >
+            <ArrowLeft className="size-4 text-muted-foreground" />
+          </button>
+          <Archive className="size-4 shrink-0 text-primary" />
+          <h2 className="font-heading text-sm font-semibold text-foreground">{ref}</h2>
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground">
+          {t("detail.stash.body")}
+        </p>
+      </header>
+
+      <div className="flex flex-col gap-0.5 px-2 py-3">
+        {loading && <DetailSkeleton />}
+        {error && <EmptyState title={t("detail.error.title")} description={error} />}
+        {!loading && !error && diffs && diffs.length === 0 && (
+          <EmptyState title={t("detail.stash.empty.title")} description={t("detail.stash.empty.body")} />
+        )}
+        {!loading && !error && diffs && diffs.length > 0 && (
+          <div className="rounded-md border border-border bg-card">
+            {diffs.map((file) => (
+              <button
+                key={file.path}
+                type="button"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] hover:bg-accent"
+              >
+                <FilePath path={file.path} className="flex-1" />
+                {file.oldPath && (
+                  <span className="shrink-0 truncate font-mono text-[10px] text-muted-foreground">
+                    &larr; {file.oldPath.split("/").pop()}
+                  </span>
+                )}
+                {file.binary ? (
+                  <Chip tone="neutral">{t("common.binaryShort")}</Chip>
+                ) : (
+                  <DiffStat
+                    insertions={file.hunks.reduce((a, h) => a + h.lines.filter((l) => l.kind === "add").length, 0)}
+                    deletions={file.hunks.reduce((a, h) => a + h.lines.filter((l) => l.kind === "del").length, 0)}
+                  />
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------ */
 
 export type DetailPanelProps = PanelProps;
 
@@ -483,6 +546,15 @@ export function DetailPanel({ className }: DetailPanelProps) {
   // para a lista em seguida. Fora dessa janela o refresh reusa o status antigo,
   // entao a tela nao pisca a cada watcher.
   const loadingStatus = useAppState((s) => s.status === null && s.loading.status);
+  const stashView = useAppState(selectStashView);
+
+  if (stashView) {
+    return (
+      <section className={cn("flex flex-col", className)} aria-label={t("detail.stash.label", { ref: stashView.ref })}>
+        <StashDiffView ref={stashView.ref} diffs={stashView.diffs} loading={stashView.loading} error={stashView.error} />
+      </section>
+    );
+  }
 
   if (selected.length > 1) {
     return (

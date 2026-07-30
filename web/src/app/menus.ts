@@ -45,7 +45,7 @@ import {
 import type { MenuItemSpec } from "@/hooks";
 import { t } from "@/i18n";
 import type { ViewerMode } from "@/viewer";
-import { clearSelection, getState, openBlame, openFile, selectRef } from "@/state/store";
+import { clearSelection, getState, openFile, selectRef, showStashDiff } from "@/state/store";
 import { browseUrl, short } from "@/lib/utils";
 import type {
   Branch,
@@ -457,6 +457,11 @@ export function remoteMenu(remote: Remote): MenuItemSpec[] {
 
 export function stashMenu(stash: StashEntry): MenuItemSpec[] {
   return [
+    {
+      label: t("menu.stash.show"),
+      icon: Eye,
+      onSelect: () => void showStashDiff(stash.ref),
+    },
     {
       label: t("rail.stashes.apply"),
       icon: Undo2,

@@ -348,6 +348,11 @@ export const pt = {
   "detail.working.title": "Alterações em aberto",
   "detail.working.hint": "clique para ver o diff",
   "detail.working.stage": "Preparar e commitar",
+  "detail.stash.label": "Conteúdo de {ref}",
+  "detail.stash.back": "Fechar",
+  "detail.stash.body": "Alterações guardadas neste stash. Clique para aplicar, ou use o menu para aplicar com pop.",
+  "detail.stash.empty.title": "Stash vazio",
+  "detail.stash.empty.body": "Este stash não contém alterações.",
 
   "selection.title": "Seleção",
   "selection.count_one": "{count} commit",
@@ -1154,6 +1159,7 @@ export const pt = {
   "menu.remote.fetch": "Fetch --prune deste remoto",
   "menu.remote.copyFetchUrl": "Copiar url de fetch",
   "menu.remote.browse": "Abrir no navegador",
+  "menu.stash.show": "Ver conteúdo",
   "menu.stash.copyMessage": "Copiar a mensagem",
   "menu.worktree.switch": "Trocar para esta worktree",
 

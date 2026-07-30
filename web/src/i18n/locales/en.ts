@@ -336,6 +336,11 @@ export const en: Messages = {
   "detail.working.title": "Uncommitted changes",
   "detail.working.hint": "click to see the diff",
   "detail.working.stage": "Stage and commit",
+  "detail.stash.label": "Contents of {ref}",
+  "detail.stash.back": "Close",
+  "detail.stash.body": "Changes saved in this stash. Click to apply, or use the menu to pop them.",
+  "detail.stash.empty.title": "Empty stash",
+  "detail.stash.empty.body": "This stash contains no changes.",
 
   "selection.title": "Selection",
   "selection.count_one": "{count} commit",
@@ -1134,6 +1139,7 @@ export const en: Messages = {
   "menu.remote.fetch": "Fetch --prune from this remote",
   "menu.remote.copyFetchUrl": "Copy the fetch url",
   "menu.remote.browse": "Open in the browser",
+  "menu.stash.show": "Show contents",
   "menu.stash.copyMessage": "Copy the message",
   "menu.worktree.switch": "Switch to this worktree",
 
