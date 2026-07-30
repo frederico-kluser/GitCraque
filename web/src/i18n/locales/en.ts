@@ -400,6 +400,18 @@ export const en: Messages = {
   "sanitize.noDom": "DOMPurify has no DOM available — the markdown cannot be shown safely",
 
   /* ---------------------------------------------------------------- */
+  /* Commit search                                                     */
+  /* ---------------------------------------------------------------- */
+  "search.placeholder": "Search commits…",
+  "search.aria": "Search commits in history",
+  "search.clear": "Clear search",
+  "search.active_one": "{count} active filter",
+  "search.active_other": "{count} active filters",
+  "search.noResults.title": "No commits found",
+  "search.noResults.body": "No commit in the repository matches the search.",
+  "search.commandLabel": "Search Commits…",
+
+  /* ---------------------------------------------------------------- */
   /* Status footer                                                     */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "server process.cwd()",

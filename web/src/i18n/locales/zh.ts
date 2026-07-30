@@ -391,6 +391,18 @@ export const zh: Messages = {
   "sanitize.noDom": "DOMPurify 没有可用的 DOM —— 无法安全显示该 markdown",
 
   /* ---------------------------------------------------------------- */
+  /* 提交搜索                                                           */
+  /* ---------------------------------------------------------------- */
+  "search.placeholder": "搜索提交…",
+  "search.aria": "在历史中搜索提交",
+  "search.clear": "清除搜索",
+  "search.active_one": "{count} 个活动筛选",
+  "search.active_other": "{count} 个活动筛选",
+  "search.noResults.title": "未找到提交",
+  "search.noResults.body": "仓库中没有提交匹配该搜索。",
+  "search.commandLabel": "搜索提交…",
+
+  /* ---------------------------------------------------------------- */
   /* 状态栏                                                            */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "服务器的 process.cwd()",

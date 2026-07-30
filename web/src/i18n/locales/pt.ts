@@ -411,6 +411,18 @@ export const pt = {
     "DOMPurify sem DOM disponível — o markdown não pode ser exibido com segurança",
 
   /* ---------------------------------------------------------------- */
+  /* Busca de commits                                                  */
+  /* ---------------------------------------------------------------- */
+  "search.placeholder": "Buscar commits…",
+  "search.aria": "Buscar commits no historico",
+  "search.clear": "Limpar busca",
+  "search.active_one": "{count} filtro ativo",
+  "search.active_other": "{count} filtros ativos",
+  "search.noResults.title": "Nenhum commit encontrado",
+  "search.noResults.body": "Nenhum commit do repositorio casa com a busca.",
+  "search.commandLabel": "Search Commits…",
+
+  /* ---------------------------------------------------------------- */
   /* Rodape de diagnostico                                             */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "process.cwd() do servidor",

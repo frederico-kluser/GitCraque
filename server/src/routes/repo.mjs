@@ -20,6 +20,11 @@ export function registerRepoRoutes(router) {
     getLog({
       limit: intParam(ctx.query.limit),
       skip: intParam(ctx.query.skip),
+      q: ctx.query.q || undefined,
+      author: ctx.query.author || undefined,
+      path: ctx.query.path || undefined,
+      before: ctx.query.before || undefined,
+      after: ctx.query.after || undefined,
       cwd: process.cwd(),
     }),
   );

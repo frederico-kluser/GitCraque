@@ -403,6 +403,18 @@ export const es: Messages = {
     "DOMPurify no tiene DOM disponible — el markdown no puede mostrarse con seguridad",
 
   /* ---------------------------------------------------------------- */
+  /* Búsqueda de commits                                               */
+  /* ---------------------------------------------------------------- */
+  "search.placeholder": "Buscar commits…",
+  "search.aria": "Buscar commits en el historial",
+  "search.clear": "Limpiar búsqueda",
+  "search.active_one": "{count} filtro activo",
+  "search.active_other": "{count} filtros activos",
+  "search.noResults.title": "Ningún commit encontrado",
+  "search.noResults.body": "Ningún commit del repositorio coincide con la búsqueda.",
+  "search.commandLabel": "Buscar Commits…",
+
+  /* ---------------------------------------------------------------- */
   /* Pie de diagnóstico                                                */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "process.cwd() del servidor",

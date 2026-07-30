@@ -97,9 +97,16 @@ export const api = {
   /* ---- historico ----
    * O backend roda exatamente:
    *   git log --pretty=format:"%H|%P|%an|%ae|%s|%ar|%d" --all --topo-order
+   *
+   * Filtros de busca (aditivos):
+   *   q:      busca texto na mensagem (--grep)
+   *   author: filtra por autor (--author)
+   *   path:   filtra por caminho (-- <path>)
+   *   before: data limite (--before)
+   *   after:  data inicial (--after)
    */
-  log: (opts: { limit?: number; skip?: number } = {}) =>
-    get<LogPayload>(`/log${qs({ limit: opts.limit, skip: opts.skip })}`),
+  log: (opts: { limit?: number; skip?: number; q?: string; author?: string; path?: string; before?: string; after?: string } = {}) =>
+    get<LogPayload>(`/log${qs({ limit: opts.limit, skip: opts.skip, q: opts.q, author: opts.author, path: opts.path, before: opts.before, after: opts.after })}`),
   commit: (hash: string) => get<CommitDetail>(`/commit/${encodeURIComponent(hash)}`),
   diff: (opts: { hash?: string; path?: string; staged?: boolean; against?: string }) =>
     get<DiffPayload[]>(`/diff${qs(opts as Record<string, string | boolean | undefined>)}`),

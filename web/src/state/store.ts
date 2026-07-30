@@ -133,6 +133,8 @@ export interface AppState {
 
   /** paginacao do log */
   limit: number;
+  /** ACRESCENTADO: texto de busca na barra de filtro de commits */
+  searchText: string;
 }
 
 /**
@@ -220,6 +222,7 @@ const INITIAL: AppState = {
   agent: AGENT_IDLE,
   ai: AI_UNKNOWN,
   limit: 2000,
+  searchText: "",
 };
 
 /* ------------------------------------------------------------------ */
@@ -309,7 +312,8 @@ export async function loadRepo() {
 export async function loadLog(limit = state.limit) {
   setLoading("log", true);
   try {
-    const log = await api.log({ limit });
+    const q = state.searchText || undefined;
+    const log = await api.log({ limit, q });
     set({ log, limit });
     return log;
   } catch (e) {
@@ -318,6 +322,12 @@ export async function loadLog(limit = state.limit) {
   } finally {
     setLoading("log", false);
   }
+}
+
+/** Define o texto de busca e recarrega o log. */
+export function setSearchText(text: string) {
+  set({ searchText: text });
+  void loadLog();
 }
 
 export async function loadRefs() {
@@ -1059,6 +1069,7 @@ export const selectWorktrees = (s: AppState) => s.worktrees?.worktrees ?? EMPTY_
 export const selectHead = (s: AppState) => s.repo?.head ?? null;
 export const selectUndo = (s: AppState) => s.undo;
 export const selectPending = (s: AppState) => s.repo?.head.pending ?? null;
+export const selectSearchText = (s: AppState) => s.searchText;
 
 const EMPTY_ARR: never[] = [];
 const EMPTY_COMMITS: LogPayload["commits"] = [];
