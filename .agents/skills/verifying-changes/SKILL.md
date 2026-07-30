@@ -27,7 +27,7 @@ with five globs:
 
 | Command | Covers | Count | Note |
 |---|---|---|---|
-| `npm run test:server` | `server/test/*.test.mjs` | 310 | ~25 s, the backend's entire safety net |
+| `npm run test:server` | `server/test/*.test.mjs` | 319 | ~25 s, the backend's entire safety net |
 | `npm run test:graph` | custom runner, 3 phases | 36 + 6 | rewrites a tracked file, see below |
 | `npm run test:dnd` | `web/src/dnd/__tests__/*.test.mjs` | 20 | |
 | `npm run test:viewer` | `web/src/viewer/__tests__/*.test.mjs` | 82 | |
@@ -79,9 +79,13 @@ lint-staged; `.git/hooks/` holds only stock samples. Nothing runs automatically,
 ever. `node .agents/skills/scripts/check-project-rules.mjs` is the substitute for
 the greppable subset of the rules; run it as part of verifying.
 
-**Node floor is wrong in the manifest.** `package.json:11` and `README.md:65`
-declare `>=20.11`, but type stripping needs ≥22.18 unflagged. On Node 20, three
-of five suites fail immediately.
+**The manifest's Node floor is lower than the suites need.** `package.json:35`
+and `README.md:16,208` declare `>=22.13` — correct for *users*, and deliberate:
+the README explains that `node:sqlite` drops `--experimental-sqlite` at 22.13.
+But type stripping is only unflagged from **22.18**, so a contributor on 22.13
+through 22.17 installs a manifest-valid Node and watches three of five suites
+fail at load time. The published tarball is unaffected: it ships `.mjs` plus a
+prebuilt `web/dist`, and strips no types at runtime.
 
 ## Procedure
 
