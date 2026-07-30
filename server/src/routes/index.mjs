@@ -17,6 +17,7 @@ import { registerRemoteRoutes } from "./remotes.mjs";
 import { registerOpsRoutes } from "./ops.mjs";
 import { registerCredentialRoutes } from "./credentials.mjs";
 import { registerAiRoutes } from "./ai.mjs";
+import { registerConflictRoutes } from "./conflicts.mjs";
 
 export { API_PREFIX };
 
@@ -34,6 +35,7 @@ export function buildRouter(deps = {}) {
   registerOpsRoutes(router, deps);
   registerCredentialRoutes(router, deps);
   registerAiRoutes(router, deps);
+  registerConflictRoutes(router, deps);
   assertContract(router);
   return router;
 }

@@ -16,6 +16,7 @@ import {
   stashShow,
 } from "../git/ops.mjs";
 import { squash } from "../git/squash.mjs";
+import { rebaseInteractive } from "../git/rebase-interactive.mjs";
 import { commit, discard, stage, unstage } from "../git/status.mjs";
 import { redo, undo, undoState } from "../git/undo.mjs";
 import { bodyOf, commandResult } from "./_util.mjs";
@@ -32,6 +33,11 @@ export function registerOpsRoutes(router) {
   // O squash devolve SquashResult (GitCommandResult + plan/originalTodo/
   // rewrittenTodo). Conflito continua sendo 200 com ok:false, como nas demais.
   router.add("POST", "/ops/squash", async (ctx) => commandResult(await squash(bodyOf(ctx))));
+
+  // Rebase interativo visual: o usuario define a acao de cada commit.
+  router.add("POST", "/ops/rebase-interactive", async (ctx) =>
+    commandResult(await rebaseInteractive(bodyOf(ctx))),
+  );
 
   router.add("POST", "/ops/abort", async (ctx) => commandResult(await abortOp(bodyOf(ctx))));
   router.add("POST", "/ops/continue", async (ctx) => commandResult(await continueOp(bodyOf(ctx))));

@@ -855,3 +855,157 @@ test("POST /api/repos/clone com url invalida retorna 409 com o comando", async (
     fs.rmSync(destino, { recursive: true, force: true });
   }
 });
+
+/* ------------------------------------------------------------------ *
+ * Conflitos — deteccao, parse e resolucao
+ * ------------------------------------------------------------------ */
+
+test("GET /api/conflicts sem conflito devolve 400", async () => {
+  const { status, json } = await api.get("/api/conflicts");
+  assert.equal(status, 400);
+  assert.equal(json.error, translate("pt", "error.noConflictState"));
+});
+
+test("ciclo completo: detectar conflito, parsear arquivo e resolver", async () => {
+  // Cria conflito: duas branches mexendo na mesma linha do mesmo arquivo.
+  git(fixture.root, "checkout", "-q", "-b", "conflito-ui-a", "main");
+  fs.writeFileSync(path.join(fixture.root, "briga-ui.txt"), "linha 1\nlado A\nlinha 3\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado A");
+
+  git(fixture.root, "checkout", "-q", "-b", "conflito-ui-b", "main");
+  fs.writeFileSync(path.join(fixture.root, "briga-ui.txt"), "linha 1\nlado B\nlinha 3\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado B");
+
+  // Merge que conflita
+  await api.post("/api/ops/merge", { source: "conflito-ui-a" });
+
+  // GET /api/conflicts — deve detectar
+  const conflicts = await api.get("/api/conflicts");
+  assert.equal(conflicts.status, 200);
+  assert.equal(conflicts.json.kind, "merge");
+  assert.ok(conflicts.json.conflicts.includes("briga-ui.txt"), "briga-ui.txt deve estar na lista");
+  assert.equal(conflicts.json.branch, "conflito-ui-b");
+
+  // GET /api/conflicts/file — parse do arquivo
+  const file = await api.get(`/api/conflicts/file?path=${encodeURIComponent("briga-ui.txt")}`);
+  assert.equal(file.status, 200);
+  assert.equal(file.json.path, "briga-ui.txt");
+  assert.equal(file.json.totalRegions, 1, "uma regiao de conflito");
+  assert.equal(file.json.regions.length, 1);
+  const reg = file.json.regions[0];
+  assert.ok(reg.ours.includes("lado B"), `nosso deve conter 'lado B' (HEAD): ${reg.ours}`);
+  assert.ok(reg.theirs.includes("lado A"), `deles deve conter 'lado A' (merge source): ${reg.theirs}`);
+  assert.equal(reg.oursLabel, "HEAD");
+  assert.ok(reg.theirsLabel.length > 0, "rotulo deles deve existir");
+  assert.equal(typeof reg.startLine, "number");
+  assert.equal(typeof reg.endLine, "number");
+  assert.equal(typeof reg.separator, "number");
+
+  // POST /api/conflicts/resolve — resolver com "ours"
+  const resolved = await api.post("/api/conflicts/resolve", {
+    path: "briga-ui.txt",
+    resolutions: [{ region: 0, resolution: "ours" }],
+  });
+  assert.equal(resolved.status, 200, resolved.json.error || "");
+  assert.equal(resolved.json.ok, true);
+  assert.equal(resolved.json.path, "briga-ui.txt");
+  assert.equal(resolved.json.resolvedRegions, 1);
+  assert.equal(resolved.json.remainingConflicts, 0);
+
+  // O arquivo no disco nao deve mais ter marcadores
+  const conteudo = fs.readFileSync(path.join(fixture.root, "briga-ui.txt"), "utf8");
+  assert.ok(!conteudo.includes("<<<<<<<"), "arquivo nao deve ter marcador <<<<<<<");
+  assert.ok(!conteudo.includes("======="), "arquivo nao deve ter marcador =======");
+  assert.ok(!conteudo.includes(">>>>>>>"), "arquivo nao deve ter marcador >>>>>>>");
+  assert.ok(conteudo.includes("lado B"), "arquivo deve conter lado B (ours/HEAD)");
+
+  // Aborta e limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
+});
+
+test("GET /api/conflicts/file recusa caminho que escapa da worktree", async () => {
+  const { status, json } = await api.get("/api/conflicts/file?path=../../../etc/passwd");
+  assert.equal(status, 400);
+  assert.ok(json.error);
+});
+
+test("POST /api/conflicts/resolve recusa regiao invalida", async () => {
+  // Cria un novo conflito rapido
+  git(fixture.root, "checkout", "-q", "-b", "conflito-inv", "main");
+  fs.writeFileSync(path.join(fixture.root, "inv.txt"), "antes\nlado X\ndepois\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado X");
+
+  git(fixture.root, "checkout", "-q", "-b", "conflito-inv2", "main");
+  fs.writeFileSync(path.join(fixture.root, "inv.txt"), "antes\nlado Y\ndepois\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado Y");
+
+  await api.post("/api/ops/merge", { source: "conflito-inv" });
+
+  // Regiao 99 nao existe
+  const { status, json } = await api.post("/api/conflicts/resolve", {
+    path: "inv.txt",
+    resolutions: [{ region: 99, resolution: "ours" }],
+  });
+  assert.equal(status, 400);
+  assert.equal(json.error, translate("pt", "error.invalidRegion"));
+
+  // Limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
+});
+
+test("POST /api/conflicts/resolve recusa resolucao invalida", async () => {
+  // Reabre o conflito
+  git(fixture.root, "checkout", "-q", "conflito-inv2");
+  await api.post("/api/ops/merge", { source: "conflito-inv" });
+
+  const { status, json } = await api.post("/api/conflicts/resolve", {
+    path: "inv.txt",
+    resolutions: [{ region: 0, resolution: "invalid" }],
+  });
+  assert.equal(status, 400);
+  assert.equal(json.error, translate("pt", "error.invalidResolution"));
+
+  // Limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
+});
+
+test("resolver com 'both' concatena os dois lados", async () => {
+  git(fixture.root, "checkout", "-q", "main");
+  fs.writeFileSync(path.join(fixture.root, "both.txt"), "inicio\nlinha A\nfim\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado A");
+
+  git(fixture.root, "checkout", "-q", "-b", "conflito-both-b", "main~1");
+  fs.writeFileSync(path.join(fixture.root, "both.txt"), "inicio\nlinha B\nfim\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado B");
+
+  git(fixture.root, "checkout", "-q", "main");
+  await api.post("/api/ops/merge", { source: "conflito-both-b" });
+
+  // Verifica que existe 1 regiao
+  const file = await api.get("/api/conflicts/file?path=both.txt");
+  assert.equal(file.json.totalRegions, 1);
+
+  // Resolve com "both"
+  const resolved = await api.post("/api/conflicts/resolve", {
+    path: "both.txt",
+    resolutions: [{ region: 0, resolution: "both" }],
+  });
+  assert.equal(resolved.json.ok, true);
+
+  const conteudo = fs.readFileSync(path.join(fixture.root, "both.txt"), "utf8");
+  assert.ok(conteudo.includes("linha A"), "deve conter lado A");
+  assert.ok(conteudo.includes("linha B"), "deve conter lado B");
+
+  // Limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
+});

@@ -18,11 +18,17 @@ import type {
   FsRootsPayload,
   GitCommandResult,
   LogPayload,
+  RebaseInteractiveRequest,
+  RebaseInteractiveResult,
   RecentReposPayload,
   RefsPayload,
   RepoPayload,
   RepoSearchPayload,
   ScanPayload,
+  ResolveRequest,
+  ResolveResult,
+  ConflictState,
+  ConflictFile,
   SquashRequest,
   SquashResult,
   StatusPayload,
@@ -190,6 +196,9 @@ export const api = {
   revert: (body: { hash: string; noCommit?: boolean }) => post<GitCommandResult>("/ops/revert", body),
   /** GIT_SEQUENCE_EDITOR="node proxy-editor.mjs" git rebase -i <base> */
   squash: (body: SquashRequest) => post<SquashResult>("/ops/squash", body),
+  /** Rebase interativo visual com acao por commit */
+  rebaseInteractive: (body: RebaseInteractiveRequest) =>
+    post<RebaseInteractiveResult>("/ops/rebase-interactive", body),
   abort: (body: { kind: "rebase" | "merge" | "cherry-pick" | "revert" }) =>
     post<GitCommandResult>("/ops/abort", body),
   continueOp: (body: { kind: "rebase" | "merge" | "cherry-pick" | "revert" }) =>
@@ -295,6 +304,16 @@ export const api = {
    * servidor ja tem. Roda com o raciocinio no maximo — o resultado vira commit. */
   resolveConflictsWithAgent: () => post<AgentRunPayload>("/ai/resolve-conflicts", {}),
   abortAgent: () => post<{ ok: true; aborted: boolean }>("/ai/abort", {}),
+
+  /* ---- conflitos: deteccao, parse e resolucao por regiao ---- */
+  conflicts: {
+    /** Estado atual de conflito: kind da operacao, arquivos unmerged */
+    state: () => get<ConflictState>("/conflicts"),
+    /** Parseia um arquivo com marcadores <<<<<<< em regioes */
+    file: (path: string) => get<ConflictFile>(`/conflicts/file${qs({ path })}`),
+    /** Resolve regioes de um arquivo e faz git add */
+    resolve: (body: ResolveRequest) => post<ResolveResult>("/conflicts/resolve", body),
+  },
 };
 
 export type Api = typeof api;

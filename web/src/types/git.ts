@@ -449,6 +449,44 @@ export interface SquashResult extends GitCommandResult {
 }
 
 /* ------------------------------------------------------------------ *
+ * 7b. Rebase interativo visual (GIT_SEQUENCE_EDITOR)
+ * ------------------------------------------------------------------ */
+
+export type RebaseInteractiveAction = "pick" | "reword" | "squash" | "fixup" | "drop";
+
+export interface RebaseInteractiveActionEntry {
+  hash: string;
+  action: RebaseInteractiveAction;
+  /** nova mensagem quando action === "reword" */
+  newMessage?: string;
+}
+
+export interface RebaseInteractiveRequest {
+  /** commits com suas acoes, na ordem em que o usuario quer */
+  actions: RebaseInteractiveActionEntry[];
+  /** commit-base do `git rebase -i <onto>`; derivado do mais antigo se ausente */
+  onto?: string;
+}
+
+export interface RebaseInteractivePlanLine {
+  action: "pick" | "reword" | "squash" | "fixup" | "drop" | "edit";
+  hash: string;
+  subject: string;
+  /** true quando esta linha foi reescrita pelo proxy-editor */
+  rewritten: boolean;
+}
+
+export interface RebaseInteractiveResult extends GitCommandResult {
+  /** o `git-rebase-todo` como o proxy-editor o deixou */
+  plan: RebaseInteractivePlanLine[];
+  /** conteudo original do todo, para auditoria */
+  originalTodo: string;
+  rewrittenTodo: string;
+  /** quantos rewords foram aplicados com sucesso */
+  rewordsApplied: number;
+}
+
+/* ------------------------------------------------------------------ *
  * 8. Credenciais / trampolim de askpass
  * ------------------------------------------------------------------ */
 
@@ -846,4 +884,67 @@ export interface CloneRequest {
   branch?: string;
   /** repositorio bare (--bare) */
   bare?: boolean;
+}
+
+/* ------------------------------------------------------------------ *
+ * 17. Conflitos — deteccao, parse e resolucao
+ * ------------------------------------------------------------------ */
+
+/** GET /api/conflicts — estado de conflito do repositorio */
+export interface ConflictState {
+  kind: PendingOperationKind;
+  step?: number;
+  total?: number;
+  current?: string;
+  conflicts: string[];
+  branch: string | null;
+}
+
+/** Uma regiao de conflito dentro de um arquivo */
+export interface ConflictRegion {
+  /** conteudo entre <<<<<<< e ======= */
+  ours: string;
+  /** conteudo entre ======= e >>>>>>> */
+  theirs: string;
+  /** numero da linha do separador =======, ou null */
+  separator: number | null;
+  /** numero da linha do fechamento >>>>>>>, ou null */
+  end: number | null;
+  /** rotulo do lado "nosso" (ex.: "HEAD") */
+  oursLabel: string;
+  /** rotulo do lado "deles" (ex.: "feature/login") */
+  theirsLabel: string;
+  /** indice da linha onde comeca <<<<<<< (0-indexado) */
+  startLine: number;
+  /** indice da linha onde termina >>>>>>> (0-indexado) */
+  endLine: number;
+  /** ja foi resolvida no cliente */
+  resolved: boolean;
+}
+
+/** GET /api/conflicts/file — arquivo parseado em regioes de conflito */
+export interface ConflictFile {
+  path: string;
+  regions: ConflictRegion[];
+  totalRegions: number;
+}
+
+/** Corpo de POST /api/conflicts/resolve */
+export interface ResolveRequest {
+  path: string;
+  resolutions: ResolveRegion[];
+}
+
+export interface ResolveRegion {
+  /** indice da regiao (0-indexado, pela ordem no arquivo) */
+  region: number;
+  /** "ours" | "theirs" | "both" */
+  resolution: "ours" | "theirs" | "both";
+}
+
+/** Resposta de POST /api/conflicts/resolve */
+export interface ResolveResult extends GitCommandResult {
+  path: string;
+  resolvedRegions: number;
+  remainingConflicts: number;
 }

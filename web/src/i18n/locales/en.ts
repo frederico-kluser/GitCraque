@@ -707,6 +707,27 @@ export const en: Messages = {
   "squash.done_other": "Squash of {count} commits",
 
   /* ---------------------------------------------------------------- */
+  /* Interactive rebase dialog                                          */
+  /* ---------------------------------------------------------------- */
+  "rebaseInteractive.title": "Interactive rebase of {count} commits",
+  "rebaseInteractive.description":
+    "Set the action for each selected commit (pick, reword, squash, fixup, drop). History will be rewritten from the base.",
+  "rebaseInteractive.hold": "Hold to execute",
+  "rebaseInteractive.needTwo": "Select at least two commits in the graph. Selected right now: {count}.",
+  "rebaseInteractive.warning":
+    "This REWRITES history: the commits below will cease to exist with their current hashes. If any were already published, the next push will require --force-with-lease.",
+  "rebaseInteractive.plan": "Interactive rebase actions",
+  "rebaseInteractive.plan.hint": "Oldest (top) to newest (bottom). Use arrows to reorder.",
+  "rebaseInteractive.moveUp": "Move up",
+  "rebaseInteractive.moveDown": "Move down",
+  "rebaseInteractive.actionFor": "Action for",
+  "rebaseInteractive.reword.placeholder": "New message for this commit",
+  "rebaseInteractive.reword.hint": "The old message will be replaced by this one.",
+  "rebaseInteractive.preview": "Will run (with GIT_SEQUENCE_EDITOR)",
+  "rebaseInteractive.op": "Interactive rebase",
+  "rebaseInteractive.done": "Interactive rebase done",
+
+  /* ---------------------------------------------------------------- */
   /* Push dialog                                                       */
   /* ---------------------------------------------------------------- */
   "push.title": "Push",
@@ -773,6 +794,24 @@ export const en: Messages = {
   "conflict.op.abort": "Abort {kind}",
   "conflict.done.resumed": "Operation resumed",
   "conflict.done.aborted": "Operation aborted",
+  "conflict.editor.title": "Resolve {path}",
+  "conflict.editor.back": "Back to list",
+  "conflict.editor.ours": "Use Ours",
+  "conflict.editor.theirs": "Use Theirs",
+  "conflict.editor.both": "Both",
+  "conflict.editor.regionLabel": "Region {index}",
+  "conflict.editor.navigate_one": "{current} of {total} conflict",
+  "conflict.editor.navigate_other": "{current} of {total} conflicts",
+  "conflict.editor.previewOurs": "Ours ({label})",
+  "conflict.editor.previewTheirs": "Theirs ({label})",
+  "conflict.editor.saveResolve": "Save and stage",
+  "conflict.editor.allResolved": "All conflicts in this file have been resolved.",
+  "conflict.editor.remaining_one": "{count} conflict remaining",
+  "conflict.editor.remaining_other": "{count} conflicts remaining",
+  "conflict.editor.fileLabel": "File",
+  "conflict.editor.selectFile": "Select a file to resolve",
+  "conflict.editor.resolved": "File resolved and staged",
+  "conflict.editor.resolveFailed": "Failed to resolve file",
 
   /* ---------------------------------------------------------------- */
   /* Create ref dialogs                                                */

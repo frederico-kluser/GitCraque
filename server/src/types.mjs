@@ -107,4 +107,25 @@
  * @property {"empty"|"pending"|null} blocked
  */
 
+/**
+ * @typedef {"pick"|"reword"|"squash"|"fixup"|"drop"} RebaseInteractiveAction
+ *
+ * @typedef {object} RebaseInteractiveActionEntry
+ * @property {string} hash
+ * @property {RebaseInteractiveAction} action
+ * @property {string} [newMessage]
+ *
+ * @typedef {object} RebaseInteractiveRequest
+ * @property {RebaseInteractiveActionEntry[]} actions
+ * @property {string} [onto]
+ *
+ * @typedef {object} RebaseInteractivePlanLine
+ * @property {RebaseInteractiveAction} action
+ * @property {string} hash
+ * @property {string} subject
+ * @property {boolean} rewritten
+ *
+ * @typedef {GitCommandResult & { plan: RebaseInteractivePlanLine[], originalTodo: string, rewrittenTodo: string, rewordsApplied: number }} RebaseInteractiveResult
+ */
+
 export {};

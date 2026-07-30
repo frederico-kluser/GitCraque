@@ -9,7 +9,12 @@
  * O par (preview, body) anda junto de proposito: se um mudar sem o outro, a UI
  * passa a mentir sobre o que vai executar.
  */
-import type { PendingOperationKind, SquashRequest } from "@/types/git";
+import type {
+  PendingOperationKind,
+  RebaseInteractiveAction,
+  RebaseInteractiveRequest,
+  SquashRequest,
+} from "@/types/git";
 
 /** Duplicado de `@/lib/utils` de proposito: este modulo nao pode importar
  *  runtime nenhum (ver cabecalho). */
@@ -307,4 +312,56 @@ export function abortPreview(kind: ResumableOpKind): string[] {
 
 export function continuePreview(kind: ResumableOpKind): string[] {
   return [kind, "--continue"];
+}
+
+/* ------------------------------------------------------------------ */
+/* Rebase interativo visual                                            */
+/* ------------------------------------------------------------------ */
+
+export interface RebaseInteractiveOptions {
+  /** hashes em ordem TOPOLOGICA: do mais ANTIGO para o mais NOVO */
+  commits: string[];
+  /** acao de cada commit */
+  actionMap: Record<string, RebaseInteractiveAction>;
+  /** mensagens novas (so para reword) */
+  messageMap: Record<string, string>;
+  /** base explicitamente fornecida */
+  onto?: string;
+  /** true quando o mais antigo e commit raiz */
+  root?: boolean;
+}
+
+export function rebaseInteractiveBody(o: RebaseInteractiveOptions): RebaseInteractiveRequest {
+  return {
+    actions: o.commits.map((hash) => {
+      const action = o.actionMap[hash] || "pick";
+      const entry: { hash: string; action: RebaseInteractiveAction; newMessage?: string } = {
+        hash,
+        action,
+      };
+      if (action === "reword" && o.messageMap[hash]) {
+        entry.newMessage = o.messageMap[hash];
+      }
+      return entry as { hash: string; action: RebaseInteractiveAction };
+    }),
+    ...(o.onto ? { onto: o.onto } : {}),
+  };
+}
+
+export function rebaseInteractivePreview(o: RebaseInteractiveOptions): string[] {
+  if (o.root || o.commits.length === 0) return ["rebase", "-i", "--root"];
+  const base = o.onto ?? `${shortHash(o.commits[0])}^`;
+  return ["rebase", "-i", base];
+}
+
+export interface RebaseInteractivePlanEntry {
+  action: RebaseInteractiveAction;
+  hash: string;
+}
+
+export function rebaseInteractivePlan(o: RebaseInteractiveOptions): RebaseInteractivePlanEntry[] {
+  return o.commits.map((hash) => ({
+    action: o.actionMap[hash] || "pick",
+    hash,
+  }));
 }

@@ -18,6 +18,8 @@ import { useSyncExternalStore } from "react";
 export type DialogSpec =
   /** Squash dos commits selecionados no grafo (hashes em qualquer ordem). */
   | { kind: "squash"; commits: string[] }
+  /** Rebase interativo visual com acao por commit. */
+  | { kind: "interactive-rebase"; commits: string[] }
   /** Push com escolha de remoto, ramo, upstream, tags e force-with-lease. */
   | { kind: "push"; remote?: string; branch?: string }
   /** `git branch -d`, com escalonamento para `-D` quando o git recusar. */

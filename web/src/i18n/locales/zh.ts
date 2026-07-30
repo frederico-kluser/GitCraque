@@ -688,6 +688,27 @@ export const zh: Messages = {
   "squash.done_other": "已压缩 {count} 个提交",
 
   /* ---------------------------------------------------------------- */
+  /* 交互式 rebase 对话框                                                */
+  /* ---------------------------------------------------------------- */
+  "rebaseInteractive.title": "交互式 rebase {count} 个提交",
+  "rebaseInteractive.description":
+    "为每个选中的提交设置动作（pick, reword, squash, fixup, drop）。历史将从基提交开始重写。",
+  "rebaseInteractive.hold": "按住执行",
+  "rebaseInteractive.needTwo": "请在图中至少选择两个提交。当前已选：{count}。",
+  "rebaseInteractive.warning":
+    "这将重写历史：下面的提交将不再以其当前的哈希值存在。如果有任何提交已发布，下一次推送将需要 --force-with-lease。",
+  "rebaseInteractive.plan": "交互式 rebase 动作",
+  "rebaseInteractive.plan.hint": "从最旧（上）到最新（下）。使用箭头重新排序。",
+  "rebaseInteractive.moveUp": "上移",
+  "rebaseInteractive.moveDown": "下移",
+  "rebaseInteractive.actionFor": "动作",
+  "rebaseInteractive.reword.placeholder": "此提交的新消息",
+  "rebaseInteractive.reword.hint": "旧消息将被此消息替换。",
+  "rebaseInteractive.preview": "将要执行（配合 GIT_SEQUENCE_EDITOR）",
+  "rebaseInteractive.op": "交互式 rebase",
+  "rebaseInteractive.done": "交互式 rebase 完成",
+
+  /* ---------------------------------------------------------------- */
   /* 推送对话框                                                        */
   /* ---------------------------------------------------------------- */
   "push.title": "Push",
@@ -751,6 +772,24 @@ export const zh: Messages = {
   "conflict.op.abort": "中止 {kind}",
   "conflict.done.resumed": "操作已恢复",
   "conflict.done.aborted": "操作已中止",
+  "conflict.editor.title": "解决 {path}",
+  "conflict.editor.back": "返回列表",
+  "conflict.editor.ours": "使用我们的",
+  "conflict.editor.theirs": "使用他们的",
+  "conflict.editor.both": "两者",
+  "conflict.editor.regionLabel": "区域 {index}",
+  "conflict.editor.navigate_one": "第 {current} 个，共 {total} 个冲突",
+  "conflict.editor.navigate_other": "第 {current} 个，共 {total} 个冲突",
+  "conflict.editor.previewOurs": "我们的 ({label})",
+  "conflict.editor.previewTheirs": "他们的 ({label})",
+  "conflict.editor.saveResolve": "保存并暂存",
+  "conflict.editor.allResolved": "此文件中的所有冲突均已解决。",
+  "conflict.editor.remaining_one": "还剩 {count} 个冲突",
+  "conflict.editor.remaining_other": "还剩 {count} 个冲突",
+  "conflict.editor.fileLabel": "文件",
+  "conflict.editor.selectFile": "选择一个文件来解决",
+  "conflict.editor.resolved": "文件已解决并暂存",
+  "conflict.editor.resolveFailed": "解决文件失败",
 
   /* ---------------------------------------------------------------- */
   /* 创建引用的对话框                                                  */

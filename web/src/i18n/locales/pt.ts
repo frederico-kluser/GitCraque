@@ -723,6 +723,27 @@ export const pt = {
   "squash.done_other": "Squash de {count} commits",
 
   /* ---------------------------------------------------------------- */
+  /* Dialogo de rebase interativo                                       */
+  /* ---------------------------------------------------------------- */
+  "rebaseInteractive.title": "Rebase interativo de {count} commits",
+  "rebaseInteractive.description":
+    "Define a acao de cada commit selecionado (pick, reword, squash, fixup, drop). O historico sera reescrito a partir da base.",
+  "rebaseInteractive.hold": "Segure para executar",
+  "rebaseInteractive.needTwo": "Selecione ao menos dois commits no grafo. Selecionados agora: {count}.",
+  "rebaseInteractive.warning":
+    "Isto REESCREVE o historico: os commits abaixo deixam de existir com os hashes atuais. Se algum ja foi publicado, o proximo push vai exigir --force-with-lease.",
+  "rebaseInteractive.plan": "Acoes do rebase interativo",
+  "rebaseInteractive.plan.hint": "Do mais antigo (topo) para o mais novo (fim). Use as setas para reordenar.",
+  "rebaseInteractive.moveUp": "Mover para cima",
+  "rebaseInteractive.moveDown": "Mover para baixo",
+  "rebaseInteractive.actionFor": "Acao para",
+  "rebaseInteractive.reword.placeholder": "Nova mensagem para este commit",
+  "rebaseInteractive.reword.hint": "A mensagem antiga sera substituida por esta.",
+  "rebaseInteractive.preview": "Sera executado (com GIT_SEQUENCE_EDITOR)",
+  "rebaseInteractive.op": "Rebase interativo",
+  "rebaseInteractive.done": "Rebase interativo concluido",
+
+  /* ---------------------------------------------------------------- */
   /* Dialogo de push                                                   */
   /* ---------------------------------------------------------------- */
   "push.title": "Push",
@@ -790,6 +811,24 @@ export const pt = {
   "conflict.op.abort": "Abortar {kind}",
   "conflict.done.resumed": "Operação retomada",
   "conflict.done.aborted": "Operação abortada",
+  "conflict.editor.title": "Resolver {path}",
+  "conflict.editor.back": "Voltar à lista",
+  "conflict.editor.ours": "Usar Nosso",
+  "conflict.editor.theirs": "Usar Deles",
+  "conflict.editor.both": "Ambos",
+  "conflict.editor.regionLabel": "Região {index}",
+  "conflict.editor.navigate_one": "{current} de {total} conflito",
+  "conflict.editor.navigate_other": "{current} de {total} conflitos",
+  "conflict.editor.previewOurs": "Nosso ({label})",
+  "conflict.editor.previewTheirs": "Deles ({label})",
+  "conflict.editor.saveResolve": "Salvar e fazer stage",
+  "conflict.editor.allResolved": "Todos os conflitos deste arquivo foram resolvidos.",
+  "conflict.editor.remaining_one": "{count} conflito restante",
+  "conflict.editor.remaining_other": "{count} conflitos restantes",
+  "conflict.editor.fileLabel": "Arquivo",
+  "conflict.editor.selectFile": "Selecione um arquivo para resolver",
+  "conflict.editor.resolved": "Arquivo resolvido e adicionado ao stage",
+  "conflict.editor.resolveFailed": "Falha ao resolver o arquivo",
 
   /* ---------------------------------------------------------------- */
   /* Dialogos de criar ref                                             */

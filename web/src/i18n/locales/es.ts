@@ -714,6 +714,27 @@ export const es: Messages = {
   "squash.done_other": "Squash de {count} commits",
 
   /* ---------------------------------------------------------------- */
+  /* Diálogo de rebase interactivo                                      */
+  /* ---------------------------------------------------------------- */
+  "rebaseInteractive.title": "Rebase interactivo de {count} commits",
+  "rebaseInteractive.description":
+    "Define la acción de cada commit seleccionado (pick, reword, squash, fixup, drop). El historial será reescrito desde la base.",
+  "rebaseInteractive.hold": "Mantén para ejecutar",
+  "rebaseInteractive.needTwo": "Selecciona al menos dos commits en el grafo. Seleccionados ahora: {count}.",
+  "rebaseInteractive.warning":
+    "Esto REESCRIBE el historial: los commits de abajo dejarán de existir con sus hashes actuales. Si alguno ya fue publicado, el próximo push exigirá --force-with-lease.",
+  "rebaseInteractive.plan": "Acciones del rebase interactivo",
+  "rebaseInteractive.plan.hint": "Del más antiguo (arriba) al más nuevo (abajo). Usa las flechas para reordenar.",
+  "rebaseInteractive.moveUp": "Mover arriba",
+  "rebaseInteractive.moveDown": "Mover abajo",
+  "rebaseInteractive.actionFor": "Acción para",
+  "rebaseInteractive.reword.placeholder": "Nuevo mensaje para este commit",
+  "rebaseInteractive.reword.hint": "El mensaje anterior será reemplazado por este.",
+  "rebaseInteractive.preview": "Se ejecutará (con GIT_SEQUENCE_EDITOR)",
+  "rebaseInteractive.op": "Rebase interactivo",
+  "rebaseInteractive.done": "Rebase interactivo completado",
+
+  /* ---------------------------------------------------------------- */
   /* Diálogo de push                                                   */
   /* ---------------------------------------------------------------- */
   "push.title": "Push",
@@ -781,6 +802,24 @@ export const es: Messages = {
   "conflict.op.abort": "Abortar {kind}",
   "conflict.done.resumed": "Operación reanudada",
   "conflict.done.aborted": "Operación abortada",
+  "conflict.editor.title": "Resolver {path}",
+  "conflict.editor.back": "Volver a la lista",
+  "conflict.editor.ours": "Usar Nuestro",
+  "conflict.editor.theirs": "Usar Suyo",
+  "conflict.editor.both": "Ambos",
+  "conflict.editor.regionLabel": "Región {index}",
+  "conflict.editor.navigate_one": "{current} de {total} conflicto",
+  "conflict.editor.navigate_other": "{current} de {total} conflictos",
+  "conflict.editor.previewOurs": "Nuestro ({label})",
+  "conflict.editor.previewTheirs": "Suyo ({label})",
+  "conflict.editor.saveResolve": "Guardar y hacer stage",
+  "conflict.editor.allResolved": "Todos los conflictos de este archivo han sido resueltos.",
+  "conflict.editor.remaining_one": "{count} conflicto restante",
+  "conflict.editor.remaining_other": "{count} conflictos restantes",
+  "conflict.editor.fileLabel": "Archivo",
+  "conflict.editor.selectFile": "Seleccione un archivo para resolver",
+  "conflict.editor.resolved": "Archivo resuelto y añadido al stage",
+  "conflict.editor.resolveFailed": "Error al resolver el archivo",
 
   /* ---------------------------------------------------------------- */
   /* Diálogos de creación                                              */

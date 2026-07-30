@@ -24,6 +24,7 @@ import {
   DeleteRemoteBranchDialog,
 } from "./DeleteBranchDialogs";
 import { IntentDialog } from "./IntentDialog";
+import { InteractiveRebaseDialog } from "./InteractiveRebaseDialog";
 import { PushDialog } from "./PushDialog";
 import { RepoPickerDialog } from "./RepoPickerDialog";
 import { SquashDialog } from "./SquashDialog";
@@ -80,6 +81,8 @@ function SpecDialogs({ spec, open }: { spec: DialogSpec | null; open: boolean })
   switch (spec.kind) {
     case "squash":
       return <SquashDialog open={open} commits={spec.commits} onClose={closeDialog} />;
+    case "interactive-rebase":
+      return <InteractiveRebaseDialog open={open} commits={spec.commits} onClose={closeDialog} />;
     case "push":
       return (
         <PushDialog
