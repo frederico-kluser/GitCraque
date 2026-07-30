@@ -94,7 +94,7 @@ export async function writeStore(file, entries, options = {}) {
     await fsp.writeFile(tmp, payload, { mode: 0o600 });
     await fsp.rename(tmp, file);
   } catch (err) {
-    await fsp.rm(tmp, { force: true }).catch(() => {});
+    await fsp.rm(tmp, { force: true }).catch((e) => console.error("[gitcraque] store tmp cleanup:", e.message));
     if (options.swallowErrors) return;
     const error = new Error(`nao foi possivel gravar ${path.basename(file)}`);
     error.status = 500;

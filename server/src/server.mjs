@@ -24,7 +24,7 @@ import {
 import { detectGitVersion } from "./git/exec.mjs";
 import { pickLocale, translate } from "./i18n.mjs";
 import { getGitCommonDir, getGitDir, getWorktreesPayload } from "./git/worktree.mjs";
-import { HttpError, readJsonBody } from "./router.mjs";
+import { makeRateLimiter, HttpError, readJsonBody } from "./router.mjs";
 import { buildRouter } from "./routes/index.mjs";
 import { runtime } from "./runtime.mjs";
 import { StaticServer } from "./static.mjs";
@@ -94,9 +94,10 @@ export async function createServer(options = {}) {
   });
 
   const statics = new StaticServer(options.distDir || WEB_DIST);
+  const rateLimit = makeRateLimiter(options.rateLimitMax ?? 60);
 
   const server = http.createServer((req, res) => {
-    handle(req, res, { router, statics, dev }).catch((err) => {
+    handle(req, res, { router, statics, dev, rateLimit }).catch((err) => {
       if (!res.headersSent) {
         sendError(res, err, pickLocale(req));
         return;
@@ -234,7 +235,15 @@ export function originDenial(req) {
  * Ciclo da requisicao
  * ------------------------------------------------------------------ */
 
-async function handle(req, res, { router, statics, dev }) {
+async function handle(req, res, { router, statics, dev, rateLimit }) {
+  // Rate limit basico por IP — o servidor so ouve em 127.0.0.1, protege contra loop acidental.
+  const ip = req.socket.remoteAddress ?? "127.0.0.1";
+  const limit = rateLimit(ip);
+  if (limit) {
+    sendJson(res, limit.status, limit.payload);
+    return;
+  }
+
   // O idioma e da REQUISICAO, nunca do processo: um servidor local pode ter
   // varias abas abertas, cada uma na sua lingua. Ver `i18n.mjs`.
   const locale = pickLocale(req);

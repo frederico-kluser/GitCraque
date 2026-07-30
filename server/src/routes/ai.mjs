@@ -89,7 +89,7 @@ export function registerAiRoutes(router) {
     const cwd = process.cwd();
     const [refs, status] = await Promise.all([
       getRefsPayload(cwd),
-      getStatus(cwd).catch(() => ({ clean: true, entries: [] })),
+      getStatus(cwd).catch((e) => { console.error("[gitcraque] ai status fallback:", e.message); return { clean: true, entries: [] }; }),
     ]);
 
     const state = session.begin({ utterance, source });
@@ -137,7 +137,7 @@ export function registerAiRoutes(router) {
     const cwd = process.cwd();
     const [refs, status] = await Promise.all([
       getRefsPayload(cwd),
-      getStatus(cwd).catch(() => ({ clean: true, entries: [] })),
+      getStatus(cwd).catch((e) => { console.error("[gitcraque] ai status fallback:", e.message); return { clean: true, entries: [] }; }),
     ]);
 
     // Sem operacao pendente nao ha o que resolver, e mandar o agente

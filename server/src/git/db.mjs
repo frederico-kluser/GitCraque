@@ -266,7 +266,8 @@ const numero = (v, padrao) => (Number.isFinite(Number(v)) ? Number(v) : padrao);
 export function quieto(fn) {
   try {
     return fn();
-  } catch {
+  } catch (e) {
+    console.error("[gitcraque] db write:", e.message);
     return undefined;
   }
 }

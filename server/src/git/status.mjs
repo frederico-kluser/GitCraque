@@ -413,6 +413,7 @@ export function commit({ message, amend, signoff } = {}) {
   const args = ["commit"];
   if (amend) args.push("--amend");
   if (signoff) args.push("--signoff");
+  // amend: true sem message → --no-edit (comportamento intencional: reusa a mensagem do commit anterior)
   if (typeof message === "string" && message.length) args.push("-m", message);
   else if (amend) args.push("--no-edit");
   return execGit(args, { mutating: true });

@@ -234,7 +234,7 @@ export function addWorktree({ path: target, branch, newBranch, ref, detach, forc
   if (detach) args.push("--detach");
   args.push(target);
   // `branch` e `ref` sao a mesma posicao no comando: o commit-ish inicial.
-  const startPoint = ref || (newBranch ? branch : branch) || "";
+  const startPoint = ref || (newBranch ? "" : branch) || "";
   if (startPoint) args.push(startPoint);
   return execGit(args, { mutating: true });
 }

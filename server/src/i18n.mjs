@@ -68,6 +68,7 @@ const MESSAGES = {
     "error.devStaticsDetail": "open http://127.0.0.1:5273",
     "error.methodMissing": "method {method} does not exist on {path}",
     "error.routeMissing": "route {method} {path} does not exist",
+    "error.tooManyRequests": "too many requests — slow down",
 
     "error.pathRequired": "path is required",
     "error.pathsRequired": "paths is required and only accepts strings",
@@ -151,6 +152,7 @@ const MESSAGES = {
     "error.devStaticsDetail": "abra http://127.0.0.1:5273",
     "error.methodMissing": "método {method} não existe em {path}",
     "error.routeMissing": "rota {method} {path} não existe",
+    "error.tooManyRequests": "requisições demais — vá mais devagar",
 
     "error.pathRequired": "path é obrigatório",
     "error.pathsRequired": "paths é obrigatório e só aceita strings",
@@ -235,6 +237,7 @@ const MESSAGES = {
     "error.devStaticsDetail": "abre http://127.0.0.1:5273",
     "error.methodMissing": "el método {method} no existe en {path}",
     "error.routeMissing": "la ruta {method} {path} no existe",
+    "error.tooManyRequests": "demasiadas peticiones — más despacio",
 
     "error.pathRequired": "path es obligatorio",
     "error.pathsRequired": "paths es obligatorio y solo acepta strings",
@@ -319,6 +322,7 @@ const MESSAGES = {
     "error.devStaticsDetail": "请打开 http://127.0.0.1:5273",
     "error.methodMissing": "{path} 上不存在 {method} 方法",
     "error.routeMissing": "路由 {method} {path} 不存在",
+    "error.tooManyRequests": "请求过多 — 请放慢速度",
 
     "error.pathRequired": "path 是必填项",
     "error.pathsRequired": "paths 是必填项，且只接受字符串",
