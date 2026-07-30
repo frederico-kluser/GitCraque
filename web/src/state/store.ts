@@ -696,6 +696,28 @@ export async function initRepository(path: string, initialBranch?: string) {
   }
 }
 
+/** `git clone` com barra de progresso via op:progress. Ao terminar, o
+ *  backend ja abriu o repo clonado (cwd:changed recarrega a View Tree). */
+export async function cloneRepository(body: { url: string; path: string; branch?: string; bare?: boolean }) {
+  set({
+    loading: { ...state.loading, operation: true },
+    operationLabel: t("store.repo.cloning", { url: body.url }),
+  });
+  try {
+    const repo = await api.clone(body);
+    toast("success", t("store.repo.cloned"), repo.name);
+    // O cwd:changed dispara refreshAll automaticamente, mas o repo ja veio
+    // na resposta — adianta o estado enquanto o evento nao chega.
+    if (repo.isRepo) set({ repo, fatal: null });
+    return repo;
+  } catch (e) {
+    toast("error", t("store.repo.cloneFailed"), describe(e));
+    return null;
+  } finally {
+    set({ loading: { ...state.loading, operation: false }, operationLabel: null });
+  }
+}
+
 /* ------------------------------------------------------------------ */
 /* Credenciais (trampolim de askpass)                                  */
 /* ------------------------------------------------------------------ */

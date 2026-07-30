@@ -96,6 +96,7 @@ export const ROUTES = [
   ["GET", "/repos/search"],
   ["POST", "/repos/open"],
   ["POST", "/repos/init"],
+  ["POST", "/repos/clone"],
 
   // Projetos favoritos: escolha explicita e permanente, ao contrario dos
   // recentes, que sao historico automatico e rotativo.

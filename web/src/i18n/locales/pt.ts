@@ -637,6 +637,9 @@ export const pt = {
   "store.repo.initializing": "git init em {path}",
   "store.repo.created": "Repositório criado",
   "store.repo.initFailed": "git init falhou",
+  "store.repo.cloning": "Clonando {url}",
+  "store.repo.cloned": "Repositório clonado",
+  "store.repo.cloneFailed": "Clone falhou",
   "store.ws.connected": "conectado — gitcraque {version} (pid {pid}) em {cwd}",
   "store.ws.cwdChanged": "diretório do servidor agora é {cwd}",
   "store.lifecycle.resumed": "aba de volta — reconectando e recarregando o estado",
@@ -938,6 +941,23 @@ export const pt = {
   "favorites.a11y.end": "{name} foi para a posição {index}.",
   "favorites.a11y.unchanged": "A ordem não mudou.",
   "favorites.a11y.cancel": "Reordenação de {name} cancelada.",
+
+  /* ---------------------------------------------------------------- */
+  /* Dialogo de clone                                                  */
+  /* ---------------------------------------------------------------- */
+  "clone.title": "Clonar repositório",
+  "clone.description": "Baixa um repositório remoto para uma pasta local. Ao terminar, o GitCraque já abre o repo clonado.",
+  "clone.confirm": "Clonar",
+  "clone.field.url": "Url",
+  "clone.field.url.placeholder": "https://github.com/org/repo.git",
+  "clone.field.url.hint": "https://..., git@..., ssh://... ou caminho local",
+  "clone.field.path": "Pasta destino",
+  "clone.field.path.placeholder": "~/code/meu-projeto",
+  "clone.field.path.hint": "A pasta será criada pelo git clone — não pode existir antes.",
+  "clone.field.branch": "Branch (opcional)",
+  "clone.field.branch.placeholder": "main",
+  "clone.op": "Clonar repositório",
+  "clone.done": "Clone concluído",
 
   /* tempo relativo do seletor */
   "time.now": "agora",

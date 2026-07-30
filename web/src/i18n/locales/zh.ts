@@ -606,6 +606,9 @@ export const zh: Messages = {
   "store.repo.initializing": "在 {path} 执行 git init",
   "store.repo.created": "仓库已创建",
   "store.repo.initFailed": "git init 失败",
+  "store.repo.cloning": "正在克隆 {url}",
+  "store.repo.cloned": "仓库已克隆",
+  "store.repo.cloneFailed": "克隆失败",
   "store.ws.connected": "已连接 —— gitcraque {version}（pid {pid}），位于 {cwd}",
   "store.ws.cwdChanged": "服务器目录现在是 {cwd}",
   "store.lifecycle.resumed": "标签页已返回 — 正在重连并重新加载状态",
@@ -891,6 +894,23 @@ export const zh: Messages = {
   "favorites.a11y.end": "{name} 已移动到第 {index} 位。",
   "favorites.a11y.unchanged": "顺序没有变化。",
   "favorites.a11y.cancel": "{name} 的重新排序已取消。",
+
+  /* ---------------------------------------------------------------- */
+  /* 克隆对话框                                                        */
+  /* ---------------------------------------------------------------- */
+  "clone.title": "克隆仓库",
+  "clone.description": "将远程仓库下载到本地文件夹。完成后，GitCraque 会打开克隆的仓库。",
+  "clone.confirm": "克隆",
+  "clone.field.url": "URL",
+  "clone.field.url.placeholder": "https://github.com/org/repo.git",
+  "clone.field.url.hint": "https://...、git@...、ssh://... 或本地路径",
+  "clone.field.path": "目标文件夹",
+  "clone.field.path.placeholder": "~/code/my-project",
+  "clone.field.path.hint": "文件夹由 git clone 创建 — 不能事先存在。",
+  "clone.field.branch": "分支（可选）",
+  "clone.field.branch.placeholder": "main",
+  "clone.op": "克隆仓库",
+  "clone.done": "克隆完成",
 
   "time.now": "刚刚",
   "time.minutesAgo": "{count} 分钟前",

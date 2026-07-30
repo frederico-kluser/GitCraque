@@ -33,7 +33,9 @@ export type DialogSpec =
   /** Reabre o painel de conflito da operacao pendente. */
   | { kind: "conflict" }
   /** Seletor de repositorios da maquina: recentes, varredura e navegacao. */
-  | { kind: "repo-picker" };
+  | { kind: "repo-picker" }
+  /** Clone de repositorio remoto: url + caminho + branch. */
+  | { kind: "clone" };
 
 export type DialogKind = DialogSpec["kind"];
 

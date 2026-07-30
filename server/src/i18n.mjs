@@ -70,6 +70,10 @@ const MESSAGES = {
     "error.routeMissing": "route {method} {path} does not exist",
     "error.tooManyRequests": "too many requests — slow down",
 
+    "error.urlRequired": "url is required",
+    "error.cloneTargetExists": "the target directory already exists",
+    "error.cloneTargetExistsDetail": "{path} already exists — choose a new folder or remove it first",
+
     "error.pathRequired": "path is required",
     "error.pathsRequired": "paths is required and only accepts strings",
     "error.pathsNotEmpty": "paths is required and cannot be empty",
@@ -153,6 +157,10 @@ const MESSAGES = {
     "error.methodMissing": "método {method} não existe em {path}",
     "error.routeMissing": "rota {method} {path} não existe",
     "error.tooManyRequests": "requisições demais — vá mais devagar",
+
+    "error.urlRequired": "url é obrigatório",
+    "error.cloneTargetExists": "o diretório de destino já existe",
+    "error.cloneTargetExistsDetail": "{path} já existe — escolha uma pasta nova ou remova-a antes",
 
     "error.pathRequired": "path é obrigatório",
     "error.pathsRequired": "paths é obrigatório e só aceita strings",
@@ -239,6 +247,10 @@ const MESSAGES = {
     "error.routeMissing": "la ruta {method} {path} no existe",
     "error.tooManyRequests": "demasiadas peticiones — más despacio",
 
+    "error.urlRequired": "url es obligatorio",
+    "error.cloneTargetExists": "el directorio de destino ya existe",
+    "error.cloneTargetExistsDetail": "{path} ya existe — elige una carpeta nueva o elimínala antes",
+
     "error.pathRequired": "path es obligatorio",
     "error.pathsRequired": "paths es obligatorio y solo acepta strings",
     "error.pathsNotEmpty": "paths es obligatorio y no puede estar vacío",
@@ -323,6 +335,10 @@ const MESSAGES = {
     "error.methodMissing": "{path} 上不存在 {method} 方法",
     "error.routeMissing": "路由 {method} {path} 不存在",
     "error.tooManyRequests": "请求过多 — 请放慢速度",
+
+    "error.urlRequired": "url 是必填项",
+    "error.cloneTargetExists": "目标目录已存在",
+    "error.cloneTargetExistsDetail": "{path} 已存在 — 请选择新文件夹或先将其删除",
 
     "error.pathRequired": "path 是必填项",
     "error.pathsRequired": "paths 是必填项，且只接受字符串",

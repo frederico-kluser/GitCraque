@@ -797,3 +797,19 @@ export interface AgentRunPayload {
   id: string;
   startedAt: number;
 }
+
+/* ------------------------------------------------------------------ *
+ * 16. Clone — POST /api/repos/clone
+ * ------------------------------------------------------------------ */
+
+/** Corpo de POST /api/repos/clone */
+export interface CloneRequest {
+  /** url do remoto (https://..., git@..., ssh://..., ou caminho local) */
+  url: string;
+  /** diretorio destino (absoluto ou ~/relativo) */
+  path: string;
+  /** branch opcional (--branch) */
+  branch?: string;
+  /** repositorio bare (--bare) */
+  bare?: boolean;
+}

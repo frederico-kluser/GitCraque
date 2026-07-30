@@ -240,6 +240,9 @@ export const api = {
   openRepo: (path: string) => post<RepoPayload>("/repos/open", { path }),
   initRepo: (body: { path: string; bare?: boolean; initialBranch?: string }) =>
     post<RepoPayload>("/repos/init", body),
+  /** git clone com barra de progresso via op:progress. Ao terminar, ja abre o repo clonado. */
+  clone: (body: { url: string; path: string; branch?: string; bare?: boolean }) =>
+    post<RepoPayload>("/repos/clone", body),
 
   /* ---- projetos favoritos (escolha explicita, nao historico) ---- */
   favorites: () => get<FavoritesPayload>("/repos/favorites"),

@@ -660,3 +660,86 @@ test("mensagem do PROPRIO git nunca e traduzida — passa como o git a emitiu", 
   assert.doesNotMatch(res.json.error, /^error\./, "a chave crua vazou para a UI");
   assert.match(res.json.error, /nao-existe-esta-branch/);
 });
+
+/* ------------------------------------------------------------------ *
+ * Clone
+ * ------------------------------------------------------------------ */
+
+test("POST /api/repos/clone clona um repo local e ja o abre", async () => {
+  const destino = path.join(os.tmpdir(), `gitcraque-clone-ok-${Date.now()}`);
+  try {
+    const ws = api.connectWs();
+    await ws.open();
+    await ws.waitFor("hello");
+
+    // Clona o fixture como se fosse um remoto local
+    const res = await api.post("/api/repos/clone", {
+      url: fixture.root,
+      path: destino,
+    });
+    assert.equal(res.status, 200, res.json.error);
+    assert.equal(res.json.isRepo, true);
+    assert.equal(res.json.cwd, destino);
+    assert.equal(res.json.name, path.basename(destino));
+    assert.ok(fs.existsSync(path.join(destino, ".git")), "o .git tem de existir");
+
+    // O cwd:changed chega porque o clone abre o repo
+    const evento = await ws.waitFor("cwd:changed");
+    assert.equal(evento.cwd, destino);
+
+    // Volta para o fixture para nao contaminar os testes seguintes.
+    // O clone deixa o servidor num repositorio DIFERENTE: a volta e via
+    // POST /repos/open, nao /worktrees/switch (que so troca entre worktrees
+    // do MESMO repo).
+    const voltou = await api.post("/api/repos/open", { path: fixture.root });
+    assert.equal(voltou.status, 200);
+    await ws.close();
+  } finally {
+    fs.rmSync(destino, { recursive: true, force: true });
+  }
+});
+
+test("POST /api/repos/clone recusa destino que ja existe", async () => {
+  const destino = path.join(os.tmpdir(), `gitcraque-clone-exists-${Date.now()}`);
+  fs.mkdirSync(destino);
+  try {
+    const res = await api.post("/api/repos/clone", {
+      url: fixture.root,
+      path: destino,
+    });
+    assert.equal(res.status, 409);
+    assert.equal(res.json.error, translate("pt", "error.cloneTargetExists"));
+  } finally {
+    fs.rmSync(destino, { recursive: true, force: true });
+  }
+});
+
+test("POST /api/repos/clone sem url e 400", async () => {
+  const res = await api.post("/api/repos/clone", {
+    path: path.join(os.tmpdir(), `gitcraque-clone-sem-url-${Date.now()}`),
+  });
+  assert.equal(res.status, 400);
+  assert.equal(res.json.error, translate("pt", "error.urlRequired"));
+});
+
+test("POST /api/repos/clone sem path e 400", async () => {
+  const res = await api.post("/api/repos/clone", { url: fixture.root });
+  assert.equal(res.status, 400);
+  assert.equal(res.json.error, translate("pt", "error.pathRequired"));
+});
+
+test("POST /api/repos/clone com url invalida retorna 409 com o comando", async () => {
+  const destino = path.join(os.tmpdir(), `gitcraque-clone-invalido-${Date.now()}`);
+  try {
+    const res = await api.post("/api/repos/clone", {
+      url: "/caminho/que/nao/existe.git",
+      path: destino,
+    });
+    assert.equal(res.status, 409);
+    assert.ok(res.json.command, "o ApiError carrega o GitCommandResult");
+    assert.equal(res.json.command.ok, false);
+    assert.ok(res.json.command.stderr.length > 0);
+  } finally {
+    fs.rmSync(destino, { recursive: true, force: true });
+  }
+});
