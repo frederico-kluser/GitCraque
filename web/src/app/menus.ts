@@ -26,6 +26,7 @@ import {
   ExternalLink,
   FileMinus2,
   FilePlus2,
+  FileSearch,
   FolderPlus,
   GitBranchPlus,
   GitCommitHorizontal,
@@ -44,7 +45,7 @@ import {
 import type { MenuItemSpec } from "@/hooks";
 import { t } from "@/i18n";
 import type { ViewerMode } from "@/viewer";
-import { clearSelection, getState, openFile, selectRef } from "@/state/store";
+import { clearSelection, getState, openBlame, openFile, selectRef } from "@/state/store";
 import { browseUrl, short } from "@/lib/utils";
 import type {
   Branch,
@@ -532,6 +533,11 @@ export function changeFileMenu(entry: StatusEntry): MenuItemSpec[] {
       icon: Eye,
       onSelect: () => openFile(entry.path, null, true),
     },
+    {
+      label: t("menu.commitFile.blame"),
+      icon: FileSearch,
+      onSelect: () => openBlame(entry.path, null),
+    },
     preparado
       ? {
           label: t("changes.unstage"),
@@ -580,6 +586,14 @@ export function commitFileMenu(file: CommitFileChange, hash: string): MenuItemSp
       disabled: file.status === "deleted",
       hint: file.status === "deleted" ? t("status.deleted") : undefined,
       onSelect: () => openFile(file.path, null, true),
+    },
+    {
+      label: t("menu.commitFile.blame"),
+      icon: FileSearch,
+      separatorBefore: true,
+      disabled: file.binary,
+      hint: file.binary ? t("common.binaryShort") : undefined,
+      onSelect: () => openBlame(file.path, hash),
     },
     {
       label: t("menu.copyPath"),
@@ -644,6 +658,13 @@ export function viewerMenu(ctx: ViewerMenuContext): MenuItemSpec[] {
       onSelect: () => void doCopy(ctx.hash as string, t("copy.hash")),
     });
   }
+
+  items.push({
+    label: t("menu.viewer.blame"),
+    icon: FileSearch,
+    separatorBefore: true,
+    onSelect: () => openBlame(ctx.path, ctx.hash),
+  });
 
   for (const [i, mode] of ctx.modes.entries()) {
     items.push({

@@ -251,6 +251,21 @@ export const zh: Messages = {
   "view.label": "已打开的文件",
   "view.back.detail": "详情",
   "view.back.changes": "更改",
+  "view.back.blame": "Blame",
+
+  /* Blame */
+  "blame.label": "{path} 的 blame",
+  "blame.header.hash": "提交",
+  "blame.header.author": "作者",
+  "blame.header.date": "日期",
+  "blame.header.line": "行",
+  "blame.header.content": "内容",
+  "blame.empty.title": "空文件",
+  "blame.empty.body": "空文件没什么好 blame 的。",
+  "blame.error.title": "无法执行 blame",
+  "blame.loading": "正在加载 blame…",
+  "blame.close": "关闭 blame 并返回",
+  "blame.tooltip": "{hash} — {summary}\n{author} <{email}> 于 {date}",
 
   /* ---------------------------------------------------------------- */
   /* 更改与提交                                                        */
@@ -1073,6 +1088,9 @@ export const zh: Messages = {
   "menu.file.view": "在查看器中查看",
   "menu.commitFile.view": "在此提交中查看",
   "menu.commitFile.viewWorking": "查看工作区的版本",
+  "menu.commitFile.blame": "Blame — 查看每一行的最后修改者",
+
+  "menu.viewer.blame": "Blame — 查看每一行的最后修改者",
 
   "menu.viewer.copySelection": "复制所选内容",
   "menu.viewer.nothingSelected": "未选中任何内容",

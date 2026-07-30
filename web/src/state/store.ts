@@ -87,6 +87,12 @@ export interface OpenFile {
   fromWorkingTree: boolean;
 }
 
+/** Arquivo aberto no painel de blame. */
+export interface OpenBlame {
+  path: string;
+  hash: string | null;
+}
+
 export interface AppState {
   repo: RepoPayload | null;
   log: LogPayload | null;
@@ -120,6 +126,8 @@ export interface AppState {
   reveal: RevealRequest | null;
   /** arquivo aberto no visualizador do rodape (diff / markdown / cru) */
   openFile: OpenFile | null;
+  /** arquivo aberto no painel de blame */
+  openBlame: OpenBlame | null;
 
   /** intencao vinda do motor de DND, aguardando confirmacao no dialogo */
   pendingIntent: DragIntent | null;
@@ -215,6 +223,7 @@ const INITIAL: AppState = {
   toasts: [],
   reveal: null,
   openFile: null,
+  openBlame: null,
   pendingIntent: null,
   credentialPrompt: null,
   agent: AGENT_IDLE,
@@ -564,6 +573,16 @@ export function openFile(path: string, hash: string | null, fromWorkingTree = fa
 }
 
 export const closeFile = () => set({ openFile: null });
+
+/** Abre o painel de blame para um arquivo. */
+export function openBlame(path: string, hash: string | null) {
+  set({ openBlame: { path, hash } });
+}
+
+/** Fecha o painel de blame. */
+export function closeBlame() {
+  set({ openBlame: null });
+}
 
 /** `README.md` -> true. O visualizador oferece "Formatado" so nesses. */
 export const isMarkdownPath = (path: string) => /\.(md|markdown|mdown|mkd)$/i.test(path);

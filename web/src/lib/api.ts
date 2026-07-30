@@ -7,6 +7,7 @@ import type {
   AgentSource,
   AiStatusPayload,
   ApiError,
+  BlamePayload,
   Branch,
   CommitDetail,
   CredentialsPayload,
@@ -251,6 +252,10 @@ export const api = {
   removeFavorite: (path: string) => post<FavoritesPayload>("/repos/favorites/remove", { path }),
   reorderFavorites: (paths: string[]) =>
     post<FavoritesPayload>("/repos/favorites/reorder", { paths }),
+
+  /* ---- blame (`git blame --porcelain`) ---- */
+  blame: (opts: { path: string; hash?: string }) =>
+    get<BlamePayload>(`/blame${qs({ path: opts.path, hash: opts.hash })}`),
 
   /* ---- conteudo de arquivo para o visualizador ----
    * `hash` ausente = working tree. Usado pelo markdown renderizado e pela

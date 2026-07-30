@@ -110,6 +110,9 @@ export const ROUTES = [
 
   ["POST", "/raw"],
 
+  // `git blame --porcelain` de um arquivo.
+  ["GET", "/blame"],
+
   // Agente: microfone -> transcricao -> pi coding agent.
   // A chave da OpenRouter e UMA so e paga as duas pernas (transcricao e agente).
   ["GET", "/ai/status"],

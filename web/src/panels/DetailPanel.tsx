@@ -18,7 +18,7 @@
  * (`useCommitDetail`), e o vazio e coberto por `Skeleton` do Motion UI.
  */
 import { useMemo } from "react";
-import { FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
+import { FileSearch, FolderGit2, GitCommitHorizontal, GitMerge, Layers, User } from "lucide-react";
 /* Arte da marca, recorte de `docs/logo.png` em 400px. Mora em `src/assets` e
  * nao em `public/`: importada, o Vite versiona o nome e o arquivo cai no ramo
  * `immutable` de `server/src/static.mjs:100-105` — na raiz do `dist` levaria
@@ -27,7 +27,7 @@ import logoMark from "@/assets/logo-mark.webp";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
-import { openFile, selectCommit, selectCommits, useAppState } from "@/state/store";
+import { openBlame, openFile, selectCommit, selectCommits, useAppState } from "@/state/store";
 import { contextMenuFor, openChanges, useCommitDetail, useWorkingDiffStats, type DiffStats } from "@/hooks";
 import { openSquash } from "@/app/actions";
 import { changeFileMenu, commitFileMenu, commitMenu } from "@/app/menus";
@@ -438,6 +438,25 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                   <Chip tone="neutral">{t("common.binaryShort")}</Chip>
                 ) : (
                   <DiffStat insertions={file.insertions} deletions={file.deletions} />
+                )}
+                {/* Botao de blame: nao-binario so. */}
+                {!file.binary && (
+                  <button
+                    type="button"
+                    title={t("menu.commitFile.blame")}
+                    aria-label={t("menu.commitFile.blame")}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openBlame(file.path, detail.hash);
+                    }}
+                    className={cn(
+                      "shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground",
+                      "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",
+                      FOCUS_RING,
+                    )}
+                  >
+                    <FileSearch className="size-3.5" />
+                  </button>
                 )}
               </button>
             );
