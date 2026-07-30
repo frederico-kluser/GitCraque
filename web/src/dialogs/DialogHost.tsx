@@ -15,6 +15,7 @@
 import { useEffect } from "react";
 import type { DialogHostProps } from "@/types/modules";
 import { AddRemoteDialog } from "./AddRemoteDialog";
+import { CloneDialog } from "./CloneDialog";
 import { ConflictDialog } from "./ConflictDialog";
 import { CredentialDialog } from "./CredentialDialog";
 import { CreateBranchDialog, CreateTagDialog } from "./CreateRefDialogs";
@@ -111,6 +112,8 @@ function SpecDialogs({ spec, open }: { spec: DialogSpec | null; open: boolean })
       return <CreateTagDialog open={open} target={spec.ref} onClose={closeDialog} />;
     case "repo-picker":
       return <RepoPickerDialog open={open} onClose={closeDialog} />;
+    case "clone":
+      return <CloneDialog open={open} onClose={closeDialog} />;
     case "conflict":
       // O ConflictDialog le a spec sozinho (ele tambem abre por estado).
       return null;

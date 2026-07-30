@@ -37,6 +37,7 @@ import {
   Check,
   Clock,
   CornerDownLeft,
+  Download,
   FolderGit2,
   FolderOpen,
   HardDriveDownload,
@@ -61,6 +62,7 @@ import { api } from "@/lib/api";
 import { Rich, t } from "@/i18n";
 import { cn, truncate } from "@/lib/utils";
 import { initRepository, openRepository, toast, useAppState } from "@/state/store";
+import { openDialog } from "@/dialogs";
 import type {
   DiscoveredRepo,
   FavoriteRepo,
@@ -879,6 +881,17 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
               {t("picker.browse.openHere")}
             </Button>
           ) : null}
+
+          <Button
+            variant="ghost"
+            onClick={() => {
+              openDialog({ kind: "clone" });
+              if (onOpened) return; // dialogo fica sobre o seletor
+            }}
+          >
+            <Download className="mr-1.5 inline size-3.5" />
+            {t("clone.title")}
+          </Button>
         </div>
       </div>
     </div>

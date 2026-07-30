@@ -624,6 +624,9 @@ export const en: Messages = {
   "store.repo.initializing": "git init at {path}",
   "store.repo.created": "Repository created",
   "store.repo.initFailed": "git init failed",
+  "store.repo.cloning": "Cloning {url}",
+  "store.repo.cloned": "Repository cloned",
+  "store.repo.cloneFailed": "Clone failed",
   "store.ws.connected": "connected — gitcraque {version} (pid {pid}) at {cwd}",
   "store.ws.cwdChanged": "server directory is now {cwd}",
   "store.lifecycle.resumed": "tab is back — reconnecting and reloading state",
@@ -921,6 +924,23 @@ export const en: Messages = {
   "favorites.a11y.end": "{name} moved to position {index}.",
   "favorites.a11y.unchanged": "The order did not change.",
   "favorites.a11y.cancel": "Reordering of {name} cancelled.",
+
+  /* ---------------------------------------------------------------- */
+  /* Clone dialog                                                     */
+  /* ---------------------------------------------------------------- */
+  "clone.title": "Clone Repository",
+  "clone.description": "Download a remote repository to a local folder. Once done, GitCraque opens the cloned repo.",
+  "clone.confirm": "Clone",
+  "clone.field.url": "URL",
+  "clone.field.url.placeholder": "https://github.com/org/repo.git",
+  "clone.field.url.hint": "https://..., git@..., ssh://... or local path",
+  "clone.field.path": "Destination folder",
+  "clone.field.path.placeholder": "~/code/my-project",
+  "clone.field.path.hint": "The folder is created by git clone — it must not exist beforehand.",
+  "clone.field.branch": "Branch (optional)",
+  "clone.field.branch.placeholder": "main",
+  "clone.op": "Clone repository",
+  "clone.done": "Clone complete",
 
   "time.now": "just now",
   "time.minutesAgo": "{count} min ago",

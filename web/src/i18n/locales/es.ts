@@ -629,6 +629,9 @@ export const es: Messages = {
   "store.repo.initializing": "git init en {path}",
   "store.repo.created": "Repositorio creado",
   "store.repo.initFailed": "git init falló",
+  "store.repo.cloning": "Clonando {url}",
+  "store.repo.cloned": "Repositorio clonado",
+  "store.repo.cloneFailed": "El clon falló",
   "store.ws.connected": "conectado — gitcraque {version} (pid {pid}) en {cwd}",
   "store.ws.cwdChanged": "el directorio del servidor ahora es {cwd}",
   "store.lifecycle.resumed": "pestaña de vuelta — reconectando y recargando el estado",
@@ -935,6 +938,23 @@ export const es: Messages = {
   "favorites.a11y.end": "{name} pasó a la posición {index}.",
   "favorites.a11y.unchanged": "El orden no cambió.",
   "favorites.a11y.cancel": "Reordenación de {name} cancelada.",
+
+  /* ---------------------------------------------------------------- */
+  /* Diálogo de clonación                                              */
+  /* ---------------------------------------------------------------- */
+  "clone.title": "Clonar repositorio",
+  "clone.description": "Descarga un repositorio remoto a una carpeta local. Al terminar, GitCraque abre el repo clonado.",
+  "clone.confirm": "Clonar",
+  "clone.field.url": "URL",
+  "clone.field.url.placeholder": "https://github.com/org/repo.git",
+  "clone.field.url.hint": "https://..., git@..., ssh://... o ruta local",
+  "clone.field.path": "Carpeta de destino",
+  "clone.field.path.placeholder": "~/code/mi-proyecto",
+  "clone.field.path.hint": "La carpeta la crea git clone — no debe existir antes.",
+  "clone.field.branch": "Rama (opcional)",
+  "clone.field.branch.placeholder": "main",
+  "clone.op": "Clonar repositorio",
+  "clone.done": "Clonación completa",
 
   "time.now": "ahora",
   "time.minutesAgo": "hace {count} min",
