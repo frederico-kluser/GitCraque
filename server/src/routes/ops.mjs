@@ -13,6 +13,7 @@ import {
   stashApply,
   stashDrop,
   stashPush,
+  stashShow,
 } from "../git/ops.mjs";
 import { squash } from "../git/squash.mjs";
 import { commit, discard, stage, unstage } from "../git/status.mjs";
@@ -50,6 +51,8 @@ export function registerOpsRoutes(router) {
   router.add("POST", "/stash/push", async (ctx) => commandResult(await stashPush(bodyOf(ctx))));
   router.add("POST", "/stash/apply", async (ctx) => commandResult(await stashApply(bodyOf(ctx))));
   router.add("POST", "/stash/drop", async (ctx) => commandResult(await stashDrop(bodyOf(ctx))));
+
+  router.add("GET", "/stash/show", async (ctx) => stashShow(ctx.query.ref));
 
   router.add("POST", "/raw", async (ctx) => commandResult(await raw(bodyOf(ctx))));
 }

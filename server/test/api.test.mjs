@@ -294,6 +294,29 @@ test("stash: push, listagem e drop", async () => {
   assert.equal((await api.get("/api/status")).json.clean, true);
 });
 
+test("stash show devolve o diff do stash", async () => {
+  fs.writeFileSync(path.join(fixture.root, "README.md"), "# fixture mexida\n");
+
+  await api.post("/api/stash/push", { message: "mexida no readme" });
+
+  const show = await api.get("/api/stash/show?ref=stash@{0}");
+  assert.equal(show.status, 200);
+  assert.ok(Array.isArray(show.json), "o resultado e um array de DiffPayload");
+  assert.ok(show.json.length > 0, "o stash tem diferencas");
+  assert.equal(show.json[0].path, "README.md");
+
+  // Limpa: pop e descarta
+  await api.post("/api/stash/apply", { ref: "stash@{0}", pop: true });
+  await api.post("/api/discard", { paths: ["README.md"] });
+  assert.equal((await api.get("/api/status")).json.clean, true);
+});
+
+test("stash show de ref invalida (comeca com -) e barrada", async () => {
+  const show = await api.get("/api/stash/show?ref=-x");
+  assert.equal(show.status, 400);
+  assert.equal(show.json.error, translate("pt", "error.argsDash", { field: "ref" }));
+});
+
 test("tag: criar anotada e deletar", async () => {
   const criada = await api.post("/api/tag/create", {
     name: "v9.9",

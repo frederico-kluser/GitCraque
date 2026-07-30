@@ -17,6 +17,7 @@ import { execGit, readGit, readGitLine, withMutationLock } from "./exec.mjs";
 import { getHeadState } from "./refs.mjs";
 import { gitPush } from "./remotes.mjs";
 import { listWorktrees } from "./worktree.mjs";
+import { parseUnifiedDiff } from "./status.mjs";
 
 /* ------------------------------------------------------------------ *
  * Guardas de entrada
@@ -544,6 +545,25 @@ export async function stashApply({ ref, pop } = {}) {
 export async function stashDrop({ ref } = {}) {
   assertRef(ref, "ref");
   return run(["stash", "drop", ref]);
+}
+
+/** GET /api/stash/show — diff do conteudo de um stash.
+ *
+ * Roda `git stash show -p <ref>` e devolve o mesmo formato de /api/diff
+ * (DiffPayload[]), reutilizando o parser de patch unificado.
+ *
+ * Stash inexistente devolve array vazio — o git so imprime header de erro no
+ * stderr mas sai com 0, e como a saida e vazia o parser devolve [] sem errar.
+ * Ref invalida (comeca com `-`) e barrada pelo `assertRef` antes de chegar ao git.
+ */
+export async function stashShow(ref) {
+  assertRef(ref, "ref");
+  const result = await readGit(["stash", "show", "-p", "--no-color", ref]);
+  if (!result.ok) {
+    // stash inexistente: git stash show sai com 0 mas sem stdout — seguro.
+    return [];
+  }
+  return parseUnifiedDiff(result.stdout);
 }
 
 /* ------------------------------------------------------------------ *

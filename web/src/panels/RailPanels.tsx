@@ -50,6 +50,7 @@ import {
   selectTags,
   selectWorktrees,
   selectRef,
+  showStashDiff,
   useAppState,
 } from "@/state/store";
 import {
@@ -580,7 +581,13 @@ function TagsSection() {
 
 function StashRow({ stash }: { stash: StashEntry }) {
   return (
-    <RailRow onContextMenu={contextMenuFor(stash.ref, () => stashMenu(stash))}>
+    <RailRow
+      onClick={() => {
+        selectRef(stash.ref);
+        void showStashDiff(stash.ref);
+      }}
+      onContextMenu={contextMenuFor(stash.ref, () => stashMenu(stash))}
+    >
       <Archive className="size-3.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-1.5">
