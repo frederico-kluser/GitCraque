@@ -166,6 +166,18 @@ export const CHANGE_REASONS = /** @type {const} */ ([
  * Acrescimos do backend (aditivos — nada acima foi removido/renomeado)
  * ------------------------------------------------------------------ */
 
+/**
+ * GET /api/log aceita query params para busca e filtro:
+ *
+ *   q      — busca texto na mensagem de commit (--grep)
+ *   author — filtra por autor (--author)
+ *   path   — filtra commits que tocam o caminho (-- <path>)
+ *   before — filtra commits anteriores a data (--before)
+ *   after  — filtra commits posteriores a data (--after)
+ *
+ * Todos sao opcionais e podem ser combinados. A base LOG_ARGS nunca e alterada.
+ */
+
 /** Endereco padrao de escuta. NUNCA 0.0.0.0: o servidor executa git na maquina. */
 export const DEFAULT_HOST = "127.0.0.1";
 

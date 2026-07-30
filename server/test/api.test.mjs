@@ -83,6 +83,43 @@ test("GET /api/log traz o commit com | com o assunto INTEIRO", async () => {
   assert.ok(head.refs.some((r) => r.kind === "localBranch" && r.name === "main" && r.isHead));
 });
 
+test("GET /api/log?q= busca por texto na mensagem", async () => {
+  const { status, json } = await api.get(`/api/log?q=${encodeURIComponent("login")}`);
+  assert.equal(status, 200);
+  assert.ok(json.commits.length >= 2, "deve encontrar feat: tela de login e fix: valida a senha");
+  assert.ok(json.commits.every((c) => c.subject.toLowerCase().includes("login")), "todos os resultados contem login");
+});
+
+test("GET /api/log?author= filtra por autor", async () => {
+  const { status, json } = await api.get("/api/log?author=Teste GitCraque");
+  assert.equal(status, 200);
+  assert.ok(json.commits.length >= 7, "todos os commits do fixture sao do Teste GitCraque");
+  assert.ok(json.commits.every((c) => c.authorName === "Teste GitCraque"));
+});
+
+test("GET /api/log?author= sem resultados", async () => {
+  const { status, json } = await api.get("/api/log?author=Fulano Ausente");
+  assert.equal(status, 200);
+  assert.equal(json.commits.length, 0);
+  assert.equal(json.empty, false, "o repositorio NAO esta vazio, so a busca e que e");
+  // total e o rev-list --all --count, que ignora os filtros de busca
+  assert.ok(json.total > 0, "o total sem filtro e maior que zero");
+});
+
+test("GET /api/log?path= filtra por caminho", async () => {
+  const { status, json } = await api.get(`/api/log?path=${encodeURIComponent("src/login.js")}`);
+  assert.equal(status, 200);
+  assert.ok(json.commits.length >= 2, "deve encontrar os commits de login");
+  assert.ok(json.commits.every((c) => c.subject.includes("login") || c.subject.includes("valida")), "resultados tocam src/login.js");
+});
+
+test("GET /api/log?q= e ?path= combinados", async () => {
+  const { status, json } = await api.get(`/api/log?q=tela&path=${encodeURIComponent("src/login.js")}`);
+  assert.equal(status, 200);
+  assert.equal(json.commits.length, 1);
+  assert.equal(json.commits[0].subject, "feat: tela de login");
+});
+
 test("GET /api/log?limit=&skip= pagina", async () => {
   const primeira = await api.get("/api/log?limit=2");
   assert.equal(primeira.json.commits.length, 2);

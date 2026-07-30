@@ -154,14 +154,33 @@ function isEmptyRepoError(stderr) {
 
 /**
  * GET /api/log
- * @param {{limit?: number, skip?: number, cwd?: string}} [opts]
+ *
+ * Filtros de busca (aditivos — LOG_ARGS nunca muda):
+ *  - q:      texto buscado na mensagem (--grep)
+ *  - author: nome ou email do autor (--author)
+ *  - path:   caminho de arquivo (-- <path>)
+ *  - before: data limite (--before)
+ *  - after:  data inicial (--after)
+ *
+ * @param {{limit?: number, skip?: number, q?: string, author?: string, path?: string, before?: string, after?: string, cwd?: string}} [opts]
  * @returns {Promise<import("../types.mjs").LogPayload>}
  */
 export async function getLog(opts = {}) {
   const cwd = opts.cwd || process.cwd();
   const args = [...LOG_ARGS];
+
+  // Filtros de busca (aditivos: nao alteram LOG_ARGS)
+  if (opts.q) args.push(`--grep=${opts.q}`);
+  if (opts.author) args.push(`--author=${opts.author}`);
+  if (opts.before) args.push(`--before=${opts.before}`);
+  if (opts.after) args.push(`--after=${opts.after}`);
+
   if (Number.isFinite(opts.limit) && opts.limit > 0) args.push("-n", String(Math.floor(opts.limit)));
   if (Number.isFinite(opts.skip) && opts.skip > 0) args.push("--skip", String(Math.floor(opts.skip)));
+
+  // O separador -- so e acrescentado se houver path (-- sozinho afeta o log).
+  const hasPath = opts.path && opts.path.length > 0;
+  if (hasPath) args.push("--", opts.path);
 
   const started = Date.now();
   const [result, remotes] = await Promise.all([
