@@ -263,6 +263,23 @@ export const pt = {
   "view.label": "Arquivo aberto",
   "view.back.detail": "Detalhe",
   "view.back.changes": "Alterações",
+  "view.back.blame": "Blame",
+
+  /* ---------------------------------------------------------------- */
+  /* Blame                                                            */
+  /* ---------------------------------------------------------------- */
+  "blame.label": "Blame de {path}",
+  "blame.header.hash": "Commit",
+  "blame.header.author": "Autor",
+  "blame.header.date": "Data",
+  "blame.header.line": "Linha",
+  "blame.header.content": "Conteúdo",
+  "blame.empty.title": "Arquivo vazio",
+  "blame.empty.body": "O blame de um arquivo sem linhas não tem o que mostrar.",
+  "blame.error.title": "Não foi possível fazer o blame",
+  "blame.loading": "Carregando blame…",
+  "blame.close": "Fechar blame e voltar",
+  "blame.tooltip": "{hash} — {summary}\n{author} <{email}> em {date}",
 
   /* ---------------------------------------------------------------- */
   /* Alteracoes e commit                                               */
@@ -1111,6 +1128,9 @@ export const pt = {
   "menu.file.view": "Ver no visualizador",
   "menu.commitFile.view": "Ver neste commit",
   "menu.commitFile.viewWorking": "Ver a versão da árvore de trabalho",
+  "menu.commitFile.blame": "Blame — quem mexeu em cada linha",
+
+  "menu.viewer.blame": "Blame — quem mexeu em cada linha",
 
   "menu.viewer.copySelection": "Copiar a seleção",
   "menu.viewer.nothingSelected": "nada marcado",

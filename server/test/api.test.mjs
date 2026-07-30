@@ -605,6 +605,58 @@ test("o watcher emite repo:changed quando o .git muda por fora", async () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * Blame — `git blame --porcelain`
+ * ------------------------------------------------------------------ */
+
+test("GET /api/blame devolve BlamePayload para um arquivo de texto", async () => {
+  const { status, json } = await api.get("/api/blame?path=README.md");
+  assert.equal(status, 200);
+  assert.equal(json.path, "README.md");
+  assert.equal(typeof json.hash, "string", "resolveu para o hash de HEAD");
+  assert.ok(json.hash.length === 40);
+  assert.ok(json.lines.length > 0, "o README tem pelo menos uma linha");
+
+  const primeira = json.lines[0];
+  assert.equal(primeira.lineNumber, 1);
+  assert.equal(typeof primeira.hash, "string");
+  assert.ok(primeira.hash.length === 40);
+  assert.equal(typeof primeira.author, "string", "campo author presente");
+  assert.equal(typeof primeira.email, "string", "campo email presente");
+  assert.equal(typeof primeira.date, "number", "timestamp Unix");
+  assert.ok(primeira.date > 0);
+  assert.equal(typeof primeira.tz, "string");
+  assert.equal(typeof primeira.summary, "string");
+  assert.equal(typeof primeira.content, "string", "a linha veio");
+});
+
+test("GET /api/blame com hash especifico devolve blame daquele commit", async () => {
+  const primeiro = fixture.hashes.primeiro;
+  const { status, json } = await api.get(`/api/blame?path=README.md&hash=${primeiro}`);
+  assert.equal(status, 200);
+  assert.equal(json.hash, primeiro);
+  // O primeiro commit so tem uma linha: "# fixture"
+  assert.equal(json.lines.length, 1);
+  assert.equal(json.lines[0].content, "# fixture");
+  assert.equal(json.lines[0].author, "Teste GitCraque");
+});
+
+test("GET /api/blame em arquivo que nao existe da 404", async () => {
+  const { status, json } = await api.get("/api/blame?path=arquivo-que-nao-existe.txt");
+  assert.equal(status, 404);
+  assert.ok(json.error);
+});
+
+test("GET /api/blame sem path da erro de validacao", async () => {
+  const { status, json } = await api.get("/api/blame");
+  assert.equal(status, 400);
+});
+
+test("GET /api/blame com hash que nao existe da 404", async () => {
+  const { status, json } = await api.get("/api/blame?path=README.md&hash=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
+  assert.equal(status, 404);
+});
+
+/* ------------------------------------------------------------------ *
  * Idioma da resposta de erro
  *
  * O backend nao guarda idioma: ele o escolhe POR REQUISICAO. Um processo

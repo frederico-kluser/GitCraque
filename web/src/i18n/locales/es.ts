@@ -254,6 +254,21 @@ export const es: Messages = {
   "view.label": "Archivo abierto",
   "view.back.detail": "Detalle",
   "view.back.changes": "Cambios",
+  "view.back.blame": "Blame",
+
+  /* Blame */
+  "blame.label": "Blame de {path}",
+  "blame.header.hash": "Commit",
+  "blame.header.author": "Autor",
+  "blame.header.date": "Fecha",
+  "blame.header.line": "Línea",
+  "blame.header.content": "Contenido",
+  "blame.empty.title": "Archivo vacío",
+  "blame.empty.body": "No hay nada que culpar en un archivo vacío.",
+  "blame.error.title": "No se pudo ejecutar blame",
+  "blame.loading": "Cargando blame…",
+  "blame.close": "Cerrar blame y volver",
+  "blame.tooltip": "{hash} — {summary}\n{author} <{email}> el {date}",
 
   /* ---------------------------------------------------------------- */
   /* Cambios y commit                                                  */
@@ -1108,6 +1123,9 @@ export const es: Messages = {
   "menu.file.view": "Ver en el visor",
   "menu.commitFile.view": "Ver en este commit",
   "menu.commitFile.viewWorking": "Ver la versión del árbol de trabajo",
+  "menu.commitFile.blame": "Blame — quién tocó cada línea",
+
+  "menu.viewer.blame": "Blame — quién tocó cada línea",
 
   "menu.viewer.copySelection": "Copiar la selección",
   "menu.viewer.nothingSelected": "nada seleccionado",

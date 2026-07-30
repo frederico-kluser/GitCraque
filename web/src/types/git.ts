@@ -734,7 +734,41 @@ export interface ConsoleLine {
 }
 
 /* ------------------------------------------------------------------ *
- * 15. Agente: microfone -> transcricao -> pi coding agent
+ * 15. Blame — `git blame --porcelain`
+ * ------------------------------------------------------------------ */
+
+/** Uma linha do arquivo com o commit que a tocou pela ultima vez. */
+export interface BlameLine {
+  /** numero da linha no arquivo (1-indexado) */
+  lineNumber: number;
+  /** hash do commit */
+  hash: string;
+  /** numero da linha original no commit */
+  originalLine: number;
+  /** nome do autor */
+  author: string;
+  /** email do autor */
+  email: string;
+  /** timestamp Unix do commit (author-time) */
+  date: number;
+  /** fuso horario ("+0000") */
+  tz: string;
+  /** assunto do commit */
+  summary: string;
+  /** conteudo da linha */
+  content: string;
+}
+
+/** Payload de GET /api/blame */
+export interface BlamePayload {
+  lines: BlameLine[];
+  path: string;
+  /** commit contra o qual o blame foi rodado; null = working tree */
+  hash: string | null;
+}
+
+/* ------------------------------------------------------------------ *
+ * 16. Agente: microfone -> transcricao -> pi coding agent
  * ------------------------------------------------------------------ */
 
 /**
