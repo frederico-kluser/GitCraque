@@ -1,6 +1,6 @@
 {
   "name": "gitcraque",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "description": "Cliente Git de desktop sem Electron: grafo de historico, drag-and-drop semantico e rebase interativo automatizado — backend Node.js puro servindo uma SPA React em localhost",
   "keywords": [
