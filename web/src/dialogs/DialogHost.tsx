@@ -15,6 +15,7 @@
 import { useEffect } from "react";
 import type { DialogHostProps } from "@/types/modules";
 import { AddRemoteDialog } from "./AddRemoteDialog";
+import { CloneDialog } from "./CloneDialog";
 import { ConflictDialog } from "./ConflictDialog";
 import { CredentialDialog } from "./CredentialDialog";
 import { CreateBranchDialog, CreateTagDialog } from "./CreateRefDialogs";
@@ -23,6 +24,7 @@ import {
   DeleteRemoteBranchDialog,
 } from "./DeleteBranchDialogs";
 import { IntentDialog } from "./IntentDialog";
+import { InteractiveRebaseDialog } from "./InteractiveRebaseDialog";
 import { PushDialog } from "./PushDialog";
 import { RepoPickerDialog } from "./RepoPickerDialog";
 import { SquashDialog } from "./SquashDialog";
@@ -79,6 +81,8 @@ function SpecDialogs({ spec, open }: { spec: DialogSpec | null; open: boolean })
   switch (spec.kind) {
     case "squash":
       return <SquashDialog open={open} commits={spec.commits} onClose={closeDialog} />;
+    case "interactive-rebase":
+      return <InteractiveRebaseDialog open={open} commits={spec.commits} onClose={closeDialog} />;
     case "push":
       return (
         <PushDialog
@@ -111,6 +115,8 @@ function SpecDialogs({ spec, open }: { spec: DialogSpec | null; open: boolean })
       return <CreateTagDialog open={open} target={spec.ref} onClose={closeDialog} />;
     case "repo-picker":
       return <RepoPickerDialog open={open} onClose={closeDialog} />;
+    case "clone":
+      return <CloneDialog open={open} onClose={closeDialog} />;
     case "conflict":
       // O ConflictDialog le a spec sozinho (ele tambem abre por estado).
       return null;

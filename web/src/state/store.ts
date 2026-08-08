@@ -27,6 +27,7 @@ import type {
   AiKeySource,
   ConsoleLine,
   CredentialPrompt,
+  DiffPayload,
   DragIntent,
   GitCommandResult,
   LogPayload,
@@ -87,6 +88,19 @@ export interface OpenFile {
   fromWorkingTree: boolean;
 }
 
+export interface OpenBlame {
+  path: string;
+  hash: string | null;
+}
+
+/** Visualizacao de diff de um stash no DetailPanel. */
+export interface StashViewState {
+  ref: string;
+  diffs: DiffPayload[] | null;
+  loading: boolean;
+  error: string | null;
+}
+
 export interface AppState {
   repo: RepoPayload | null;
   log: LogPayload | null;
@@ -120,11 +134,15 @@ export interface AppState {
   reveal: RevealRequest | null;
   /** arquivo aberto no visualizador do rodape (diff / markdown / cru) */
   openFile: OpenFile | null;
+  /** arquivo aberto no painel de blame */
+  openBlame: OpenBlame | null;
 
   /** intencao vinda do motor de DND, aguardando confirmacao no dialogo */
   pendingIntent: DragIntent | null;
   /** pedido vivo do trampolim de askpass */
   credentialPrompt: CredentialPrompt | null;
+  /** diff do stash selecionado no rail para o DetailPanel */
+  stashView: StashViewState | null;
 
   /** sessao do agente de voz/texto */
   agent: AgentSlice;
@@ -133,6 +151,8 @@ export interface AppState {
 
   /** paginacao do log */
   limit: number;
+  /** ACRESCENTADO: texto de busca na barra de filtro de commits */
+  searchText: string;
 }
 
 /**
@@ -215,11 +235,14 @@ const INITIAL: AppState = {
   toasts: [],
   reveal: null,
   openFile: null,
+  openBlame: null,
   pendingIntent: null,
   credentialPrompt: null,
+  stashView: null,
   agent: AGENT_IDLE,
   ai: AI_UNKNOWN,
   limit: 2000,
+  searchText: "",
 };
 
 /* ------------------------------------------------------------------ */
@@ -309,7 +332,8 @@ export async function loadRepo() {
 export async function loadLog(limit = state.limit) {
   setLoading("log", true);
   try {
-    const log = await api.log({ limit });
+    const q = state.searchText || undefined;
+    const log = await api.log({ limit, q });
     set({ log, limit });
     return log;
   } catch (e) {
@@ -318,6 +342,12 @@ export async function loadLog(limit = state.limit) {
   } finally {
     setLoading("log", false);
   }
+}
+
+/** Define o texto de busca e recarrega o log. */
+export function setSearchText(text: string) {
+  set({ searchText: text });
+  void loadLog();
 }
 
 export async function loadRefs() {
@@ -525,6 +555,22 @@ export function selectRef(ref: string | null) {
   if (target) revealCommit(target, "ref");
 }
 
+/** Exibe o diff de um stash no DetailPanel. */
+export async function showStashDiff(ref: string) {
+  set({ stashView: { ref, diffs: null, loading: true, error: null } });
+  try {
+    const diffs = await api.stashShow(ref);
+    set({ stashView: { ref, diffs, loading: false, error: null } });
+  } catch (e) {
+    set({ stashView: { ref, diffs: null, loading: false, error: describe(e) } });
+  }
+}
+
+/** Fecha o diff do stash e volta ao estado normal do DetailPanel. */
+export function clearStashView() {
+  set({ stashView: null });
+}
+
 /** fullName ou nome curto -> hash apontado, olhando branches, remotas e tags. */
 export function resolveRefTarget(ref: string): string | null {
   const refs = state.refs;
@@ -564,6 +610,16 @@ export function openFile(path: string, hash: string | null, fromWorkingTree = fa
 }
 
 export const closeFile = () => set({ openFile: null });
+
+/** Abre o painel de blame para um arquivo. */
+export function openBlame(path: string, hash: string | null) {
+  set({ openBlame: { path, hash } });
+}
+
+/** Fecha o painel de blame. */
+export function closeBlame() {
+  set({ openBlame: null });
+}
 
 /** `README.md` -> true. O visualizador oferece "Formatado" so nesses. */
 export const isMarkdownPath = (path: string) => /\.(md|markdown|mdown|mkd)$/i.test(path);
@@ -690,6 +746,28 @@ export async function initRepository(path: string, initialBranch?: string) {
     return repo;
   } catch (e) {
     toast("error", t("store.repo.initFailed"), describe(e));
+    return null;
+  } finally {
+    set({ loading: { ...state.loading, operation: false }, operationLabel: null });
+  }
+}
+
+/** `git clone` com barra de progresso via op:progress. Ao terminar, o
+ *  backend ja abriu o repo clonado (cwd:changed recarrega a View Tree). */
+export async function cloneRepository(body: { url: string; path: string; branch?: string; bare?: boolean }) {
+  set({
+    loading: { ...state.loading, operation: true },
+    operationLabel: t("store.repo.cloning", { url: body.url }),
+  });
+  try {
+    const repo = await api.clone(body);
+    toast("success", t("store.repo.cloned"), repo.name);
+    // O cwd:changed dispara refreshAll automaticamente, mas o repo ja veio
+    // na resposta — adianta o estado enquanto o evento nao chega.
+    if (repo.isRepo) set({ repo, fatal: null });
+    return repo;
+  } catch (e) {
+    toast("error", t("store.repo.cloneFailed"), describe(e));
     return null;
   } finally {
     set({ loading: { ...state.loading, operation: false }, operationLabel: null });
@@ -1055,10 +1133,12 @@ export const selectRemoteBranches = (s: AppState) => s.refs?.remoteBranches ?? E
 export const selectTags = (s: AppState) => s.refs?.tags ?? EMPTY_ARR;
 export const selectRemotes = (s: AppState) => s.repo?.remotes ?? s.refs?.remotes ?? EMPTY_ARR;
 export const selectStashes = (s: AppState) => s.refs?.stashes ?? EMPTY_ARR;
+export const selectStashView = (s: AppState) => s.stashView;
 export const selectWorktrees = (s: AppState) => s.worktrees?.worktrees ?? EMPTY_ARR;
 export const selectHead = (s: AppState) => s.repo?.head ?? null;
 export const selectUndo = (s: AppState) => s.undo;
 export const selectPending = (s: AppState) => s.repo?.head.pending ?? null;
+export const selectSearchText = (s: AppState) => s.searchText;
 
 const EMPTY_ARR: never[] = [];
 const EMPTY_COMMITS: LogPayload["commits"] = [];

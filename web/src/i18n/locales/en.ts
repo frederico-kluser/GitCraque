@@ -254,6 +254,21 @@ export const en: Messages = {
   "view.label": "Open file",
   "view.back.detail": "Detail",
   "view.back.changes": "Changes",
+  "view.back.blame": "Blame",
+
+  /* Blame */
+  "blame.label": "Blame for {path}",
+  "blame.header.hash": "Commit",
+  "blame.header.author": "Author",
+  "blame.header.date": "Date",
+  "blame.header.line": "Line",
+  "blame.header.content": "Content",
+  "blame.empty.title": "Empty file",
+  "blame.empty.body": "There is nothing to blame in an empty file.",
+  "blame.error.title": "Could not run blame",
+  "blame.loading": "Loading blame…",
+  "blame.close": "Close blame and go back",
+  "blame.tooltip": "{hash} — {summary}\n{author} <{email}> on {date}",
 
   /* ---------------------------------------------------------------- */
   /* Changes and commit                                                */
@@ -321,6 +336,11 @@ export const en: Messages = {
   "detail.working.title": "Uncommitted changes",
   "detail.working.hint": "click to see the diff",
   "detail.working.stage": "Stage and commit",
+  "detail.stash.label": "Contents of {ref}",
+  "detail.stash.back": "Close",
+  "detail.stash.body": "Changes saved in this stash. Click to apply, or use the menu to pop them.",
+  "detail.stash.empty.title": "Empty stash",
+  "detail.stash.empty.body": "This stash contains no changes.",
 
   "selection.title": "Selection",
   "selection.count_one": "{count} commit",
@@ -398,6 +418,18 @@ export const en: Messages = {
   "markdown.image": "image",
   "markdown.imageUnresolved": "· image not resolved",
   "sanitize.noDom": "DOMPurify has no DOM available — the markdown cannot be shown safely",
+
+  /* ---------------------------------------------------------------- */
+  /* Commit search                                                     */
+  /* ---------------------------------------------------------------- */
+  "search.placeholder": "Search commits…",
+  "search.aria": "Search commits in history",
+  "search.clear": "Clear search",
+  "search.active_one": "{count} active filter",
+  "search.active_other": "{count} active filters",
+  "search.noResults.title": "No commits found",
+  "search.noResults.body": "No commit in the repository matches the search.",
+  "search.commandLabel": "Search Commits…",
 
   /* ---------------------------------------------------------------- */
   /* Status footer                                                     */
@@ -624,6 +656,9 @@ export const en: Messages = {
   "store.repo.initializing": "git init at {path}",
   "store.repo.created": "Repository created",
   "store.repo.initFailed": "git init failed",
+  "store.repo.cloning": "Cloning {url}",
+  "store.repo.cloned": "Repository cloned",
+  "store.repo.cloneFailed": "Clone failed",
   "store.ws.connected": "connected — gitcraque {version} (pid {pid}) at {cwd}",
   "store.ws.cwdChanged": "server directory is now {cwd}",
   "store.lifecycle.resumed": "tab is back — reconnecting and reloading state",
@@ -670,6 +705,27 @@ export const en: Messages = {
   "squash.op": "Squash",
   "squash.done_one": "Squash of {count} commit",
   "squash.done_other": "Squash of {count} commits",
+
+  /* ---------------------------------------------------------------- */
+  /* Interactive rebase dialog                                          */
+  /* ---------------------------------------------------------------- */
+  "rebaseInteractive.title": "Interactive rebase of {count} commits",
+  "rebaseInteractive.description":
+    "Set the action for each selected commit (pick, reword, squash, fixup, drop). History will be rewritten from the base.",
+  "rebaseInteractive.hold": "Hold to execute",
+  "rebaseInteractive.needTwo": "Select at least two commits in the graph. Selected right now: {count}.",
+  "rebaseInteractive.warning":
+    "This REWRITES history: the commits below will cease to exist with their current hashes. If any were already published, the next push will require --force-with-lease.",
+  "rebaseInteractive.plan": "Interactive rebase actions",
+  "rebaseInteractive.plan.hint": "Oldest (top) to newest (bottom). Use arrows to reorder.",
+  "rebaseInteractive.moveUp": "Move up",
+  "rebaseInteractive.moveDown": "Move down",
+  "rebaseInteractive.actionFor": "Action for",
+  "rebaseInteractive.reword.placeholder": "New message for this commit",
+  "rebaseInteractive.reword.hint": "The old message will be replaced by this one.",
+  "rebaseInteractive.preview": "Will run (with GIT_SEQUENCE_EDITOR)",
+  "rebaseInteractive.op": "Interactive rebase",
+  "rebaseInteractive.done": "Interactive rebase done",
 
   /* ---------------------------------------------------------------- */
   /* Push dialog                                                       */
@@ -738,6 +794,24 @@ export const en: Messages = {
   "conflict.op.abort": "Abort {kind}",
   "conflict.done.resumed": "Operation resumed",
   "conflict.done.aborted": "Operation aborted",
+  "conflict.editor.title": "Resolve {path}",
+  "conflict.editor.back": "Back to list",
+  "conflict.editor.ours": "Use Ours",
+  "conflict.editor.theirs": "Use Theirs",
+  "conflict.editor.both": "Both",
+  "conflict.editor.regionLabel": "Region {index}",
+  "conflict.editor.navigate_one": "{current} of {total} conflict",
+  "conflict.editor.navigate_other": "{current} of {total} conflicts",
+  "conflict.editor.previewOurs": "Ours ({label})",
+  "conflict.editor.previewTheirs": "Theirs ({label})",
+  "conflict.editor.saveResolve": "Save and stage",
+  "conflict.editor.allResolved": "All conflicts in this file have been resolved.",
+  "conflict.editor.remaining_one": "{count} conflict remaining",
+  "conflict.editor.remaining_other": "{count} conflicts remaining",
+  "conflict.editor.fileLabel": "File",
+  "conflict.editor.selectFile": "Select a file to resolve",
+  "conflict.editor.resolved": "File resolved and staged",
+  "conflict.editor.resolveFailed": "Failed to resolve file",
 
   /* ---------------------------------------------------------------- */
   /* Create ref dialogs                                                */
@@ -922,6 +996,23 @@ export const en: Messages = {
   "favorites.a11y.unchanged": "The order did not change.",
   "favorites.a11y.cancel": "Reordering of {name} cancelled.",
 
+  /* ---------------------------------------------------------------- */
+  /* Clone dialog                                                     */
+  /* ---------------------------------------------------------------- */
+  "clone.title": "Clone Repository",
+  "clone.description": "Download a remote repository to a local folder. Once done, GitCraque opens the cloned repo.",
+  "clone.confirm": "Clone",
+  "clone.field.url": "URL",
+  "clone.field.url.placeholder": "https://github.com/org/repo.git",
+  "clone.field.url.hint": "https://..., git@..., ssh://... or local path",
+  "clone.field.path": "Destination folder",
+  "clone.field.path.placeholder": "~/code/my-project",
+  "clone.field.path.hint": "The folder is created by git clone — it must not exist beforehand.",
+  "clone.field.branch": "Branch (optional)",
+  "clone.field.branch.placeholder": "main",
+  "clone.op": "Clone repository",
+  "clone.done": "Clone complete",
+
   "time.now": "just now",
   "time.minutesAgo": "{count} min ago",
   "time.hoursAgo": "{count} h ago",
@@ -1087,12 +1178,16 @@ export const en: Messages = {
   "menu.remote.fetch": "Fetch --prune from this remote",
   "menu.remote.copyFetchUrl": "Copy the fetch url",
   "menu.remote.browse": "Open in the browser",
+  "menu.stash.show": "Show contents",
   "menu.stash.copyMessage": "Copy the message",
   "menu.worktree.switch": "Switch to this worktree",
 
   "menu.file.view": "View in the viewer",
   "menu.commitFile.view": "View in this commit",
   "menu.commitFile.viewWorking": "View the working tree version",
+  "menu.commitFile.blame": "Blame — who last touched each line",
+
+  "menu.viewer.blame": "Blame — who last touched each line",
 
   "menu.viewer.copySelection": "Copy the selection",
   "menu.viewer.nothingSelected": "nothing selected",

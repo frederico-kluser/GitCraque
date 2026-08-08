@@ -38,8 +38,8 @@ export class Hub {
       if (client.readyState === 1) {
         try {
           client.send(payload);
-        } catch {
-          /* cliente morrendo: o close cuida do resto */
+        } catch (e) {
+          console.error("[gitcraque] hub send:", e.message);
         }
       }
     }

@@ -18,6 +18,7 @@ export async function bootServer(repoRoot, options = {}) {
     host: "127.0.0.1",
     dev: options.dev ?? false,
     version: "0.0.0-test",
+    rateLimitMax: Infinity,
     ...options,
   });
 

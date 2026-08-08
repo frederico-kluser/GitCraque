@@ -7,6 +7,7 @@ import type {
   AgentSource,
   AiStatusPayload,
   ApiError,
+  BlamePayload,
   Branch,
   CommitDetail,
   CredentialsPayload,
@@ -17,11 +18,17 @@ import type {
   FsRootsPayload,
   GitCommandResult,
   LogPayload,
+  RebaseInteractiveRequest,
+  RebaseInteractiveResult,
   RecentReposPayload,
   RefsPayload,
   RepoPayload,
   RepoSearchPayload,
   ScanPayload,
+  ResolveRequest,
+  ResolveResult,
+  ConflictState,
+  ConflictFile,
   SquashRequest,
   SquashResult,
   StatusPayload,
@@ -97,9 +104,16 @@ export const api = {
   /* ---- historico ----
    * O backend roda exatamente:
    *   git log --pretty=format:"%H|%P|%an|%ae|%s|%ar|%d" --all --topo-order
+   *
+   * Filtros de busca (aditivos):
+   *   q:      busca texto na mensagem (--grep)
+   *   author: filtra por autor (--author)
+   *   path:   filtra por caminho (-- <path>)
+   *   before: data limite (--before)
+   *   after:  data inicial (--after)
    */
-  log: (opts: { limit?: number; skip?: number } = {}) =>
-    get<LogPayload>(`/log${qs({ limit: opts.limit, skip: opts.skip })}`),
+  log: (opts: { limit?: number; skip?: number; q?: string; author?: string; path?: string; before?: string; after?: string } = {}) =>
+    get<LogPayload>(`/log${qs({ limit: opts.limit, skip: opts.skip, q: opts.q, author: opts.author, path: opts.path, before: opts.before, after: opts.after })}`),
   commit: (hash: string) => get<CommitDetail>(`/commit/${encodeURIComponent(hash)}`),
   diff: (opts: { hash?: string; path?: string; staged?: boolean; against?: string }) =>
     get<DiffPayload[]>(`/diff${qs(opts as Record<string, string | boolean | undefined>)}`),
@@ -182,6 +196,9 @@ export const api = {
   revert: (body: { hash: string; noCommit?: boolean }) => post<GitCommandResult>("/ops/revert", body),
   /** GIT_SEQUENCE_EDITOR="node proxy-editor.mjs" git rebase -i <base> */
   squash: (body: SquashRequest) => post<SquashResult>("/ops/squash", body),
+  /** Rebase interativo visual com acao por commit */
+  rebaseInteractive: (body: RebaseInteractiveRequest) =>
+    post<RebaseInteractiveResult>("/ops/rebase-interactive", body),
   abort: (body: { kind: "rebase" | "merge" | "cherry-pick" | "revert" }) =>
     post<GitCommandResult>("/ops/abort", body),
   continueOp: (body: { kind: "rebase" | "merge" | "cherry-pick" | "revert" }) =>
@@ -208,6 +225,8 @@ export const api = {
     post<GitCommandResult>("/stash/push", body),
   stashApply: (body: { ref: string; pop?: boolean }) => post<GitCommandResult>("/stash/apply", body),
   stashDrop: (body: { ref: string }) => post<GitCommandResult>("/stash/drop", body),
+  /** `git stash show -p <ref>` — devolve DiffPayload[] (mesmo formato de /api/diff). */
+  stashShow: (ref: string) => get<DiffPayload[]>(`/stash/show${qs({ ref })}`),
 
   /* ---- tags ---- */
   createTag: (body: { name: string; ref?: string; message?: string }) =>
@@ -240,6 +259,9 @@ export const api = {
   openRepo: (path: string) => post<RepoPayload>("/repos/open", { path }),
   initRepo: (body: { path: string; bare?: boolean; initialBranch?: string }) =>
     post<RepoPayload>("/repos/init", body),
+  /** git clone com barra de progresso via op:progress. Ao terminar, ja abre o repo clonado. */
+  clone: (body: { url: string; path: string; branch?: string; bare?: boolean }) =>
+    post<RepoPayload>("/repos/clone", body),
 
   /* ---- projetos favoritos (escolha explicita, nao historico) ---- */
   favorites: () => get<FavoritesPayload>("/repos/favorites"),
@@ -248,6 +270,10 @@ export const api = {
   removeFavorite: (path: string) => post<FavoritesPayload>("/repos/favorites/remove", { path }),
   reorderFavorites: (paths: string[]) =>
     post<FavoritesPayload>("/repos/favorites/reorder", { paths }),
+
+  /* ---- blame (`git blame --porcelain`) ---- */
+  blame: (opts: { path: string; hash?: string }) =>
+    get<BlamePayload>(`/blame${qs({ path: opts.path, hash: opts.hash })}`),
 
   /* ---- conteudo de arquivo para o visualizador ----
    * `hash` ausente = working tree. Usado pelo markdown renderizado e pela
@@ -278,6 +304,16 @@ export const api = {
    * servidor ja tem. Roda com o raciocinio no maximo — o resultado vira commit. */
   resolveConflictsWithAgent: () => post<AgentRunPayload>("/ai/resolve-conflicts", {}),
   abortAgent: () => post<{ ok: true; aborted: boolean }>("/ai/abort", {}),
+
+  /* ---- conflitos: deteccao, parse e resolucao por regiao ---- */
+  conflicts: {
+    /** Estado atual de conflito: kind da operacao, arquivos unmerged */
+    state: () => get<ConflictState>("/conflicts"),
+    /** Parseia um arquivo com marcadores <<<<<<< em regioes */
+    file: (path: string) => get<ConflictFile>(`/conflicts/file${qs({ path })}`),
+    /** Resolve regioes de um arquivo e faz git add */
+    resolve: (body: ResolveRequest) => post<ResolveResult>("/conflicts/resolve", body),
+  },
 };
 
 export type Api = typeof api;

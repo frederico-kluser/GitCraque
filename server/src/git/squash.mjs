@@ -269,7 +269,7 @@ export async function squash({ commits, message, fixup, base } = {}) {
     payload.commits = ordered;
     return payload;
   } finally {
-    await fs.rm(auditDir, { recursive: true, force: true }).catch(() => {});
+    await fs.rm(auditDir, { recursive: true, force: true }).catch((e) => console.error("[gitcraque] squash audit cleanup:", e.message));
   }
 }
 

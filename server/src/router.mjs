@@ -159,3 +159,34 @@ export function readJsonBody(req) {
     });
   });
 }
+
+/* ------------------------------------------------------------------ *
+ * Rate limiting basico
+ * ------------------------------------------------------------------ */
+
+/**
+ * Cria um rate limiter: 60 req/s por IP.
+ * Protege contra loop acidental — o servidor so ouve em 127.0.0.1.
+ * Cada servidor ganha o seu proprio mapa para que a suite de testes nao
+ * acumule contagens entre instancias.
+ * @returns {(ip: string) => null|{status: number, payload: object}}
+ */
+export function makeRateLimiter(maxReqs = 60) {
+  /** @type {Map<string, {count: number, resetAt: number}>} */
+  const map = new Map();
+
+  return (ip) => {
+    const now = Date.now();
+    let entry = map.get(ip);
+    if (!entry || now >= entry.resetAt) {
+      entry = { count: 1, resetAt: now + 1000 };
+      map.set(ip, entry);
+      return null;
+    }
+    entry.count += 1;
+    if (entry.count > maxReqs) {
+      return { status: 429, payload: { error: "error.tooManyRequests" } };
+    }
+    return null;
+  };
+}

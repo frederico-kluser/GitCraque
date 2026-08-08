@@ -127,7 +127,7 @@ export class Vault {
   async start() {
     this.nonce = crypto.randomBytes(24).toString("hex");
     this.dir = await fsp.mkdtemp(path.join(os.tmpdir(), "gitcraque-"));
-    await fsp.chmod(this.dir, 0o700).catch(() => {});
+    await fsp.chmod(this.dir, 0o700).catch((e) => console.error("[gitcraque] vault chmod:", e.message));
 
     this.socketPath =
       process.platform === "win32"
@@ -150,7 +150,7 @@ export class Vault {
 
     if (process.platform !== "win32") {
       // So o dono le e escreve: qualquer outro usuario da maquina fica de fora.
-      await fsp.chmod(this.socketPath, 0o600).catch(() => {});
+      await fsp.chmod(this.socketPath, 0o600).catch((e) => console.error("[gitcraque] vault chmod:", e.message));
     }
 
     const shim = await this.#writeShim();
@@ -181,7 +181,7 @@ export class Vault {
       `#!/bin/sh\nexec ${shellQuote(process.execPath)} ${shellQuote(ASKPASS_SCRIPT)} "$@"\n`,
       { mode: 0o700 },
     );
-    await fsp.chmod(shim, 0o700).catch(() => {});
+    await fsp.chmod(shim, 0o700).catch((e) => console.error("[gitcraque] vault chmod:", e.message));
     return shim;
   }
 

@@ -449,6 +449,44 @@ export interface SquashResult extends GitCommandResult {
 }
 
 /* ------------------------------------------------------------------ *
+ * 7b. Rebase interativo visual (GIT_SEQUENCE_EDITOR)
+ * ------------------------------------------------------------------ */
+
+export type RebaseInteractiveAction = "pick" | "reword" | "squash" | "fixup" | "drop";
+
+export interface RebaseInteractiveActionEntry {
+  hash: string;
+  action: RebaseInteractiveAction;
+  /** nova mensagem quando action === "reword" */
+  newMessage?: string;
+}
+
+export interface RebaseInteractiveRequest {
+  /** commits com suas acoes, na ordem em que o usuario quer */
+  actions: RebaseInteractiveActionEntry[];
+  /** commit-base do `git rebase -i <onto>`; derivado do mais antigo se ausente */
+  onto?: string;
+}
+
+export interface RebaseInteractivePlanLine {
+  action: "pick" | "reword" | "squash" | "fixup" | "drop" | "edit";
+  hash: string;
+  subject: string;
+  /** true quando esta linha foi reescrita pelo proxy-editor */
+  rewritten: boolean;
+}
+
+export interface RebaseInteractiveResult extends GitCommandResult {
+  /** o `git-rebase-todo` como o proxy-editor o deixou */
+  plan: RebaseInteractivePlanLine[];
+  /** conteudo original do todo, para auditoria */
+  originalTodo: string;
+  rewrittenTodo: string;
+  /** quantos rewords foram aplicados com sucesso */
+  rewordsApplied: number;
+}
+
+/* ------------------------------------------------------------------ *
  * 8. Credenciais / trampolim de askpass
  * ------------------------------------------------------------------ */
 
@@ -734,7 +772,41 @@ export interface ConsoleLine {
 }
 
 /* ------------------------------------------------------------------ *
- * 15. Agente: microfone -> transcricao -> pi coding agent
+ * 15. Blame — `git blame --porcelain`
+ * ------------------------------------------------------------------ */
+
+/** Uma linha do arquivo com o commit que a tocou pela ultima vez. */
+export interface BlameLine {
+  /** numero da linha no arquivo (1-indexado) */
+  lineNumber: number;
+  /** hash do commit */
+  hash: string;
+  /** numero da linha original no commit */
+  originalLine: number;
+  /** nome do autor */
+  author: string;
+  /** email do autor */
+  email: string;
+  /** timestamp Unix do commit (author-time) */
+  date: number;
+  /** fuso horario ("+0000") */
+  tz: string;
+  /** assunto do commit */
+  summary: string;
+  /** conteudo da linha */
+  content: string;
+}
+
+/** Payload de GET /api/blame */
+export interface BlamePayload {
+  lines: BlameLine[];
+  path: string;
+  /** commit contra o qual o blame foi rodado; null = working tree */
+  hash: string | null;
+}
+
+/* ------------------------------------------------------------------ *
+ * 16. Agente: microfone -> transcricao -> pi coding agent
  * ------------------------------------------------------------------ */
 
 /**
@@ -796,4 +868,83 @@ export interface TranscriptionPayload {
 export interface AgentRunPayload {
   id: string;
   startedAt: number;
+}
+
+/* ------------------------------------------------------------------ *
+ * 16. Clone — POST /api/repos/clone
+ * ------------------------------------------------------------------ */
+
+/** Corpo de POST /api/repos/clone */
+export interface CloneRequest {
+  /** url do remoto (https://..., git@..., ssh://..., ou caminho local) */
+  url: string;
+  /** diretorio destino (absoluto ou ~/relativo) */
+  path: string;
+  /** branch opcional (--branch) */
+  branch?: string;
+  /** repositorio bare (--bare) */
+  bare?: boolean;
+}
+
+/* ------------------------------------------------------------------ *
+ * 17. Conflitos — deteccao, parse e resolucao
+ * ------------------------------------------------------------------ */
+
+/** GET /api/conflicts — estado de conflito do repositorio */
+export interface ConflictState {
+  kind: PendingOperationKind;
+  step?: number;
+  total?: number;
+  current?: string;
+  conflicts: string[];
+  branch: string | null;
+}
+
+/** Uma regiao de conflito dentro de um arquivo */
+export interface ConflictRegion {
+  /** conteudo entre <<<<<<< e ======= */
+  ours: string;
+  /** conteudo entre ======= e >>>>>>> */
+  theirs: string;
+  /** numero da linha do separador =======, ou null */
+  separator: number | null;
+  /** numero da linha do fechamento >>>>>>>, ou null */
+  end: number | null;
+  /** rotulo do lado "nosso" (ex.: "HEAD") */
+  oursLabel: string;
+  /** rotulo do lado "deles" (ex.: "feature/login") */
+  theirsLabel: string;
+  /** indice da linha onde comeca <<<<<<< (0-indexado) */
+  startLine: number;
+  /** indice da linha onde termina >>>>>>> (0-indexado) */
+  endLine: number;
+  /** ja foi resolvida no cliente */
+  resolved: boolean;
+}
+
+/** GET /api/conflicts/file — arquivo parseado em regioes de conflito */
+export interface ConflictFile {
+  path: string;
+  regions: ConflictRegion[];
+  totalRegions: number;
+}
+
+/** Corpo de POST /api/conflicts/resolve */
+export interface ResolveRequest {
+  path: string;
+  resolutions: ResolveRegion[];
+}
+
+export interface ResolveRegion {
+  /** indice da regiao (0-indexado, pela ordem no arquivo) */
+  region: number;
+  /** "ours" | "theirs" | "both" */
+  resolution: "ours" | "theirs" | "both";
+}
+
+/** Resposta de POST /api/conflicts/resolve */
+export interface ResolveResult extends GitCommandResult {
+  path: string;
+  resolvedRegions: number;
+  remainingConflicts: number;
 }

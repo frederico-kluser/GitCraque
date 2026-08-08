@@ -12,11 +12,14 @@
  *     `--upload-pack=curl` ainda seria lido como flag pelo git.
  */
 import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 
 import { execGit, readGit, readGitLine, withMutationLock } from "./exec.mjs";
 import { getHeadState } from "./refs.mjs";
 import { gitPush } from "./remotes.mjs";
 import { listWorktrees } from "./worktree.mjs";
+import { parseUnifiedDiff } from "./status.mjs";
 
 /* ------------------------------------------------------------------ *
  * Guardas de entrada
@@ -546,6 +549,25 @@ export async function stashDrop({ ref } = {}) {
   return run(["stash", "drop", ref]);
 }
 
+/** GET /api/stash/show — diff do conteudo de um stash.
+ *
+ * Roda `git stash show -p <ref>` e devolve o mesmo formato de /api/diff
+ * (DiffPayload[]), reutilizando o parser de patch unificado.
+ *
+ * Stash inexistente devolve array vazio — o git so imprime header de erro no
+ * stderr mas sai com 0, e como a saida e vazia o parser devolve [] sem errar.
+ * Ref invalida (comeca com `-`) e barrada pelo `assertRef` antes de chegar ao git.
+ */
+export async function stashShow(ref) {
+  assertRef(ref, "ref");
+  const result = await readGit(["stash", "show", "-p", "--no-color", ref]);
+  if (!result.ok) {
+    // stash inexistente: git stash show sai com 0 mas sem stdout — seguro.
+    return [];
+  }
+  return parseUnifiedDiff(result.stdout);
+}
+
 /* ------------------------------------------------------------------ *
  * Tags
  * ------------------------------------------------------------------ */
@@ -587,8 +609,25 @@ export async function deleteTag({ name, remote } = {}) {
 /** Comandos que travariam o servidor ou abririam prompt fora do trampolim. */
 const RAW_BLOCKLIST = new Set(["gui", "citool", "difftool", "mergetool", "daemon", "gitk"]);
 
+/** Rate limit exclusivo do /raw: 10 chamadas/s. */
+const _rawRateMap = new Map();
+
 /** POST /api/raw — qualquer comando git cru, ainda assim por argv em array. */
 export async function raw({ args } = {}) {
+  // Rate limit: max 10 chamadas/s
+  const now = Date.now();
+  let rawEntry = _rawRateMap.get("raw");
+  if (!rawEntry || now >= rawEntry.resetAt) {
+    rawEntry = { count: 1, resetAt: now + 1000 };
+    _rawRateMap.set("raw", rawEntry);
+  } else {
+    rawEntry.count += 1;
+    if (rawEntry.count > 10) {
+      const error = new Error("error.tooManyRequests");
+      error.status = 429;
+      throw error;
+    }
+  }
   if (!Array.isArray(args) || args.length === 0) {
     const error = new Error("error.argsRequired");
     error.status = 400;
@@ -607,5 +646,16 @@ export async function raw({ args } = {}) {
     throw error;
   }
   const result = await tx(() => step(args));
+
+  // Audit log no ~/.cache/gitcraque/audit.log
+  try {
+    const dir = path.join(os.homedir(), ".cache", "gitcraque");
+    fs.mkdirSync(dir, { recursive: true });
+    const line = `${new Date().toISOString()} ${JSON.stringify(args)} ${result.ok ? "ok" : "error"}\n`;
+    fs.appendFileSync(path.join(dir, "audit.log"), line);
+  } catch {
+    /* audit falhou, mas a operacao git rodou — nao derruba o resultado */
+  }
+
   return withPendingState(result);
 }

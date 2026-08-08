@@ -26,15 +26,17 @@
 import { useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { useMotionUITheme, useMotionUITransition } from "@/components/motion-ui/ui-theme";
-import { closeFile, useAppState } from "@/state/store";
+import { closeBlame, closeFile, useAppState } from "@/state/store";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { PanelProps } from "@/types/modules";
+import { BlamePanel } from "./BlamePanel";
 import { DetailPanel } from "./DetailPanel";
 import { FileViewPanel } from "./FileViewPanel";
 
 export function SidePanel({ className }: PanelProps) {
   const openFile = useAppState((s) => s.openFile);
+  const openBlame = useAppState((s) => s.openBlame);
   const primary = useAppState((s) => s.selection.primary);
   const ui = useMotionUITransition("ui");
   const { motionMode } = useMotionUITheme();
@@ -42,14 +44,14 @@ export function SidePanel({ className }: PanelProps) {
 
   /**
    * Selecionar outro commit e um pedido para ver AQUELE commit: a View do
-   * arquivo anterior sai de cena sozinha. Guardado por ref porque o efeito nao
-   * pode disparar na montagem — fecharia um arquivo que ninguem mandou fechar.
+   * arquivo anterior e o blame saem de cena sozinhos.
    */
   const lastPrimary = useRef(primary);
   useEffect(() => {
     if (lastPrimary.current !== primary) {
       lastPrimary.current = primary;
       closeFile();
+      closeBlame();
     }
   }, [primary]);
 
@@ -59,14 +61,16 @@ export function SidePanel({ className }: PanelProps) {
           sem posicionamento absoluto e sem a coluna pular de altura. */}
       <AnimatePresence initial={false}>
         <motion.div
-          key={openFile ? "view" : "detail"}
+          key={openBlame ? "blame" : openFile ? "view" : "detail"}
           initial={still ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={still ? undefined : { opacity: 0 }}
           transition={{ ...ui }}
           className="col-start-1 row-start-1 grid min-h-0 min-w-0 bg-card"
         >
-          {openFile ? (
+          {openBlame ? (
+            <BlamePanel className="min-h-0" path={openBlame.path} hash={openBlame.hash} />
+          ) : openFile ? (
             <FileViewPanel className="min-h-0" file={openFile} />
           ) : (
             <DetailPanel className="min-h-0" />

@@ -59,6 +59,7 @@ export const ROUTES = [
   ["POST", "/ops/reset"],
   ["POST", "/ops/revert"],
   ["POST", "/ops/squash"],
+  ["POST", "/ops/rebase-interactive"],
   ["POST", "/ops/abort"],
   ["POST", "/ops/continue"],
 
@@ -74,6 +75,7 @@ export const ROUTES = [
   ["POST", "/stash/push"],
   ["POST", "/stash/apply"],
   ["POST", "/stash/drop"],
+  ["GET", "/stash/show"],
 
   ["POST", "/tag/create"],
   ["POST", "/tag/delete"],
@@ -96,6 +98,7 @@ export const ROUTES = [
   ["GET", "/repos/search"],
   ["POST", "/repos/open"],
   ["POST", "/repos/init"],
+  ["POST", "/repos/clone"],
 
   // Projetos favoritos: escolha explicita e permanente, ao contrario dos
   // recentes, que sao historico automatico e rotativo.
@@ -109,6 +112,9 @@ export const ROUTES = [
 
   ["POST", "/raw"],
 
+  // `git blame --porcelain` de um arquivo.
+  ["GET", "/blame"],
+
   // Agente: microfone -> transcricao -> pi coding agent.
   // A chave da OpenRouter e UMA so e paga as duas pernas (transcricao e agente).
   ["GET", "/ai/status"],
@@ -120,6 +126,11 @@ export const ROUTES = [
   // conflitos da operacao pendente e leva ate o commit.
   ["POST", "/ai/resolve-conflicts"],
   ["POST", "/ai/abort"],
+
+  // Conflitos: deteccao, parse dos marcadores e resolucao por regiao.
+  ["GET", "/conflicts"],
+  ["GET", "/conflicts/file"],
+  ["POST", "/conflicts/resolve"],
 ];
 
 /** Tipos de evento que o servidor pode emitir no WebSocket. */
@@ -162,6 +173,18 @@ export const CHANGE_REASONS = /** @type {const} */ ([
  * Acrescimos do backend (aditivos — nada acima foi removido/renomeado)
  * ------------------------------------------------------------------ */
 
+/**
+ * GET /api/log aceita query params para busca e filtro:
+ *
+ *   q      — busca texto na mensagem de commit (--grep)
+ *   author — filtra por autor (--author)
+ *   path   — filtra commits que tocam o caminho (-- <path>)
+ *   before — filtra commits anteriores a data (--before)
+ *   after  — filtra commits posteriores a data (--after)
+ *
+ * Todos sao opcionais e podem ser combinados. A base LOG_ARGS nunca e alterada.
+ */
+
 /** Endereco padrao de escuta. NUNCA 0.0.0.0: o servidor executa git na maquina. */
 export const DEFAULT_HOST = "127.0.0.1";
 
@@ -192,6 +215,16 @@ export const ENV_ASKPASS_NONCE = "GITCRAQUE_ASKPASS_NONCE";
 export const ENV_SQUASH_HASHES = "GITCRAQUE_SQUASH_HASHES";
 export const ENV_SQUASH_MODE = "GITCRAQUE_SQUASH_MODE";
 export const ENV_SQUASH_AUDIT = "GITCRAQUE_SQUASH_AUDIT";
+
+/** Nomes das variaveis de ambiente do proxy-editor do rebase interativo. */
+export const ENV_REBASE_HASHES = "GITCRAQUE_REBASE_HASHES";
+export const ENV_REBASE_ACTIONS = "GITCRAQUE_REBASE_ACTIONS";
+export const ENV_REBASE_AUDIT = "GITCRAQUE_REBASE_AUDIT";
+
+/** Nomes das variaveis de ambiente do proxy-editor no modo GIT_EDITOR (reword). */
+export const ENV_REWORD_MESSAGE = "GITCRAQUE_REWORD_MESSAGE";
+export const ENV_REWORD_AUDIT = "GITCRAQUE_REWORD_AUDIT";
+export const ENV_REWORD_QUEUE = "GITCRAQUE_REWORD_QUEUE";
 
 /**
  * Prioridade dos motivos de `repo:changed` quando o debounce agrupa varios.

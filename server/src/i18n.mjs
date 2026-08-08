@@ -68,6 +68,11 @@ const MESSAGES = {
     "error.devStaticsDetail": "open http://127.0.0.1:5273",
     "error.methodMissing": "method {method} does not exist on {path}",
     "error.routeMissing": "route {method} {path} does not exist",
+    "error.tooManyRequests": "too many requests — slow down",
+
+    "error.urlRequired": "url is required",
+    "error.cloneTargetExists": "the target directory already exists",
+    "error.cloneTargetExistsDetail": "{path} already exists — choose a new folder or remove it first",
 
     "error.pathRequired": "path is required",
     "error.pathsRequired": "paths is required and only accepts strings",
@@ -98,6 +103,14 @@ const MESSAGES = {
     "error.squashNotContiguous": "the selected commits are not contiguous",
     "error.squashNotContiguousDetail": "select neighbouring commits on the same graph line",
 
+    "error.rebaseInteractiveNeedsTwo": "actions needs at least 2 elements",
+    "error.rebaseInteractiveMissingHash": "every action needs a hash",
+    "error.rebaseInteractiveInvalidAction": "invalid action",
+    "error.rebaseInteractiveRewordNeedsMessage": "reword action needs newMessage",
+    "error.rebaseInteractiveNoHistory": "could not list the history of HEAD",
+    "error.rebaseInteractiveNotContiguous": "the selected commits are not contiguous",
+    "error.rebaseInteractiveNotContiguousDetail": "select neighbouring commits on the same graph line",
+
     "error.pathMissing": "the path does not exist",
     "error.pathUnreadable": "the path does not exist or cannot be read",
     "error.notADirectory": "the path is not a directory",
@@ -114,6 +127,16 @@ const MESSAGES = {
     "error.argsDash": "{field} cannot start with \"-\"",
     "error.argsDashDetail": "git would read the value as a command-line option",
     "error.opInteractive": "it opens its own interface and would hang the server",
+
+    "error.noConflictState": "the repository is not in a conflicted state",
+    "error.resolutionsRequired": "resolutions is required and cannot be empty",
+    "error.invalidRegion": "invalid region index",
+    "error.invalidRegionDetail": "region {index} is out of range (0-{total})",
+    "error.invalidResolution": "invalid resolution",
+    "error.invalidResolutionDetail": "resolution must be ours, theirs or both, not \"{resolution}\"",
+    "error.pathOutsideRoot": "path must be inside the repository",
+    "error.pathOutsideRootDetail": "{path} escapes the worktree root",
+    "error.fileMissingDetail": "{path}: {code}",
 
     "error.undoEmptyRepo": "there is nothing to undo in a repository with no commits",
     "error.undoPending": "finish or abort the operation in progress before undoing",
@@ -151,6 +174,11 @@ const MESSAGES = {
     "error.devStaticsDetail": "abra http://127.0.0.1:5273",
     "error.methodMissing": "método {method} não existe em {path}",
     "error.routeMissing": "rota {method} {path} não existe",
+    "error.tooManyRequests": "requisições demais — vá mais devagar",
+
+    "error.urlRequired": "url é obrigatório",
+    "error.cloneTargetExists": "o diretório de destino já existe",
+    "error.cloneTargetExistsDetail": "{path} já existe — escolha uma pasta nova ou remova-a antes",
 
     "error.pathRequired": "path é obrigatório",
     "error.pathsRequired": "paths é obrigatório e só aceita strings",
@@ -182,6 +210,14 @@ const MESSAGES = {
     "error.squashNotContiguous": "os commits selecionados não são contíguos",
     "error.squashNotContiguousDetail": "selecione commits vizinhos na mesma linha do grafo",
 
+    "error.rebaseInteractiveNeedsTwo": "actions precisa de pelo menos 2 elementos",
+    "error.rebaseInteractiveMissingHash": "toda acao precisa de um hash",
+    "error.rebaseInteractiveInvalidAction": "acao invalida",
+    "error.rebaseInteractiveRewordNeedsMessage": "a acao reword precisa de newMessage",
+    "error.rebaseInteractiveNoHistory": "não consegui listar o histórico do HEAD",
+    "error.rebaseInteractiveNotContiguous": "os commits selecionados não são contíguos",
+    "error.rebaseInteractiveNotContiguousDetail": "selecione commits vizinhos na mesma linha do grafo",
+
     "error.pathMissing": "caminho não existe",
     "error.pathUnreadable": "caminho não existe ou não pode ser lido",
     "error.notADirectory": "o caminho não é um diretório",
@@ -198,6 +234,16 @@ const MESSAGES = {
     "error.argsDash": "{field} não pode começar com \"-\"",
     "error.argsDashDetail": "o git leria o valor como opção de linha de comando",
     "error.opInteractive": "abre interface própria e travaria o servidor",
+
+    "error.noConflictState": "o repositório não está em estado de conflito",
+    "error.resolutionsRequired": "resolutions é obrigatório e não pode ser vazio",
+    "error.invalidRegion": "índice de região inválido",
+    "error.invalidRegionDetail": "região {index} fora do intervalo (0-{total})",
+    "error.invalidResolution": "resolução inválida",
+    "error.invalidResolutionDetail": "resolução deve ser ours, theirs ou both, não \"{resolution}\"",
+    "error.pathOutsideRoot": "caminho tem de ser um caminho relativo dentro do repositório",
+    "error.pathOutsideRootDetail": "{path} escapa da raiz da worktree",
+    "error.fileMissingDetail": "{path}: {code}",
 
     "error.undoEmptyRepo": "não há o que desfazer num repositório sem commits",
     "error.undoPending": "termine ou aborte a operação em andamento antes de desfazer",
@@ -235,6 +281,11 @@ const MESSAGES = {
     "error.devStaticsDetail": "abre http://127.0.0.1:5273",
     "error.methodMissing": "el método {method} no existe en {path}",
     "error.routeMissing": "la ruta {method} {path} no existe",
+    "error.tooManyRequests": "demasiadas peticiones — más despacio",
+
+    "error.urlRequired": "url es obligatorio",
+    "error.cloneTargetExists": "el directorio de destino ya existe",
+    "error.cloneTargetExistsDetail": "{path} ya existe — elige una carpeta nueva o elimínala antes",
 
     "error.pathRequired": "path es obligatorio",
     "error.pathsRequired": "paths es obligatorio y solo acepta strings",
@@ -266,6 +317,14 @@ const MESSAGES = {
     "error.squashNotContiguous": "los commits seleccionados no son contiguos",
     "error.squashNotContiguousDetail": "selecciona commits vecinos en la misma línea del grafo",
 
+    "error.rebaseInteractiveNeedsTwo": "actions necesita al menos 2 elementos",
+    "error.rebaseInteractiveMissingHash": "toda acción necesita un hash",
+    "error.rebaseInteractiveInvalidAction": "acción inválida",
+    "error.rebaseInteractiveRewordNeedsMessage": "la acción reword necesita newMessage",
+    "error.rebaseInteractiveNoHistory": "no pude listar el historial de HEAD",
+    "error.rebaseInteractiveNotContiguous": "los commits seleccionados no son contiguos",
+    "error.rebaseInteractiveNotContiguousDetail": "selecciona commits vecinos en la misma línea del grafo",
+
     "error.pathMissing": "la ruta no existe",
     "error.pathUnreadable": "la ruta no existe o no se puede leer",
     "error.notADirectory": "la ruta no es un directorio",
@@ -282,6 +341,16 @@ const MESSAGES = {
     "error.argsDash": "{field} no puede empezar por \"-\"",
     "error.argsDashDetail": "git leería el valor como una opción de línea de comandos",
     "error.opInteractive": "abre su propia interfaz y bloquearía el servidor",
+
+    "error.noConflictState": "el repositorio no está en estado de conflicto",
+    "error.resolutionsRequired": "resolutions es obligatorio y no puede estar vacío",
+    "error.invalidRegion": "índice de región inválido",
+    "error.invalidRegionDetail": "la región {index} está fuera del rango (0-{total})",
+    "error.invalidResolution": "resolución inválida",
+    "error.invalidResolutionDetail": "la resolución debe ser ours, theirs o both, no \"{resolution}\"",
+    "error.pathOutsideRoot": "la ruta tiene que estar dentro del repositorio",
+    "error.pathOutsideRootDetail": "{path} escapa de la raíz del worktree",
+    "error.fileMissingDetail": "{path}: {code}",
 
     "error.undoEmptyRepo": "no hay nada que deshacer en un repositorio sin commits",
     "error.undoPending": "termina o aborta la operación en curso antes de deshacer",
@@ -319,6 +388,11 @@ const MESSAGES = {
     "error.devStaticsDetail": "请打开 http://127.0.0.1:5273",
     "error.methodMissing": "{path} 上不存在 {method} 方法",
     "error.routeMissing": "路由 {method} {path} 不存在",
+    "error.tooManyRequests": "请求过多 — 请放慢速度",
+
+    "error.urlRequired": "url 是必填项",
+    "error.cloneTargetExists": "目标目录已存在",
+    "error.cloneTargetExistsDetail": "{path} 已存在 — 请选择新文件夹或先将其删除",
 
     "error.pathRequired": "path 是必填项",
     "error.pathsRequired": "paths 是必填项，且只接受字符串",
@@ -349,6 +423,14 @@ const MESSAGES = {
     "error.squashNotContiguous": "选中的提交不连续",
     "error.squashNotContiguousDetail": "请在图的同一条线上选择相邻的提交",
 
+    "error.rebaseInteractiveNeedsTwo": "actions 至少需要 2 个元素",
+    "error.rebaseInteractiveMissingHash": "每个动作都需要一个哈希",
+    "error.rebaseInteractiveInvalidAction": "无效的动作",
+    "error.rebaseInteractiveRewordNeedsMessage": "reword 动作需要 newMessage",
+    "error.rebaseInteractiveNoHistory": "无法列出 HEAD 的历史",
+    "error.rebaseInteractiveNotContiguous": "选中的提交不连续",
+    "error.rebaseInteractiveNotContiguousDetail": "请在图的同一条线上选择相邻的提交",
+
     "error.pathMissing": "该路径不存在",
     "error.pathUnreadable": "该路径不存在或无法读取",
     "error.notADirectory": "该路径不是一个目录",
@@ -365,6 +447,16 @@ const MESSAGES = {
     "error.argsDash": "{field} 不能以 \"-\" 开头",
     "error.argsDashDetail": "git 会把该值当作命令行选项来读取",
     "error.opInteractive": "它会打开自己的界面，从而卡住服务器",
+
+    "error.noConflictState": "仓库不在冲突状态",
+    "error.resolutionsRequired": "resolutions 是必填项，且不能为空",
+    "error.invalidRegion": "无效的区域索引",
+    "error.invalidRegionDetail": "区域 {index} 超出范围 (0-{total})",
+    "error.invalidResolution": "无效的解决方案",
+    "error.invalidResolutionDetail": "解决方案必须是 ours、theirs 或 both，而不是 \"{resolution}\"",
+    "error.pathOutsideRoot": "路径必须在仓库内",
+    "error.pathOutsideRootDetail": "{path} 脱离了工作树根目录",
+    "error.fileMissingDetail": "{path}: {code}",
 
     "error.undoEmptyRepo": "仓库中没有提交，无法撤销",
     "error.undoPending": "请先完成或中止正在进行的操作，然后再撤销",

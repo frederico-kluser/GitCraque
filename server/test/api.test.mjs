@@ -83,6 +83,43 @@ test("GET /api/log traz o commit com | com o assunto INTEIRO", async () => {
   assert.ok(head.refs.some((r) => r.kind === "localBranch" && r.name === "main" && r.isHead));
 });
 
+test("GET /api/log?q= busca por texto na mensagem", async () => {
+  const { status, json } = await api.get(`/api/log?q=${encodeURIComponent("login")}`);
+  assert.equal(status, 200);
+  assert.ok(json.commits.length >= 2, "deve encontrar feat: tela de login e fix: valida a senha");
+  assert.ok(json.commits.every((c) => c.subject.toLowerCase().includes("login")), "todos os resultados contem login");
+});
+
+test("GET /api/log?author= filtra por autor", async () => {
+  const { status, json } = await api.get("/api/log?author=Teste GitCraque");
+  assert.equal(status, 200);
+  assert.ok(json.commits.length >= 7, "todos os commits do fixture sao do Teste GitCraque");
+  assert.ok(json.commits.every((c) => c.authorName === "Teste GitCraque"));
+});
+
+test("GET /api/log?author= sem resultados", async () => {
+  const { status, json } = await api.get("/api/log?author=Fulano Ausente");
+  assert.equal(status, 200);
+  assert.equal(json.commits.length, 0);
+  assert.equal(json.empty, false, "o repositorio NAO esta vazio, so a busca e que e");
+  // total e o rev-list --all --count, que ignora os filtros de busca
+  assert.ok(json.total > 0, "o total sem filtro e maior que zero");
+});
+
+test("GET /api/log?path= filtra por caminho", async () => {
+  const { status, json } = await api.get(`/api/log?path=${encodeURIComponent("src/login.js")}`);
+  assert.equal(status, 200);
+  assert.ok(json.commits.length >= 2, "deve encontrar os commits de login");
+  assert.ok(json.commits.every((c) => c.subject.includes("login") || c.subject.includes("valida")), "resultados tocam src/login.js");
+});
+
+test("GET /api/log?q= e ?path= combinados", async () => {
+  const { status, json } = await api.get(`/api/log?q=tela&path=${encodeURIComponent("src/login.js")}`);
+  assert.equal(status, 200);
+  assert.equal(json.commits.length, 1);
+  assert.equal(json.commits[0].subject, "feat: tela de login");
+});
+
 test("GET /api/log?limit=&skip= pagina", async () => {
   const primeira = await api.get("/api/log?limit=2");
   assert.equal(primeira.json.commits.length, 2);
@@ -292,6 +329,29 @@ test("stash: push, listagem e drop", async () => {
 
   await api.post("/api/discard", { paths: ["README.md"] });
   assert.equal((await api.get("/api/status")).json.clean, true);
+});
+
+test("stash show devolve o diff do stash", async () => {
+  fs.writeFileSync(path.join(fixture.root, "README.md"), "# fixture mexida\n");
+
+  await api.post("/api/stash/push", { message: "mexida no readme" });
+
+  const show = await api.get("/api/stash/show?ref=stash@{0}");
+  assert.equal(show.status, 200);
+  assert.ok(Array.isArray(show.json), "o resultado e um array de DiffPayload");
+  assert.ok(show.json.length > 0, "o stash tem diferencas");
+  assert.equal(show.json[0].path, "README.md");
+
+  // Limpa: pop e descarta
+  await api.post("/api/stash/apply", { ref: "stash@{0}", pop: true });
+  await api.post("/api/discard", { paths: ["README.md"] });
+  assert.equal((await api.get("/api/status")).json.clean, true);
+});
+
+test("stash show de ref invalida (comeca com -) e barrada", async () => {
+  const show = await api.get("/api/stash/show?ref=-x");
+  assert.equal(show.status, 400);
+  assert.equal(show.json.error, translate("pt", "error.argsDash", { field: "ref" }));
 });
 
 test("tag: criar anotada e deletar", async () => {
@@ -605,6 +665,58 @@ test("o watcher emite repo:changed quando o .git muda por fora", async () => {
 });
 
 /* ------------------------------------------------------------------ *
+ * Blame — `git blame --porcelain`
+ * ------------------------------------------------------------------ */
+
+test("GET /api/blame devolve BlamePayload para um arquivo de texto", async () => {
+  const { status, json } = await api.get("/api/blame?path=README.md");
+  assert.equal(status, 200);
+  assert.equal(json.path, "README.md");
+  assert.equal(typeof json.hash, "string", "resolveu para o hash de HEAD");
+  assert.ok(json.hash.length === 40);
+  assert.ok(json.lines.length > 0, "o README tem pelo menos uma linha");
+
+  const primeira = json.lines[0];
+  assert.equal(primeira.lineNumber, 1);
+  assert.equal(typeof primeira.hash, "string");
+  assert.ok(primeira.hash.length === 40);
+  assert.equal(typeof primeira.author, "string", "campo author presente");
+  assert.equal(typeof primeira.email, "string", "campo email presente");
+  assert.equal(typeof primeira.date, "number", "timestamp Unix");
+  assert.ok(primeira.date > 0);
+  assert.equal(typeof primeira.tz, "string");
+  assert.equal(typeof primeira.summary, "string");
+  assert.equal(typeof primeira.content, "string", "a linha veio");
+});
+
+test("GET /api/blame com hash especifico devolve blame daquele commit", async () => {
+  const primeiro = fixture.hashes.primeiro;
+  const { status, json } = await api.get(`/api/blame?path=README.md&hash=${primeiro}`);
+  assert.equal(status, 200);
+  assert.equal(json.hash, primeiro);
+  // O primeiro commit so tem uma linha: "# fixture"
+  assert.equal(json.lines.length, 1);
+  assert.equal(json.lines[0].content, "# fixture");
+  assert.equal(json.lines[0].author, "Teste GitCraque");
+});
+
+test("GET /api/blame em arquivo que nao existe da 404", async () => {
+  const { status, json } = await api.get("/api/blame?path=arquivo-que-nao-existe.txt");
+  assert.equal(status, 404);
+  assert.ok(json.error);
+});
+
+test("GET /api/blame sem path da erro de validacao", async () => {
+  const { status, json } = await api.get("/api/blame");
+  assert.equal(status, 400);
+});
+
+test("GET /api/blame com hash que nao existe da 404", async () => {
+  const { status, json } = await api.get("/api/blame?path=README.md&hash=deadbeefdeadbeefdeadbeefdeadbeefdeadbeef");
+  assert.equal(status, 404);
+});
+
+/* ------------------------------------------------------------------ *
  * Idioma da resposta de erro
  *
  * O backend nao guarda idioma: ele o escolhe POR REQUISICAO. Um processo
@@ -659,4 +771,241 @@ test("mensagem do PROPRIO git nunca e traduzida — passa como o git a emitiu", 
   // catalogo: `translate` devolve undefined e a borda usa a string crua.
   assert.doesNotMatch(res.json.error, /^error\./, "a chave crua vazou para a UI");
   assert.match(res.json.error, /nao-existe-esta-branch/);
+});
+
+/* ------------------------------------------------------------------ *
+ * Clone
+ * ------------------------------------------------------------------ */
+
+test("POST /api/repos/clone clona um repo local e ja o abre", async () => {
+  const destino = path.join(os.tmpdir(), `gitcraque-clone-ok-${Date.now()}`);
+  try {
+    const ws = api.connectWs();
+    await ws.open();
+    await ws.waitFor("hello");
+
+    // Clona o fixture como se fosse um remoto local
+    const res = await api.post("/api/repos/clone", {
+      url: fixture.root,
+      path: destino,
+    });
+    assert.equal(res.status, 200, res.json.error);
+    assert.equal(res.json.isRepo, true);
+    assert.equal(res.json.cwd, destino);
+    assert.equal(res.json.name, path.basename(destino));
+    assert.ok(fs.existsSync(path.join(destino, ".git")), "o .git tem de existir");
+
+    // O cwd:changed chega porque o clone abre o repo
+    const evento = await ws.waitFor("cwd:changed");
+    assert.equal(evento.cwd, destino);
+
+    // Volta para o fixture para nao contaminar os testes seguintes.
+    // O clone deixa o servidor num repositorio DIFERENTE: a volta e via
+    // POST /repos/open, nao /worktrees/switch (que so troca entre worktrees
+    // do MESMO repo).
+    const voltou = await api.post("/api/repos/open", { path: fixture.root });
+    assert.equal(voltou.status, 200);
+    await ws.close();
+  } finally {
+    fs.rmSync(destino, { recursive: true, force: true });
+  }
+});
+
+test("POST /api/repos/clone recusa destino que ja existe", async () => {
+  const destino = path.join(os.tmpdir(), `gitcraque-clone-exists-${Date.now()}`);
+  fs.mkdirSync(destino);
+  try {
+    const res = await api.post("/api/repos/clone", {
+      url: fixture.root,
+      path: destino,
+    });
+    assert.equal(res.status, 409);
+    assert.equal(res.json.error, translate("pt", "error.cloneTargetExists"));
+  } finally {
+    fs.rmSync(destino, { recursive: true, force: true });
+  }
+});
+
+test("POST /api/repos/clone sem url e 400", async () => {
+  const res = await api.post("/api/repos/clone", {
+    path: path.join(os.tmpdir(), `gitcraque-clone-sem-url-${Date.now()}`),
+  });
+  assert.equal(res.status, 400);
+  assert.equal(res.json.error, translate("pt", "error.urlRequired"));
+});
+
+test("POST /api/repos/clone sem path e 400", async () => {
+  const res = await api.post("/api/repos/clone", { url: fixture.root });
+  assert.equal(res.status, 400);
+  assert.equal(res.json.error, translate("pt", "error.pathRequired"));
+});
+
+test("POST /api/repos/clone com url invalida retorna 409 com o comando", async () => {
+  const destino = path.join(os.tmpdir(), `gitcraque-clone-invalido-${Date.now()}`);
+  try {
+    const res = await api.post("/api/repos/clone", {
+      url: "/caminho/que/nao/existe.git",
+      path: destino,
+    });
+    assert.equal(res.status, 409);
+    assert.ok(res.json.command, "o ApiError carrega o GitCommandResult");
+    assert.equal(res.json.command.ok, false);
+    assert.ok(res.json.command.stderr.length > 0);
+  } finally {
+    fs.rmSync(destino, { recursive: true, force: true });
+  }
+});
+
+/* ------------------------------------------------------------------ *
+ * Conflitos — deteccao, parse e resolucao
+ * ------------------------------------------------------------------ */
+
+test("GET /api/conflicts sem conflito devolve 400", async () => {
+  const { status, json } = await api.get("/api/conflicts");
+  assert.equal(status, 400);
+  assert.equal(json.error, translate("pt", "error.noConflictState"));
+});
+
+test("ciclo completo: detectar conflito, parsear arquivo e resolver", async () => {
+  // Cria conflito: duas branches mexendo na mesma linha do mesmo arquivo.
+  git(fixture.root, "checkout", "-q", "-b", "conflito-ui-a", "main");
+  fs.writeFileSync(path.join(fixture.root, "briga-ui.txt"), "linha 1\nlado A\nlinha 3\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado A");
+
+  git(fixture.root, "checkout", "-q", "-b", "conflito-ui-b", "main");
+  fs.writeFileSync(path.join(fixture.root, "briga-ui.txt"), "linha 1\nlado B\nlinha 3\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado B");
+
+  // Merge que conflita
+  await api.post("/api/ops/merge", { source: "conflito-ui-a" });
+
+  // GET /api/conflicts — deve detectar
+  const conflicts = await api.get("/api/conflicts");
+  assert.equal(conflicts.status, 200);
+  assert.equal(conflicts.json.kind, "merge");
+  assert.ok(conflicts.json.conflicts.includes("briga-ui.txt"), "briga-ui.txt deve estar na lista");
+  assert.equal(conflicts.json.branch, "conflito-ui-b");
+
+  // GET /api/conflicts/file — parse do arquivo
+  const file = await api.get(`/api/conflicts/file?path=${encodeURIComponent("briga-ui.txt")}`);
+  assert.equal(file.status, 200);
+  assert.equal(file.json.path, "briga-ui.txt");
+  assert.equal(file.json.totalRegions, 1, "uma regiao de conflito");
+  assert.equal(file.json.regions.length, 1);
+  const reg = file.json.regions[0];
+  assert.ok(reg.ours.includes("lado B"), `nosso deve conter 'lado B' (HEAD): ${reg.ours}`);
+  assert.ok(reg.theirs.includes("lado A"), `deles deve conter 'lado A' (merge source): ${reg.theirs}`);
+  assert.equal(reg.oursLabel, "HEAD");
+  assert.ok(reg.theirsLabel.length > 0, "rotulo deles deve existir");
+  assert.equal(typeof reg.startLine, "number");
+  assert.equal(typeof reg.endLine, "number");
+  assert.equal(typeof reg.separator, "number");
+
+  // POST /api/conflicts/resolve — resolver com "ours"
+  const resolved = await api.post("/api/conflicts/resolve", {
+    path: "briga-ui.txt",
+    resolutions: [{ region: 0, resolution: "ours" }],
+  });
+  assert.equal(resolved.status, 200, resolved.json.error || "");
+  assert.equal(resolved.json.ok, true);
+  assert.equal(resolved.json.path, "briga-ui.txt");
+  assert.equal(resolved.json.resolvedRegions, 1);
+  assert.equal(resolved.json.remainingConflicts, 0);
+
+  // O arquivo no disco nao deve mais ter marcadores
+  const conteudo = fs.readFileSync(path.join(fixture.root, "briga-ui.txt"), "utf8");
+  assert.ok(!conteudo.includes("<<<<<<<"), "arquivo nao deve ter marcador <<<<<<<");
+  assert.ok(!conteudo.includes("======="), "arquivo nao deve ter marcador =======");
+  assert.ok(!conteudo.includes(">>>>>>>"), "arquivo nao deve ter marcador >>>>>>>");
+  assert.ok(conteudo.includes("lado B"), "arquivo deve conter lado B (ours/HEAD)");
+
+  // Aborta e limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
+});
+
+test("GET /api/conflicts/file recusa caminho que escapa da worktree", async () => {
+  const { status, json } = await api.get("/api/conflicts/file?path=../../../etc/passwd");
+  assert.equal(status, 400);
+  assert.ok(json.error);
+});
+
+test("POST /api/conflicts/resolve recusa regiao invalida", async () => {
+  // Cria un novo conflito rapido
+  git(fixture.root, "checkout", "-q", "-b", "conflito-inv", "main");
+  fs.writeFileSync(path.join(fixture.root, "inv.txt"), "antes\nlado X\ndepois\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado X");
+
+  git(fixture.root, "checkout", "-q", "-b", "conflito-inv2", "main");
+  fs.writeFileSync(path.join(fixture.root, "inv.txt"), "antes\nlado Y\ndepois\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado Y");
+
+  await api.post("/api/ops/merge", { source: "conflito-inv" });
+
+  // Regiao 99 nao existe
+  const { status, json } = await api.post("/api/conflicts/resolve", {
+    path: "inv.txt",
+    resolutions: [{ region: 99, resolution: "ours" }],
+  });
+  assert.equal(status, 400);
+  assert.equal(json.error, translate("pt", "error.invalidRegion"));
+
+  // Limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
+});
+
+test("POST /api/conflicts/resolve recusa resolucao invalida", async () => {
+  // Reabre o conflito
+  git(fixture.root, "checkout", "-q", "conflito-inv2");
+  await api.post("/api/ops/merge", { source: "conflito-inv" });
+
+  const { status, json } = await api.post("/api/conflicts/resolve", {
+    path: "inv.txt",
+    resolutions: [{ region: 0, resolution: "invalid" }],
+  });
+  assert.equal(status, 400);
+  assert.equal(json.error, translate("pt", "error.invalidResolution"));
+
+  // Limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
+});
+
+test("resolver com 'both' concatena os dois lados", async () => {
+  git(fixture.root, "checkout", "-q", "main");
+  fs.writeFileSync(path.join(fixture.root, "both.txt"), "inicio\nlinha A\nfim\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado A");
+
+  git(fixture.root, "checkout", "-q", "-b", "conflito-both-b", "main~1");
+  fs.writeFileSync(path.join(fixture.root, "both.txt"), "inicio\nlinha B\nfim\n");
+  git(fixture.root, "add", "-A");
+  git(fixture.root, "commit", "-q", "-m", "lado B");
+
+  git(fixture.root, "checkout", "-q", "main");
+  await api.post("/api/ops/merge", { source: "conflito-both-b" });
+
+  // Verifica que existe 1 regiao
+  const file = await api.get("/api/conflicts/file?path=both.txt");
+  assert.equal(file.json.totalRegions, 1);
+
+  // Resolve com "both"
+  const resolved = await api.post("/api/conflicts/resolve", {
+    path: "both.txt",
+    resolutions: [{ region: 0, resolution: "both" }],
+  });
+  assert.equal(resolved.json.ok, true);
+
+  const conteudo = fs.readFileSync(path.join(fixture.root, "both.txt"), "utf8");
+  assert.ok(conteudo.includes("linha A"), "deve conter lado A");
+  assert.ok(conteudo.includes("linha B"), "deve conter lado B");
+
+  // Limpa
+  await api.post("/api/ops/abort", { kind: "merge" });
+  await api.post("/api/checkout", { ref: "main" });
 });

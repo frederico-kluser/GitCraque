@@ -63,6 +63,7 @@ import {
   openRepoPicker,
   openStashPush,
 } from "@/app/actions";
+import { CommitSearch } from "./CommitSearch";
 import { UndoRedo } from "./UndoRedo";
 import { Rich, t } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -674,6 +675,9 @@ export function Toolbar({ className }: PanelProps) {
 
         {/* --- worktree ativa --- */}
         <WorktreeSelector />
+
+        {/* --- busca de commits --- */}
+        <CommitSearch className="hidden w-44 sm:flex xl:w-56" />
 
         <div className="flex-1" />
 

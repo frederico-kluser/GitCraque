@@ -254,6 +254,21 @@ export const es: Messages = {
   "view.label": "Archivo abierto",
   "view.back.detail": "Detalle",
   "view.back.changes": "Cambios",
+  "view.back.blame": "Blame",
+
+  /* Blame */
+  "blame.label": "Blame de {path}",
+  "blame.header.hash": "Commit",
+  "blame.header.author": "Autor",
+  "blame.header.date": "Fecha",
+  "blame.header.line": "Línea",
+  "blame.header.content": "Contenido",
+  "blame.empty.title": "Archivo vacío",
+  "blame.empty.body": "No hay nada que culpar en un archivo vacío.",
+  "blame.error.title": "No se pudo ejecutar blame",
+  "blame.loading": "Cargando blame…",
+  "blame.close": "Cerrar blame y volver",
+  "blame.tooltip": "{hash} — {summary}\n{author} <{email}> el {date}",
 
   /* ---------------------------------------------------------------- */
   /* Cambios y commit                                                  */
@@ -322,6 +337,11 @@ export const es: Messages = {
   "detail.working.title": "Cambios sin confirmar",
   "detail.working.hint": "haz clic para ver el diff",
   "detail.working.stage": "Preparar y confirmar",
+  "detail.stash.label": "Contenido de {ref}",
+  "detail.stash.back": "Cerrar",
+  "detail.stash.body": "Cambios guardados en este stash. Haz clic para aplicar, o usa el menú para hacer pop.",
+  "detail.stash.empty.title": "Stash vacío",
+  "detail.stash.empty.body": "Este stash no contiene cambios.",
 
   "selection.title": "Selección",
   "selection.count_one": "{count} commit",
@@ -401,6 +421,18 @@ export const es: Messages = {
   "markdown.imageUnresolved": "· imagen no resuelta",
   "sanitize.noDom":
     "DOMPurify no tiene DOM disponible — el markdown no puede mostrarse con seguridad",
+
+  /* ---------------------------------------------------------------- */
+  /* Búsqueda de commits                                               */
+  /* ---------------------------------------------------------------- */
+  "search.placeholder": "Buscar commits…",
+  "search.aria": "Buscar commits en el historial",
+  "search.clear": "Limpiar búsqueda",
+  "search.active_one": "{count} filtro activo",
+  "search.active_other": "{count} filtros activos",
+  "search.noResults.title": "Ningún commit encontrado",
+  "search.noResults.body": "Ningún commit del repositorio coincide con la búsqueda.",
+  "search.commandLabel": "Buscar Commits…",
 
   /* ---------------------------------------------------------------- */
   /* Pie de diagnóstico                                                */
@@ -629,6 +661,9 @@ export const es: Messages = {
   "store.repo.initializing": "git init en {path}",
   "store.repo.created": "Repositorio creado",
   "store.repo.initFailed": "git init falló",
+  "store.repo.cloning": "Clonando {url}",
+  "store.repo.cloned": "Repositorio clonado",
+  "store.repo.cloneFailed": "El clon falló",
   "store.ws.connected": "conectado — gitcraque {version} (pid {pid}) en {cwd}",
   "store.ws.cwdChanged": "el directorio del servidor ahora es {cwd}",
   "store.lifecycle.resumed": "pestaña de vuelta — reconectando y recargando el estado",
@@ -677,6 +712,27 @@ export const es: Messages = {
   "squash.op": "Squash",
   "squash.done_one": "Squash de {count} commit",
   "squash.done_other": "Squash de {count} commits",
+
+  /* ---------------------------------------------------------------- */
+  /* Diálogo de rebase interactivo                                      */
+  /* ---------------------------------------------------------------- */
+  "rebaseInteractive.title": "Rebase interactivo de {count} commits",
+  "rebaseInteractive.description":
+    "Define la acción de cada commit seleccionado (pick, reword, squash, fixup, drop). El historial será reescrito desde la base.",
+  "rebaseInteractive.hold": "Mantén para ejecutar",
+  "rebaseInteractive.needTwo": "Selecciona al menos dos commits en el grafo. Seleccionados ahora: {count}.",
+  "rebaseInteractive.warning":
+    "Esto REESCRIBE el historial: los commits de abajo dejarán de existir con sus hashes actuales. Si alguno ya fue publicado, el próximo push exigirá --force-with-lease.",
+  "rebaseInteractive.plan": "Acciones del rebase interactivo",
+  "rebaseInteractive.plan.hint": "Del más antiguo (arriba) al más nuevo (abajo). Usa las flechas para reordenar.",
+  "rebaseInteractive.moveUp": "Mover arriba",
+  "rebaseInteractive.moveDown": "Mover abajo",
+  "rebaseInteractive.actionFor": "Acción para",
+  "rebaseInteractive.reword.placeholder": "Nuevo mensaje para este commit",
+  "rebaseInteractive.reword.hint": "El mensaje anterior será reemplazado por este.",
+  "rebaseInteractive.preview": "Se ejecutará (con GIT_SEQUENCE_EDITOR)",
+  "rebaseInteractive.op": "Rebase interactivo",
+  "rebaseInteractive.done": "Rebase interactivo completado",
 
   /* ---------------------------------------------------------------- */
   /* Diálogo de push                                                   */
@@ -746,6 +802,24 @@ export const es: Messages = {
   "conflict.op.abort": "Abortar {kind}",
   "conflict.done.resumed": "Operación reanudada",
   "conflict.done.aborted": "Operación abortada",
+  "conflict.editor.title": "Resolver {path}",
+  "conflict.editor.back": "Volver a la lista",
+  "conflict.editor.ours": "Usar Nuestro",
+  "conflict.editor.theirs": "Usar Suyo",
+  "conflict.editor.both": "Ambos",
+  "conflict.editor.regionLabel": "Región {index}",
+  "conflict.editor.navigate_one": "{current} de {total} conflicto",
+  "conflict.editor.navigate_other": "{current} de {total} conflictos",
+  "conflict.editor.previewOurs": "Nuestro ({label})",
+  "conflict.editor.previewTheirs": "Suyo ({label})",
+  "conflict.editor.saveResolve": "Guardar y hacer stage",
+  "conflict.editor.allResolved": "Todos los conflictos de este archivo han sido resueltos.",
+  "conflict.editor.remaining_one": "{count} conflicto restante",
+  "conflict.editor.remaining_other": "{count} conflictos restantes",
+  "conflict.editor.fileLabel": "Archivo",
+  "conflict.editor.selectFile": "Seleccione un archivo para resolver",
+  "conflict.editor.resolved": "Archivo resuelto y añadido al stage",
+  "conflict.editor.resolveFailed": "Error al resolver el archivo",
 
   /* ---------------------------------------------------------------- */
   /* Diálogos de creación                                              */
@@ -936,6 +1010,23 @@ export const es: Messages = {
   "favorites.a11y.unchanged": "El orden no cambió.",
   "favorites.a11y.cancel": "Reordenación de {name} cancelada.",
 
+  /* ---------------------------------------------------------------- */
+  /* Diálogo de clonación                                              */
+  /* ---------------------------------------------------------------- */
+  "clone.title": "Clonar repositorio",
+  "clone.description": "Descarga un repositorio remoto a una carpeta local. Al terminar, GitCraque abre el repo clonado.",
+  "clone.confirm": "Clonar",
+  "clone.field.url": "URL",
+  "clone.field.url.placeholder": "https://github.com/org/repo.git",
+  "clone.field.url.hint": "https://..., git@..., ssh://... o ruta local",
+  "clone.field.path": "Carpeta de destino",
+  "clone.field.path.placeholder": "~/code/mi-proyecto",
+  "clone.field.path.hint": "La carpeta la crea git clone — no debe existir antes.",
+  "clone.field.branch": "Rama (opcional)",
+  "clone.field.branch.placeholder": "main",
+  "clone.op": "Clonar repositorio",
+  "clone.done": "Clonación completa",
+
   "time.now": "ahora",
   "time.minutesAgo": "hace {count} min",
   "time.hoursAgo": "hace {count} h",
@@ -1102,12 +1193,16 @@ export const es: Messages = {
   "menu.remote.fetch": "Fetch --prune de este remoto",
   "menu.remote.copyFetchUrl": "Copiar la url de fetch",
   "menu.remote.browse": "Abrir en el navegador",
+  "menu.stash.show": "Ver contenido",
   "menu.stash.copyMessage": "Copiar el mensaje",
   "menu.worktree.switch": "Cambiar a este worktree",
 
   "menu.file.view": "Ver en el visor",
   "menu.commitFile.view": "Ver en este commit",
   "menu.commitFile.viewWorking": "Ver la versión del árbol de trabajo",
+  "menu.commitFile.blame": "Blame — quién tocó cada línea",
+
+  "menu.viewer.blame": "Blame — quién tocó cada línea",
 
   "menu.viewer.copySelection": "Copiar la selección",
   "menu.viewer.nothingSelected": "nada seleccionado",

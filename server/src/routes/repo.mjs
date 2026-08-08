@@ -9,6 +9,7 @@ import { getRefsPayload, getHeadState } from "../git/refs.mjs";
 import { getDiff, getStatus } from "../git/status.mjs";
 import { getGitCommonDir, getWorktreeRoot, listWorktrees } from "../git/worktree.mjs";
 import { getRemotes } from "../git/remotes.mjs";
+import { getBlame } from "../git/blame.mjs";
 import { boolParam, intParam } from "./_util.mjs";
 
 export function registerRepoRoutes(router) {
@@ -20,6 +21,11 @@ export function registerRepoRoutes(router) {
     getLog({
       limit: intParam(ctx.query.limit),
       skip: intParam(ctx.query.skip),
+      q: ctx.query.q || undefined,
+      author: ctx.query.author || undefined,
+      path: ctx.query.path || undefined,
+      before: ctx.query.before || undefined,
+      after: ctx.query.after || undefined,
       cwd: process.cwd(),
     }),
   );
@@ -37,6 +43,10 @@ export function registerRepoRoutes(router) {
 
   router.add("GET", "/refs", () => getRefsPayload());
   router.add("GET", "/status", () => getStatus());
+
+  router.add("GET", "/blame", (ctx) =>
+    getBlame({ path: ctx.query.path, hash: ctx.query.hash }),
+  );
 }
 
 /** GET /api/repo — o retrato que a UI carrega no boot e a cada `cwd:changed`. */

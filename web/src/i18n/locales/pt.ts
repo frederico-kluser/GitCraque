@@ -263,6 +263,23 @@ export const pt = {
   "view.label": "Arquivo aberto",
   "view.back.detail": "Detalhe",
   "view.back.changes": "Alterações",
+  "view.back.blame": "Blame",
+
+  /* ---------------------------------------------------------------- */
+  /* Blame                                                            */
+  /* ---------------------------------------------------------------- */
+  "blame.label": "Blame de {path}",
+  "blame.header.hash": "Commit",
+  "blame.header.author": "Autor",
+  "blame.header.date": "Data",
+  "blame.header.line": "Linha",
+  "blame.header.content": "Conteúdo",
+  "blame.empty.title": "Arquivo vazio",
+  "blame.empty.body": "O blame de um arquivo sem linhas não tem o que mostrar.",
+  "blame.error.title": "Não foi possível fazer o blame",
+  "blame.loading": "Carregando blame…",
+  "blame.close": "Fechar blame e voltar",
+  "blame.tooltip": "{hash} — {summary}\n{author} <{email}> em {date}",
 
   /* ---------------------------------------------------------------- */
   /* Alteracoes e commit                                               */
@@ -331,6 +348,11 @@ export const pt = {
   "detail.working.title": "Alterações em aberto",
   "detail.working.hint": "clique para ver o diff",
   "detail.working.stage": "Preparar e commitar",
+  "detail.stash.label": "Conteúdo de {ref}",
+  "detail.stash.back": "Fechar",
+  "detail.stash.body": "Alterações guardadas neste stash. Clique para aplicar, ou use o menu para aplicar com pop.",
+  "detail.stash.empty.title": "Stash vazio",
+  "detail.stash.empty.body": "Este stash não contém alterações.",
 
   "selection.title": "Seleção",
   "selection.count_one": "{count} commit",
@@ -409,6 +431,18 @@ export const pt = {
   "markdown.imageUnresolved": "· imagem não resolvida",
   "sanitize.noDom":
     "DOMPurify sem DOM disponível — o markdown não pode ser exibido com segurança",
+
+  /* ---------------------------------------------------------------- */
+  /* Busca de commits                                                  */
+  /* ---------------------------------------------------------------- */
+  "search.placeholder": "Buscar commits…",
+  "search.aria": "Buscar commits no historico",
+  "search.clear": "Limpar busca",
+  "search.active_one": "{count} filtro ativo",
+  "search.active_other": "{count} filtros ativos",
+  "search.noResults.title": "Nenhum commit encontrado",
+  "search.noResults.body": "Nenhum commit do repositorio casa com a busca.",
+  "search.commandLabel": "Search Commits…",
 
   /* ---------------------------------------------------------------- */
   /* Rodape de diagnostico                                             */
@@ -637,6 +671,9 @@ export const pt = {
   "store.repo.initializing": "git init em {path}",
   "store.repo.created": "Repositório criado",
   "store.repo.initFailed": "git init falhou",
+  "store.repo.cloning": "Clonando {url}",
+  "store.repo.cloned": "Repositório clonado",
+  "store.repo.cloneFailed": "Clone falhou",
   "store.ws.connected": "conectado — gitcraque {version} (pid {pid}) em {cwd}",
   "store.ws.cwdChanged": "diretório do servidor agora é {cwd}",
   "store.lifecycle.resumed": "aba de volta — reconectando e recarregando o estado",
@@ -684,6 +721,27 @@ export const pt = {
   "squash.op": "Squash",
   "squash.done_one": "Squash de {count} commit",
   "squash.done_other": "Squash de {count} commits",
+
+  /* ---------------------------------------------------------------- */
+  /* Dialogo de rebase interativo                                       */
+  /* ---------------------------------------------------------------- */
+  "rebaseInteractive.title": "Rebase interativo de {count} commits",
+  "rebaseInteractive.description":
+    "Define a acao de cada commit selecionado (pick, reword, squash, fixup, drop). O historico sera reescrito a partir da base.",
+  "rebaseInteractive.hold": "Segure para executar",
+  "rebaseInteractive.needTwo": "Selecione ao menos dois commits no grafo. Selecionados agora: {count}.",
+  "rebaseInteractive.warning":
+    "Isto REESCREVE o historico: os commits abaixo deixam de existir com os hashes atuais. Se algum ja foi publicado, o proximo push vai exigir --force-with-lease.",
+  "rebaseInteractive.plan": "Acoes do rebase interativo",
+  "rebaseInteractive.plan.hint": "Do mais antigo (topo) para o mais novo (fim). Use as setas para reordenar.",
+  "rebaseInteractive.moveUp": "Mover para cima",
+  "rebaseInteractive.moveDown": "Mover para baixo",
+  "rebaseInteractive.actionFor": "Acao para",
+  "rebaseInteractive.reword.placeholder": "Nova mensagem para este commit",
+  "rebaseInteractive.reword.hint": "A mensagem antiga sera substituida por esta.",
+  "rebaseInteractive.preview": "Sera executado (com GIT_SEQUENCE_EDITOR)",
+  "rebaseInteractive.op": "Rebase interativo",
+  "rebaseInteractive.done": "Rebase interativo concluido",
 
   /* ---------------------------------------------------------------- */
   /* Dialogo de push                                                   */
@@ -753,6 +811,24 @@ export const pt = {
   "conflict.op.abort": "Abortar {kind}",
   "conflict.done.resumed": "Operação retomada",
   "conflict.done.aborted": "Operação abortada",
+  "conflict.editor.title": "Resolver {path}",
+  "conflict.editor.back": "Voltar à lista",
+  "conflict.editor.ours": "Usar Nosso",
+  "conflict.editor.theirs": "Usar Deles",
+  "conflict.editor.both": "Ambos",
+  "conflict.editor.regionLabel": "Região {index}",
+  "conflict.editor.navigate_one": "{current} de {total} conflito",
+  "conflict.editor.navigate_other": "{current} de {total} conflitos",
+  "conflict.editor.previewOurs": "Nosso ({label})",
+  "conflict.editor.previewTheirs": "Deles ({label})",
+  "conflict.editor.saveResolve": "Salvar e fazer stage",
+  "conflict.editor.allResolved": "Todos os conflitos deste arquivo foram resolvidos.",
+  "conflict.editor.remaining_one": "{count} conflito restante",
+  "conflict.editor.remaining_other": "{count} conflitos restantes",
+  "conflict.editor.fileLabel": "Arquivo",
+  "conflict.editor.selectFile": "Selecione um arquivo para resolver",
+  "conflict.editor.resolved": "Arquivo resolvido e adicionado ao stage",
+  "conflict.editor.resolveFailed": "Falha ao resolver o arquivo",
 
   /* ---------------------------------------------------------------- */
   /* Dialogos de criar ref                                             */
@@ -939,6 +1015,23 @@ export const pt = {
   "favorites.a11y.unchanged": "A ordem não mudou.",
   "favorites.a11y.cancel": "Reordenação de {name} cancelada.",
 
+  /* ---------------------------------------------------------------- */
+  /* Dialogo de clone                                                  */
+  /* ---------------------------------------------------------------- */
+  "clone.title": "Clonar repositório",
+  "clone.description": "Baixa um repositório remoto para uma pasta local. Ao terminar, o GitCraque já abre o repo clonado.",
+  "clone.confirm": "Clonar",
+  "clone.field.url": "Url",
+  "clone.field.url.placeholder": "https://github.com/org/repo.git",
+  "clone.field.url.hint": "https://..., git@..., ssh://... ou caminho local",
+  "clone.field.path": "Pasta destino",
+  "clone.field.path.placeholder": "~/code/meu-projeto",
+  "clone.field.path.hint": "A pasta será criada pelo git clone — não pode existir antes.",
+  "clone.field.branch": "Branch (opcional)",
+  "clone.field.branch.placeholder": "main",
+  "clone.op": "Clonar repositório",
+  "clone.done": "Clone concluído",
+
   /* tempo relativo do seletor */
   "time.now": "agora",
   "time.minutesAgo": "{count} min atrás",
@@ -1105,12 +1198,16 @@ export const pt = {
   "menu.remote.fetch": "Fetch --prune deste remoto",
   "menu.remote.copyFetchUrl": "Copiar url de fetch",
   "menu.remote.browse": "Abrir no navegador",
+  "menu.stash.show": "Ver conteúdo",
   "menu.stash.copyMessage": "Copiar a mensagem",
   "menu.worktree.switch": "Trocar para esta worktree",
 
   "menu.file.view": "Ver no visualizador",
   "menu.commitFile.view": "Ver neste commit",
   "menu.commitFile.viewWorking": "Ver a versão da árvore de trabalho",
+  "menu.commitFile.blame": "Blame — quem mexeu em cada linha",
+
+  "menu.viewer.blame": "Blame — quem mexeu em cada linha",
 
   "menu.viewer.copySelection": "Copiar a seleção",
   "menu.viewer.nothingSelected": "nada marcado",
