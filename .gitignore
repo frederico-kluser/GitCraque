@@ -15,3 +15,5 @@ coverage/
 # plano de tarefa do project-router: descartavel, apagado no fim de cada tarefa.
 # ignorado para que uma tarefa interrompida nao deixe o arquivo commitavel.
 TASK_PLAN.md
+
+.deep-orchestrator/
