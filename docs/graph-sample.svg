@@ -37,8 +37,8 @@
 <path d="M 18 810 L 18 882" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
 <path d="M 78 846 C 78 868.32 18 859.68 18 882" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
 <path d="M 18 882 L 18 918" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<circle cx="18" cy="18" r="10.5" fill="none" stroke="var(--primary)" stroke-width="1.5" opacity="1"/>
-<circle cx="18" cy="18" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="18" r="15" fill="none" stroke="var(--primary)" stroke-width="1.5" opacity="1"/>
+<circle cx="18" cy="18" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <rect class="primary-soft" x="110" y="10" width="35.4" height="16" rx="8"/><text class="primary" x="116.5" y="21.5">HEAD</text>
 <rect class="chip" x="150.4" y="10" width="35.4" height="16" rx="8"/><text class="fg" x="156.9" y="21.5">main</text>
 <rect class="chip" x="190.8" y="10" width="74.6" height="16" rx="8"/><text class="muted" x="197.3" y="21.5">origin/main</text>
@@ -46,134 +46,134 @@
 <text class="meta" x="440" y="22">Grace Hopper</text>
 <text class="meta" x="560" y="22">3 weeks ago</text>
 <text class="hash" x="665" y="22">1a1a1a1</text>
-<circle cx="38" cy="54" r="6" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
+<circle cx="38" cy="54" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
 <rect class="chip" x="110" y="46" width="35.4" height="16" rx="8"/><text class="fg" x="116.5" y="57.5">next</text>
 <text class="sub" x="150.4" y="58">spike: dnd semantico</text>
 <text class="meta" x="440" y="58">Ada Lovelace</text>
 <text class="meta" x="560" y="58">3 weeks ago</text>
 <text class="hash" x="665" y="58">1919191</text>
-<circle cx="18" cy="90" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="90" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <rect class="tag-soft" x="110" y="82" width="46.6" height="16" rx="8"/><text class="tag" x="116.5" y="93.5">v1.2.0</text>
 <text class="sub" x="161.6" y="94">chore: release 1.2.0</text>
 <text class="meta" x="440" y="94">Alan Turing</text>
 <text class="meta" x="560" y="94">3 weeks ago</text>
 <text class="hash" x="665" y="94">1818181</text>
-<circle cx="18" cy="126" r="9.5" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
-<circle cx="18" cy="126" r="7" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="126" r="14" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="18" cy="126" r="10.5" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="130">merge: feature/ui</text>
 <text class="meta" x="440" y="130">Grace Hopper</text>
 <text class="meta" x="560" y="130">3 weeks ago</text>
 <text class="hash" x="665" y="130">1717171</text>
-<circle cx="58" cy="162" r="6" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
+<circle cx="58" cy="162" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
 <rect class="chip" x="110" y="154" width="108.2" height="16" rx="8"/><text class="muted" x="116.5" y="165.5">origin/feature/ui</text>
 <text class="sub" x="223.2" y="166">feat(ui): grafo virtualizado</text>
 <text class="meta" x="440" y="166">Ada Lovelace</text>
 <text class="meta" x="560" y="166">3 weeks ago</text>
 <text class="hash" x="665" y="166">1616161</text>
-<circle cx="18" cy="198" r="9.5" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
-<circle cx="18" cy="198" r="7" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="198" r="14" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="18" cy="198" r="10.5" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="202">merge: hotfix/timeout</text>
 <text class="meta" x="440" y="202">Alan Turing</text>
 <text class="meta" x="560" y="202">2 days ago</text>
 <text class="hash" x="665" y="202">1515151</text>
-<circle cx="78" cy="234" r="6" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
+<circle cx="78" cy="234" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="238">fix: sinal de kill</text>
 <text class="meta" x="440" y="238">Grace Hopper</text>
 <text class="meta" x="560" y="238">2 days ago</text>
 <text class="hash" x="665" y="238">1414141</text>
-<circle cx="38" cy="270" r="6" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
+<circle cx="38" cy="270" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="274">spike: proxy-editor do squash</text>
 <text class="meta" x="440" y="274">Ada Lovelace</text>
 <text class="meta" x="560" y="274">2 days ago</text>
 <text class="hash" x="665" y="274">1313131</text>
-<circle cx="78" cy="306" r="6" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
+<circle cx="78" cy="306" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="310">fix: timeout de 120 s</text>
 <text class="meta" x="440" y="310">Alan Turing</text>
 <text class="meta" x="560" y="310">2 days ago</text>
 <text class="hash" x="665" y="310">1212121</text>
-<circle cx="18" cy="342" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="342" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="346">perf: buffer de 64 MB</text>
 <text class="meta" x="440" y="346">Grace Hopper</text>
 <text class="meta" x="560" y="346">2 days ago</text>
 <text class="hash" x="665" y="346">1111111</text>
-<circle cx="58" cy="378" r="6" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
+<circle cx="58" cy="378" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="382">feat(ui): chips de referencia</text>
 <text class="meta" x="440" y="382">Ada Lovelace</text>
 <text class="meta" x="560" y="382">5 hours ago</text>
 <text class="hash" x="665" y="382">1010101</text>
-<circle cx="18" cy="414" r="9.5" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
-<circle cx="18" cy="414" r="7" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="414" r="14" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
+<circle cx="18" cy="414" r="10.5" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="418">merge: feature/api</text>
 <text class="meta" x="440" y="418">Alan Turing</text>
 <text class="meta" x="560" y="418">5 hours ago</text>
 <text class="hash" x="665" y="418">0f0f0f0</text>
-<circle cx="18" cy="450" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="450" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="454">refactor: exec com argv</text>
 <text class="meta" x="440" y="454">Grace Hopper</text>
 <text class="meta" x="560" y="454">5 hours ago</text>
 <text class="hash" x="665" y="454">0e0e0e0</text>
-<circle cx="58" cy="486" r="6" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
+<circle cx="58" cy="486" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="490">feat(ui): painel de detalhe</text>
 <text class="meta" x="440" y="490">Ada Lovelace</text>
 <text class="meta" x="560" y="490">5 hours ago</text>
 <text class="hash" x="665" y="490">0d0d0d0</text>
-<circle cx="38" cy="522" r="6" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
+<circle cx="38" cy="522" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="526">spike: trampolim de askpass</text>
 <text class="meta" x="440" y="526">Alan Turing</text>
 <text class="meta" x="560" y="526">5 hours ago</text>
 <text class="hash" x="665" y="526">0c0c0c0</text>
-<circle cx="18" cy="558" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="558" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="562">fix: encoding do stdout</text>
 <text class="meta" x="440" y="562">Grace Hopper</text>
 <text class="meta" x="560" y="562">1 hour ago</text>
 <text class="hash" x="665" y="562">0b0b0b0</text>
-<circle cx="58" cy="594" r="6" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
+<circle cx="58" cy="594" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="598">feat(ui): rail de branches</text>
 <text class="meta" x="440" y="598">Ada Lovelace</text>
 <text class="meta" x="560" y="598">1 hour ago</text>
 <text class="hash" x="665" y="598">0a0a0a0</text>
-<circle cx="78" cy="630" r="6" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
+<circle cx="78" cy="630" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="634">test(api): separador no assunto</text>
 <text class="meta" x="440" y="634">Alan Turing</text>
 <text class="meta" x="560" y="634">1 hour ago</text>
 <text class="hash" x="665" y="634">0909090</text>
-<circle cx="58" cy="666" r="6" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
+<circle cx="58" cy="666" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="670">feat(ui): shell de tres colunas</text>
 <text class="meta" x="440" y="670">Grace Hopper</text>
 <text class="meta" x="560" y="670">1 hour ago</text>
 <text class="hash" x="665" y="670">0808080</text>
-<circle cx="18" cy="702" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="702" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="706">feat: watcher do .git</text>
 <text class="meta" x="440" y="706">Ada Lovelace</text>
 <text class="meta" x="560" y="706">1 hour ago</text>
 <text class="hash" x="665" y="706">0707070</text>
-<circle cx="78" cy="738" r="6" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
+<circle cx="78" cy="738" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="742">feat(api): parser do topo-order</text>
 <text class="meta" x="440" y="742">Alan Turing</text>
 <text class="meta" x="560" y="742">2 minutes ago</text>
 <text class="hash" x="665" y="742">0606060</text>
-<circle cx="38" cy="774" r="6" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
+<circle cx="38" cy="774" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="778">spike: worktrees por chdir</text>
 <text class="meta" x="440" y="778">Grace Hopper</text>
 <text class="meta" x="560" y="778">2 minutes ago</text>
 <text class="hash" x="665" y="778">0505050</text>
-<circle cx="18" cy="810" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="810" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="814">docs: arquitetura inicial</text>
 <text class="meta" x="440" y="814">Ada Lovelace</text>
 <text class="meta" x="560" y="814">2 minutes ago</text>
 <text class="hash" x="665" y="814">0404040</text>
-<circle cx="78" cy="846" r="6" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
+<circle cx="78" cy="846" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="850">feat(api): rota de log</text>
 <text class="meta" x="440" y="850">Alan Turing</text>
 <text class="meta" x="560" y="850">2 minutes ago</text>
 <text class="hash" x="665" y="850">0303030</text>
-<circle cx="18" cy="882" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="882" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
 <text class="sub" x="110.0" y="886">feat: servidor http nativo</text>
 <text class="meta" x="440" y="886">Grace Hopper</text>
 <text class="meta" x="560" y="886">2 minutes ago</text>
 <text class="hash" x="665" y="886">0202020</text>
-<circle cx="18" cy="918" r="6" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<circle cx="18" cy="918" r="2.7" fill="var(--lane-0)" stroke="none" stroke-width="0" opacity="1"/>
+<circle cx="18" cy="918" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
+<circle cx="18" cy="918" r="4.05" fill="var(--lane-0)" stroke="none" stroke-width="0" opacity="1"/>
 <text class="sub" x="110.0" y="922">chore: esqueleto do projeto</text>
 <text class="meta" x="440" y="922">Ada Lovelace</text>
 <text class="meta" x="560" y="922">2 minutes ago</text>

@@ -35,8 +35,8 @@
  * 3. **Subir `nodeRadius` aperta um teste.** `findCollisions`
  *    (`__tests__/geometry.ts:81`) exige folga de `nodeRadius + 1.5 +
  *    strokeWidth/2` entre a tinta de uma aresta e a tinta de um commit alheio.
- *    Hoje a folga pedida e 8.6px contra 20px de `laneWidth` — ha margem, mas ela
- *    nao e infinita: bola muito maior sem afastar as lanes reprova
+ *    Hoje a folga pedida e 11.6px contra 20px de `laneWidth` — ha margem, mas
+ *    ela nao e infinita: bola muito maior sem afastar as lanes reprova
  *    `layout.test.ts`.
  */
 import type { GraphMetrics } from "@/types/modules";
@@ -60,7 +60,7 @@ export const METRICS: GraphMetrics = {
   /** distancia horizontal entre duas lanes. Precisa ficar acima da folga do item 3 */
   laneWidth: 20,
   /** raio da bola do commit, antes de qualquer anel */
-  nodeRadius: 6,
+  nodeRadius: 9,
   /** margem a esquerda antes da lane 0 */
   paddingLeft: 18,
   /** espessura do traco das arestas e do contorno da bola */
@@ -119,26 +119,26 @@ export interface NodeShape {
  */
 export const NODE = {
   /** quanto a bola cresce com o ponteiro em cima. 1 desliga o efeito */
-  hoverScale: 1.3,
+  hoverScale: 1.2,
   /** o merge e uma bola cheia um pouco maior que um commit comum */
-  mergeDelta: 1,
+  mergeDelta: 1.5,
   /** o anel externo que so o merge tem — e o que da o ar "macio" */
-  mergeRingDelta: 3.5,
+  mergeRingDelta: 5,
   mergeRingWidth: 1.5,
   mergeRingOpacity: 0.5,
   /** o anel de HEAD, em cor de destaque, por fora de tudo */
-  headRingDelta: 4.5,
+  headRingDelta: 6,
   headRingWidth: 1.5,
   /** o ponto cheio no meio da bola de um commit raiz, em fracao do raio */
   rootCoreRatio: 0.45,
   /** o halo da selecao: um disco translucido por baixo da bola */
-  haloDelta: 6,
+  haloDelta: 8,
   haloOpacity: 0.24,
   /**
    * Escala do halo com a linha NAO selecionada. Ele nunca sai do DOM e, mesmo
    * invisivel, continua sendo alvo do ponteiro — e ele que define o tamanho
    * confortavel do alvo do hover. Em repouso: (nodeRadius + haloDelta) *
-   * haloRestScale ≈ 9.6px de raio. Baixar demais aqui deixa a bola dificil de
+   * haloRestScale ≈ 13.6px de raio. Baixar demais aqui deixa a bola dificil de
    * acertar; subir demais faz o hover disparar longe da bola.
    */
   haloRestScale: 0.8,
