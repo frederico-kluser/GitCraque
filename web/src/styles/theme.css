@@ -442,3 +442,20 @@
     font-size: max(16px, 1rem);
   }
 }
+
+/*
+ * FORA DE QUALQUER `@layer` — mesma disciplina do bloco acima.
+ *
+ * As linhas da paleta de comandos realcam em `onMouseEnter` (arquivo do
+ * catalogo, propriedade do shadcn CLI — nao se edita), e num celular nao ha
+ * hover: o toque que abre a paleta nao deixa nenhuma linha realcada ate o
+ * segundo toque. A regra devolve o feedback de pressao: enquanto o dedo esta
+ * em cima, a linha pintada e o mesmo HIGHLIGHT_FILL do componente
+ * (`var(--primary)` 16% sobre `var(--muted)`), entao o gesto de "tocar e
+ * soltar" ganha a mesma cor que o hover da no desktop. O `data-active` existe
+ * em TODAS as linhas (true/false), entao o seletor e estavel; dentro de
+ * `@layer` ele perderia para qualquer utilitaria de fundo.
+ */
+[data-active="false"]:active {
+  background-color: color-mix(in srgb, var(--primary) 16%, var(--muted));
+}

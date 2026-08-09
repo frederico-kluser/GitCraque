@@ -110,6 +110,27 @@ export const es: Messages = {
   "commands.theme.dark": "Tema oscuro",
 
   /* ---------------------------------------------------------------- */
+  /* Paleta de comandos (⌘K) — host en app/CommandPaletteHost.tsx     */
+  /* ---------------------------------------------------------------- */
+  "commands.group.repository": "Repositorio",
+  "commands.group.projects": "Proyectos",
+  "commands.project.open": "Abrir {name}",
+  "commands.group.worktrees": "Worktrees",
+  "commands.group.branches": "Ramas",
+  "commands.group.network": "Red",
+  "commands.group.appearance": "Apariencia",
+  "commands.worktree.switch": "Cambiar a la worktree {label}",
+  "commands.branch.checkout": "Checkout {name}",
+  "palette.open": "Abrir la paleta de comandos",
+  "palette.placeholder": "Escribe un comando o busca…",
+  "palette.inputLabel": "Buscar comandos",
+  "palette.dialogLabel": "Paleta de comandos",
+  "palette.hint.navigate": "navegar",
+  "palette.hint.run": "ejecutar",
+  "palette.hint.close": "cerrar",
+  "palette.empty": "Ningún comando coincide con “{query}”.",
+
+  /* ---------------------------------------------------------------- */
   /* Barra superior                                                    */
   /* ---------------------------------------------------------------- */
   "toolbar.connection.open": "conectado",

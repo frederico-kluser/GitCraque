@@ -111,6 +111,27 @@ export const zh: Messages = {
   "commands.theme.dark": "深色主题",
 
   /* ---------------------------------------------------------------- */
+  /* 命令面板 (⌘K) — host 在 app/CommandPaletteHost.tsx                */
+  /* ---------------------------------------------------------------- */
+  "commands.group.repository": "仓库",
+  "commands.group.projects": "项目",
+  "commands.project.open": "打开 {name}",
+  "commands.group.worktrees": "工作树",
+  "commands.group.branches": "分支",
+  "commands.group.network": "网络",
+  "commands.group.appearance": "外观",
+  "commands.worktree.switch": "切换到工作树 {label}",
+  "commands.branch.checkout": "检出 {name}",
+  "palette.open": "打开命令面板",
+  "palette.placeholder": "输入命令或搜索…",
+  "palette.inputLabel": "搜索命令",
+  "palette.dialogLabel": "命令面板",
+  "palette.hint.navigate": "导航",
+  "palette.hint.run": "执行",
+  "palette.hint.close": "关闭",
+  "palette.empty": "没有与“{query}”匹配的命令。",
+
+  /* ---------------------------------------------------------------- */
   /* 顶栏                                                              */
   /* ---------------------------------------------------------------- */
   "toolbar.connection.open": "已连接",

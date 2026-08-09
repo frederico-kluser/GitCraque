@@ -17,6 +17,7 @@ import {
   ChevronDown,
   CircleAlert,
   Clock,
+  Command,
   FolderTree,
   GitBranch,
   GitCommitHorizontal,
@@ -38,9 +39,17 @@ import { ProgressBar } from "@/components/motion-ui/progress-bar";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { Sparkline } from "@/components/motion-ui/sparkline";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
-import { selectCommits, selectHead, selectPending, selectWorktrees, useAppState } from "@/state/store";
+import {
+  clearSelection,
+  selectCommits,
+  selectHead,
+  selectPending,
+  selectWorktrees,
+  useAppState,
+} from "@/state/store";
 import {
   loadProjects,
+  openPalette,
   openSettings,
   selectChangesOpen,
   toggleChanges,
@@ -465,6 +474,48 @@ function CommitButton() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Paleta de comandos (⌘K) e limpar selecao (Esc)                      */
+/* ------------------------------------------------------------------ */
+
+/**
+ * A porta tocavel do ⌘K — o icone e o Command (⌘), e nao uma lupa, para nao
+ * brigar com a lupa da busca de commits (`CommitSearch`) que fica ao lado no
+ * layout compacto. O atalho de teclado e o listener do proprio
+ * `CommandPalette` (montado em `app/CommandPaletteHost.tsx`); este botao so
+ * abre — o estado `paletteOpen` e compartilhado pelo `useShellStore`.
+ */
+function PaletteButton() {
+  return (
+    <ToolButton
+      tone="ghost"
+      aria-label={t("palette.open")}
+      title={t("palette.open")}
+      icon={<Command className="size-3.5" />}
+      onClick={openPalette}
+    />
+  );
+}
+
+/**
+ * O Esc tocavel: limpa a selecao de commits com um toque. Aparece SO com
+ * selecao ativa — sumir e aparecer e o proprio sinal de que ha selecao, e ele
+ * fica no FIM da ilha para nao empurrar os botoes vizinhos quando nasce.
+ */
+function ClearSelectionButton() {
+  const hasSelection = useAppState((s) => s.selection.commits.length > 0);
+  if (!hasSelection) return null;
+  return (
+    <ToolButton
+      tone="ghost"
+      aria-label={t("menu.commit.clearSelection")}
+      title={t("menu.commit.clearSelection")}
+      icon={<X className="size-3.5" />}
+      onClick={clearSelection}
+    />
+  );
+}
+
+/* ------------------------------------------------------------------ */
 /* Seletor de worktree                                                 */
 /* ------------------------------------------------------------------ */
 
@@ -660,6 +711,9 @@ export function Toolbar({ className }: PanelProps) {
 
             <span className="min-w-0 flex-1" />
 
+            {/* O atalho ⌘K no teclado e a paleta de comandos no toque. */}
+            <PaletteButton />
+
             <ActionMenu
               label={t("toolbar.overflow.label")}
               title={t("toolbar.overflow.title")}
@@ -816,6 +870,7 @@ export function Toolbar({ className }: PanelProps) {
           <ToolButton icon={<Archive className="size-3.5" />} onClick={openStashPush}>
             {t("toolbar.action.stash")}
           </ToolButton>
+          <PaletteButton />
           <ToolButton
             tone="ghost"
             aria-label={t("toolbar.action.refresh")}
@@ -833,6 +888,8 @@ export function Toolbar({ className }: PanelProps) {
             icon={<Settings className="size-3.5" />}
             onClick={openSettings}
           />
+          {/* Limpar a selecao de commits: contextual — so aparece com selecao. */}
+          <ClearSelectionButton />
         </div>
 
         <div className="h-7 w-px bg-border" />

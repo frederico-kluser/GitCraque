@@ -138,6 +138,13 @@ export interface ShellState {
   /** modal de configuracoes aberto. Efemero, como a gaveta de alteracoes. */
   settingsOpen: boolean;
   /**
+   * Paleta de comandos (⌘K) aberta. Efemera, como a gaveta de alteracoes:
+   * nao volta aberta depois de um reload, e a abertura por teclado ja e o
+   * `useCommandK` interno do componente — este campo existe para o botao da
+   * toolbar e o host (`app/CommandPaletteHost.tsx`) compartilharem o estado.
+   */
+  paletteOpen: boolean;
+  /**
    * Gaveta de alteracoes (staging + commit) aberta por cima da tela.
    *
    * Efemera de proposito: nao volta aberta depois de um reload. Antes isto era
@@ -241,6 +248,7 @@ const DEFAULTS: ShellState = {
   autoFetchMs: 60_000,
   settingsOpen: false,
   changesOpen: false,
+  paletteOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
   contextMenu: null,
@@ -330,6 +338,7 @@ const INITIAL: ShellState = {
   // nunca restaura estado efemero
   settingsOpen: false,
   changesOpen: false,
+  paletteOpen: false,
   commitDraft: EMPTY_DRAFT,
   confirm: null,
   contextMenu: null,
@@ -451,6 +460,14 @@ export const setDetailWidth = (px: number) => set({ detailWidth: clamp(px, DETAI
 export const openChanges = () => set({ changesOpen: true });
 export const closeChanges = () => set({ changesOpen: false });
 export const toggleChanges = () => set((s) => ({ changesOpen: !s.changesOpen }));
+
+/* ------------------------------------------------------------------ */
+/* Paleta de comandos                                                  */
+/* ------------------------------------------------------------------ */
+
+export const openPalette = () => set({ paletteOpen: true });
+export const closePalette = () => set({ paletteOpen: false });
+export const setPaletteOpen = (open: boolean) => set({ paletteOpen: open });
 
 export const setCommitDraft = (patch: Partial<CommitDraft>) =>
   set((s) => ({ commitDraft: { ...s.commitDraft, ...patch } }));
@@ -576,6 +593,7 @@ export const selectCommitDraft = (s: ShellState) => s.commitDraft;
 export const selectContextMenu = (s: ShellState) => s.contextMenu;
 export const selectChangesOpen = (s: ShellState) => s.changesOpen;
 export const selectSettingsOpen = (s: ShellState) => s.settingsOpen;
+export const selectPaletteOpen = (s: ShellState) => s.paletteOpen;
 export const selectMobilePane = (s: ShellState) => s.mobilePane;
 export const selectLayoutMode = (s: ShellState) => s.layoutMode;
 export const selectForceTouchTargets = (s: ShellState) => s.forceTouchTargets;

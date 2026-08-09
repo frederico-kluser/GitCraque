@@ -55,6 +55,7 @@ import { FOCUS_RING } from "@/panels/parts";
 import { doActivateRef, doRefresh } from "./actions";
 import { commitMenu, refMenu } from "./menus";
 import { AiBar } from "./AiBar";
+import { CommandPaletteHost } from "./CommandPaletteHost";
 import { MobileNav } from "./MobileNav";
 import { ConfirmHost } from "./ConfirmHost";
 import { ContextMenuHost } from "./ContextMenuHost";
@@ -319,7 +320,16 @@ export function App() {
                 </>
               ) : mobilePane === "detail" ? (
                 <>
-                  <CompactPaneHeader title={t("mobile.nav.detail")} onBack={() => setMobilePane("graph")} />
+                  {/* A volta do detalhe e o Esc tocavel: fechar o painel desfaz a
+                      selecao, o mesmo que a tecla faz no desktop. Sem isso, num
+                      celular so haveria teclado para limpar a selecao. */}
+                  <CompactPaneHeader
+                    title={t("mobile.nav.detail")}
+                    onBack={() => {
+                      clearSelection();
+                      setMobilePane("graph");
+                    }}
+                  />
                   <SidePanel className="min-h-0 flex-1 bg-card" />
                 </>
               ) : (
@@ -420,6 +430,10 @@ export function App() {
       {/* Preferencias da pessoa (idioma, tema, rotina de fetch, chave de IA),
           chamadas pela engrenagem da toolbar. */}
       <SettingsDialog />
+      {/* Paleta de comandos (⌘K): o gatilho e o botao da toolbar, o listener
+          de teclado e do proprio componente. O wrapper esconde a barra do
+          componente; o popup e portalado para o body e cobre a tela. */}
+      <CommandPaletteHost />
       {/* Um menu de contexto para a tela inteira — e o fim do menu do navegador
           em tudo o que nao e campo de texto. */}
       <ContextMenuHost />
