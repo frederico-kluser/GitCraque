@@ -450,13 +450,23 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                 ) : (
                   <DiffStat insertions={file.insertions} deletions={file.deletions} />
                 )}
-                {/* Botao de blame: nao-binario so. */}
+                {/* Acao de blame: `span` com `role="button"`, nao um `<button>`,
+                    para nao aninhar botao dentro do botao da linha (o React
+                    rejeita `<button>` em `<button>` com hydration error). Enter
+                    e Espaco disparam o mesmo caminho do clique. */}
                 {!file.binary && (
-                  <button
-                    type="button"
+                  <span
+                    role="button"
+                    tabIndex={0}
                     title={t("menu.commitFile.blame")}
                     aria-label={t("menu.commitFile.blame")}
                     onClick={(e) => {
+                      e.stopPropagation();
+                      openBlame(file.path, detail.hash);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key !== "Enter" && e.key !== " ") return;
+                      e.preventDefault();
                       e.stopPropagation();
                       openBlame(file.path, detail.hash);
                     }}
@@ -467,7 +477,7 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                     )}
                   >
                     <FileSearch className="size-3.5" />
-                  </button>
+                  </span>
                 )}
               </button>
             );
