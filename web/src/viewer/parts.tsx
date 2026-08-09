@@ -38,6 +38,10 @@ export function IconButton({ label, onClick, disabled, children, className }: Ic
         "inline-flex shrink-0 items-center justify-center rounded-sm border border-border bg-muted px-2 py-1.5 text-muted-foreground",
         "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
         "hover:text-foreground disabled:pointer-events-none disabled:opacity-60",
+        /* Dedinho: o alvo salta para 44x44 sem mudar nada no desktop — a
+           variante `touch:` so vale com ponteiro grosseiro ou alvos forçados
+           nas configuracoes (onda2a, theme.css). */
+        "touch:min-h-tap touch:min-w-tap touch:px-3",
         FOCUS_RING,
         className,
       )}

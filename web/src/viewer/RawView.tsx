@@ -59,13 +59,16 @@ export function RawView({ payload }: RawViewProps) {
           <Notice title={t("raw.empty.title")}>{t("raw.empty.body")}</Notice>
         </div>
       ) : (
-        <div className="grid grid-cols-[auto_1fr] items-start font-mono text-xs leading-relaxed">
+        /* gutter comprimido e mono um ponto maior em tela estreita (max-md),
+           via CSS puro: a estrutura da grade nao muda de modo. `pb-safe-bottom`
+           deixa a ultima linha acima da barra de gestos do iOS. */
+        <div className="grid grid-cols-[auto_1fr] items-start font-mono text-xs leading-relaxed pb-safe-bottom">
           {lines.map((line, index) => (
             <Fragment key={index}>
-              <span className="select-none px-2 py-0.5 text-right tabular-nums text-muted-foreground/70">
+              <span className="select-none py-0.5 text-right tabular-nums text-muted-foreground/70 max-md:px-1.5 px-2">
                 {index + 1}
               </span>
-              <span className="py-0.5 pr-3 whitespace-pre-wrap break-words">{line || " "}</span>
+              <span className="py-0.5 pr-3 whitespace-pre-wrap break-words max-md:text-[13px]">{line || " "}</span>
             </Fragment>
           ))}
         </div>

@@ -55,7 +55,11 @@ export function MarkdownView({ source, truncated }: MarkdownViewProps) {
   }
 
   return (
-    <div className="p-4">
+    /* `max-md:pb-safe-bottom`: a ultima linha do documento fica acima da
+       barra de gestos do iOS em tela estreita. Escopada ao compacto de
+       proposito — sem o `max-md:` o token (zero no desktop) passaria por
+       cima do `p-4` e roubaria o respiro de baixo na tela grande. */
+    <div className="p-4 max-md:pb-safe-bottom">
       {truncated ? (
         <Notice tone="warning" title={t("markdown.truncated.title")} className="mb-4">
           {t("markdown.truncated.body")}

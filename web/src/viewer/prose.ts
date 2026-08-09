@@ -15,8 +15,13 @@
  * `bg-surface-inset`). Nenhum hex, nenhuma cor crua da paleta do Tailwind.
  */
 export const PROSE = {
-  /** o container que o `MarkdownView` poe em volta do HTML gerado */
-  root: "text-sm leading-relaxed text-foreground",
+  /**
+   * o container que o `MarkdownView` poe em volta do HTML gerado.
+   * `break-words` fecha a fuga horizontal de palavra longa (URL num link,
+   * identificador gigante) em tela estreita; em desktop so age quando a
+   * palavra nao cabe na linha.
+   */
+  root: "text-sm leading-relaxed text-foreground break-words",
 
   h1: "mt-8 mb-4 border-b border-border pb-2 text-xl font-semibold tracking-tight text-foreground first:mt-0",
   h2: "mt-8 mb-3 border-b border-border pb-1.5 text-lg font-semibold tracking-tight text-foreground first:mt-0",
@@ -45,23 +50,23 @@ export const PROSE = {
    * Precisa PARECER isso — mono e recuado, nunca disfarcado de paragrafo.
    */
   rawHtml:
-    "my-3 overflow-x-auto rounded-md border border-dashed border-border bg-surface-inset px-3 py-2 font-mono text-xs whitespace-pre-wrap text-muted-foreground",
+    "my-3 overflow-x-auto rounded-md border border-dashed border-border bg-surface-inset px-3 py-2 font-mono text-xs whitespace-pre-wrap text-muted-foreground max-md:text-[13px]",
 
   blockquote:
     "my-4 border-l-2 border-primary/40 bg-surface-inset py-2 pl-4 text-muted-foreground italic",
 
   tableWrap: "my-4 overflow-x-auto rounded-md border border-border",
   table: "w-full border-collapse text-left text-xs",
-  th: "border-b border-border bg-surface-inset px-3 py-2 font-semibold text-foreground",
-  td: "border-b border-border px-3 py-2 align-top text-muted-foreground",
+  th: "border-b border-border bg-surface-inset px-3 py-2 font-semibold text-foreground max-md:px-2",
+  td: "border-b border-border px-3 py-2 align-top text-muted-foreground max-md:px-2",
   tr: "[&:last-child>td]:border-b-0",
 
-  code: "rounded-sm border border-border bg-surface-inset px-1 py-0.5 font-mono text-xs text-foreground",
+  code: "rounded-sm border border-border bg-surface-inset px-1 py-0.5 font-mono text-xs text-foreground max-md:text-[13px]",
   codeBlock: "my-4 overflow-hidden rounded-md border border-border bg-surface-inset",
   codeLang:
     "border-b border-border px-3 py-1.5 font-mono text-xs uppercase tracking-wider text-muted-foreground",
   pre: "overflow-x-auto p-3",
-  preCode: "font-mono text-xs leading-relaxed text-foreground",
+  preCode: "font-mono text-xs leading-relaxed text-foreground max-md:text-[13px]",
 
   strong: "font-semibold text-foreground",
   em: "italic",

@@ -10,23 +10,38 @@
  * pularem de lugar quando um hunk passa da centena. O cabecalho de hunk ocupa
  * as quatro colunas.
  *
+ * Em tela estreita (<768px, `useViewportValue(selectIsMobile)`) a grade vira
+ * tres colunas com UM numero por linha — o da nova versao quando existe, o da
+ * antiga em delecao pura — e o conteudo sobe para 13px; numeracao e fonte do
+ * desktop ficam intocadas.
+ *
  * Cor sai dos tokens `bg-diff-add-bg` / `text-diff-add-fg` e
  * `bg-diff-del-bg` / `text-diff-del-fg`. Nenhum hex.
  */
 import { Fragment } from "react";
 import type { DiffHunk, DiffLine, DiffPayload } from "@/types/git";
+import { selectIsMobile, useViewportValue } from "@/hooks";
 import { Rich, t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Notice } from "./parts.tsx";
 
 /* ------------------------------------------------------------------ */
 
+/* Em tela estreita a grade tem UMA coluna de numero (a nova quando existe,
+   a antiga senao — delecao pura), com um espaco a menos de gutter: sobra
+   largura para o conteudo embrulhar em vez de rolar. O desktop nao muda. */
+const GUTTER_COMPACT = "px-1.5";
+
 const GUTTER =
   "select-none px-2 py-0.5 text-right tabular-nums text-muted-foreground/70";
 
 const MARKER = "select-none px-1 text-center";
 
+/* O conteudo ja embrulha (`whitespace-pre-wrap break-words`): linha longa
+   quebra, nunca empurra a pagina. Em tela estreita o mono sobe um ponto —
+   legivel sem scroll horizontal. */
 const CONTENT = "py-0.5 pr-3 whitespace-pre-wrap break-words";
+const CONTENT_COMPACT = "text-[13px]";
 
 const LINE_TONE: Record<DiffLine["kind"], string> = {
   add: "bg-diff-add-bg text-diff-add-fg",
@@ -63,15 +78,32 @@ export function pickPatch(patches: DiffPayload[] | null, path: string): DiffPayl
 
 /* ------------------------------------------------------------------ */
 
-function HunkLines({ hunk }: { hunk: DiffHunk }) {
+function HunkLines({ hunk, compact }: { hunk: DiffHunk; compact: boolean }) {
   return (
     <>
-      <div className="col-span-4 border-y border-border bg-surface-inset px-3 py-1 text-muted-foreground">
+      <div
+        className={cn(
+          "border-y border-border bg-surface-inset px-3 py-1 text-muted-foreground",
+          compact ? "col-span-3" : "col-span-4",
+        )}
+      >
         {hunk.header}
       </div>
       {hunk.lines.map((line, index) => {
         const tone = LINE_TONE[line.kind];
-        return (
+        return compact ? (
+          <Fragment key={`${hunk.header}-${index}`}>
+            <span className={cn(GUTTER, GUTTER_COMPACT, tone)}>
+              {line.newNumber ?? line.oldNumber ?? ""}
+            </span>
+            <span className={cn(MARKER, tone)} aria-hidden="true">
+              {LINE_MARK[line.kind]}
+            </span>
+            <span className={cn(CONTENT, CONTENT_COMPACT, tone)}>
+              {line.content || " "}
+            </span>
+          </Fragment>
+        ) : (
           <Fragment key={`${hunk.header}-${index}`}>
             <span className={cn(GUTTER, tone)}>{line.oldNumber ?? ""}</span>
             <span className={cn(GUTTER, tone)}>{line.newNumber ?? ""}</span>
@@ -93,6 +125,11 @@ export interface DiffViewProps {
 }
 
 export function DiffView({ patch, path }: DiffViewProps) {
+  /* Booleano so (nao o viewport inteiro): re-render unico ao cruzar o corte
+     de 768px, coalescido por rAF no proprio hook — nada de re-render a cada
+     pixel de resize. */
+  const compact = useViewportValue(selectIsMobile);
+
   if (!patch) {
     return (
       <div className="p-3">
@@ -118,9 +155,24 @@ export function DiffView({ patch, path }: DiffViewProps) {
   }
 
   return (
-    <div className="grid grid-cols-[auto_auto_auto_1fr] items-start font-mono text-xs leading-relaxed">
+    /* `pb-safe-bottom` deixa a ultima linha acima da barra de gestos do iOS:
+       o padding vem do token `--spacing-safe-bottom` e vale zero em desktop
+       e em aparelho sem recorte. */
+    <div
+      className={cn(
+        "grid items-start font-mono text-xs leading-relaxed pb-safe-bottom",
+        compact
+          ? "grid-cols-[auto_auto_1fr]"
+          : "grid-cols-[auto_auto_auto_1fr]",
+      )}
+    >
       {patch.oldPath && patch.oldPath !== patch.path ? (
-        <div className="col-span-4 border-b border-border px-3 py-1.5 text-muted-foreground">
+        <div
+          className={cn(
+            "border-b border-border px-3 py-1.5 text-muted-foreground",
+            compact ? "col-span-3" : "col-span-4",
+          )}
+        >
           <Rich
             k="diff.renamedFrom"
             nodes={{ path: <span className="text-foreground">{patch.oldPath}</span> }}
@@ -128,7 +180,7 @@ export function DiffView({ patch, path }: DiffViewProps) {
         </div>
       ) : null}
       {patch.hunks.map((hunk, index) => (
-        <HunkLines key={`${hunk.header}-${index}`} hunk={hunk} />
+        <HunkLines key={`${hunk.header}-${index}`} hunk={hunk} compact={compact} />
       ))}
     </div>
   );

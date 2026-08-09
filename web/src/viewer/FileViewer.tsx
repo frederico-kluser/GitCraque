@@ -96,7 +96,13 @@ function Header({ file, mode, modes, onMode, summary, onClose }: HeaderProps) {
           className="p-0.5"
         >
           {modes.map((option) => (
-            <SegmentedToggleOption key={option} value={option} className="px-3 py-1 text-xs">
+            /* `touch:min-h-tap` so sob toque (ou alvos forçados): a pilula
+               inteira passa a ter 44px de altura, sem mudar o desktop. */
+            <SegmentedToggleOption
+              key={option}
+              value={option}
+              className="px-3 py-1 text-xs touch:min-h-tap touch:px-3"
+            >
               {t(MODE_LABEL[option])}
             </SegmentedToggleOption>
           ))}
@@ -191,8 +197,15 @@ export function FileViewer({ file, onClose, onMenu, className }: FileViewerProps
   const summary = buildSummary(activeMode, patch, content.data);
 
   return (
+    /* `text-size-adjust:100%` segura a inflacao automatica de fonte do iOS
+       Safari quando a pagina esta num container com scroll proprio — sem
+       isso, em orientacao de paisagem o conteudo cresce e o scroll horizontal
+       reaparece. No desktop a propriedade e no-op. */
     <section
-      className={cn("flex h-full min-h-0 flex-col bg-card", className)}
+      className={cn(
+        "flex h-full min-h-0 flex-col bg-card [text-size-adjust:100%]",
+        className,
+      )}
       aria-label={t("viewer.label", { path: file.path })}
       /* A selecao e lida NA HORA do clique: o menu precisa saber se ha um trecho
          marcado para oferecer "copiar a selecao" — e o unico uso real que o menu
