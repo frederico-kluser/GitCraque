@@ -39,6 +39,15 @@ export type GraphDensity = "comfortable" | "compact";
 export const COMPACT_SUBJECT_MIN = 160;
 export const COMPACT_META_COL = 48;
 
+/**
+ * Piso da largura de conteudo da linha compacta. Com 320px o piso era inerte:
+ * um grafo de poucas lanes (coluna de 56px) cabia inteiro numa tela de 375px e
+ * a rolagem nunca forcava. A 480px, em qualquer celular ate essa largura a
+ * linha inteira rola para o lado mesmo com um grafo de uma lane so — o scroll
+ * lateral e obrigatorio — e o aviso de rolagem aparece.
+ */
+const MIN_COMPACT_CONTENT_WIDTH = 480;
+
 export const GRID_TEMPLATE: Record<GraphDensity, string> = {
   comfortable: "var(--graph-col) minmax(0,1fr) 7rem 6rem 4.5rem",
   compact: `var(--graph-col) minmax(${COMPACT_SUBJECT_MIN}px,1fr) ${COMPACT_META_COL}px`,
@@ -49,7 +58,10 @@ export const ROW_GRID = "grid grid-cols-[var(--graph-cols)] items-center";
 
 /** Largura de conteudo da linha compacta — o minimo que a grade inteira ocupa. */
 export const compactContentWidth = (graphWidth: number): number =>
-  graphWidth + COMPACT_SUBJECT_MIN + COMPACT_META_COL;
+  Math.max(
+    MIN_COMPACT_CONTENT_WIDTH,
+    graphWidth + COMPACT_SUBJECT_MIN + COMPACT_META_COL,
+  );
 
 /** Linhas acima e abaixo da janela que ficam montadas para o scroll nao piscar. */
 export const OVERSCAN = 6;

@@ -25,6 +25,7 @@ import {
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import type { GraphMetrics, GraphViewProps } from "@/types/modules";
+import { laneX } from "./bezier.ts";
 import { CommitRow } from "./CommitRow.tsx";
 import { CommitTooltip } from "./CommitTooltip.tsx";
 import { COMPACT_METRICS, computeGraphLayout, DEFAULT_METRICS } from "./layout.ts";
@@ -317,14 +318,63 @@ export function GraphView({
     );
     if (plan !== null) servedNonceRef.current = plan.nonce;
     applyRevealPlan(plan, surface);
-  }, [revealHash, revealNonce, layout, viewportHeight, metrics.rowHeight, loading]);
+
+    /* No compacto, centralizar a LINHA nao basta: a lane do commit pode estar
+       fora da janela horizontal (grafo largo num celular). Depois do scroll
+       vertical, leva o rolador lateral ao centro da bola do commit revelado —
+       `laneX` JA e o centro da bola, sem somar `nodeRadius`. A guarda so
+       dispara quando a bola esta FORA da janela: se o commit ja aparece, o
+       scroll lateral nao mexe (clicar numa branch do rail nao desloca a tela
+       inteira sem necessidade). */
+    if (compact && plan !== null && plan.row !== null && scrollerWidth > 0) {
+      const node = layout.nodes[plan.row];
+      const scroller = scrollerRef.current;
+      if (node !== undefined && scroller !== null) {
+        const targetX = laneX(node.lane, metrics);
+        if (
+          targetX < scroller.scrollLeft ||
+          targetX > scroller.scrollLeft + scrollerWidth
+        ) {
+          scroller.scrollTo({
+            left: targetX - scrollerWidth / 2,
+            behavior: "smooth",
+          });
+        }
+      }
+    }
+  }, [
+    revealHash,
+    revealNonce,
+    layout,
+    viewportHeight,
+    metrics.rowHeight,
+    metrics.paddingLeft,
+    metrics.laneWidth,
+    loading,
+    compact,
+    scrollerWidth,
+  ]);
 
   const handleSelect = useCallback<GraphViewProps["onSelect"]>(
     (hash, mode) => {
       if (mode !== "range") anchorRef.current = hash;
       onSelect(hash, mode);
+      /* No compacto, o clique direto numa linha tambem evidencia o commit:
+         rola lateralmente ate a bola ficar no centro da janela — o mesmo
+         gesto do reveal, so que disparado pela selecao. */
+      if (compact && scrollerRef.current !== null) {
+        const row = layout.index.get(hash);
+        const node = row !== undefined ? layout.nodes[row] : undefined;
+        if (node !== undefined) {
+          const targetX = laneX(node.lane, metrics);
+          scrollerRef.current.scrollTo({
+            left: targetX - scrollerWidth / 2,
+            behavior: "smooth",
+          });
+        }
+      }
     },
-    [onSelect],
+    [onSelect, compact, layout, metrics, scrollerWidth],
   );
 
   const moveTo = useCallback(
@@ -484,15 +534,22 @@ export function GraphView({
         {compact ? (
           /* No compacto o container medido (o da lista) ganha um PAI que rola
              para o lado quando o grafo e largo demais: o conteudo tem largura
-             propria (`compactContentWidth`) e o CABECALHO rola junto — fora do
-             rolador ele espremeria as colunas ate desalinhar da lista.
-             `overscroll-x-contain` devolve o gesto ao resto da pagina quando o
-             conteudo termina — rolagem aninhada em cadeia, nao disputada. */
+             propria (`compactContentWidth`, com piso fixo de 480px — nem um
+             grafo de uma lane deixa a linha espremer abaixo disso em telas
+             estreitas, o scroll lateral e obrigatorio) e o CABECALHO rola
+             junto — fora do rolador ele espremeria as colunas ate desalinhar
+             da lista. `overscroll-x-contain` devolve o gesto ao resto da
+             pagina quando o conteudo termina — rolagem aninhada em cadeia,
+             nao disputada. */
           <div
             ref={scrollerRef}
             onScroll={handleScrollerScroll}
             className="min-h-0 flex-1 overflow-x-auto overscroll-x-contain"
           >
+            {/* `min-width` (CSS) e o que prende a largura de verdade: a grade
+                inteira (coluna do grafo + assunto + meta) nunca fica menor
+                que `compactContentWidth`, entao o rolador sempre tem o que
+                rolar quando a janela e estreita. */}
             <div
               className="flex h-full min-h-0 flex-col"
               style={{ minWidth: compactContentWidth(graphWidth) }}
