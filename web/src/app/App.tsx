@@ -33,6 +33,7 @@ import {
   RAIL_RANGE,
   openContextMenu,
   requestCommit,
+  selectIsTouch,
   selectMobilePane,
   setCommitDraft,
   setDetailWidth,
@@ -45,7 +46,9 @@ import {
   useLifecycleRecovery,
   useRepoPoll,
   useShellState,
+  useViewportValue,
 } from "@/hooks";
+import type { MobilePane } from "@/hooks";
 import type { CommitRef } from "@/types/git";
 import { cn } from "@/lib/utils";
 import { FOCUS_RING } from "@/panels/parts";
@@ -55,6 +58,7 @@ import { AiBar } from "./AiBar";
 import { MobileNav } from "./MobileNav";
 import { ConfirmHost } from "./ConfirmHost";
 import { ContextMenuHost } from "./ContextMenuHost";
+import { PaneSwipe } from "./PaneSwipe";
 import { SettingsDialog } from "./SettingsDialog";
 import { Splitter } from "./Splitter";
 import { StatusFooter } from "./StatusFooter";
@@ -123,6 +127,22 @@ function EmptyRepo() {
 }
 
 /* ------------------------------------------------------------------ */
+/* Coluna unica: ordem dos paineis e navegacao por deslize              */
+/* ------------------------------------------------------------------ */
+
+/** A ordem dos paineis do layout compacto, da esquerda para a direita — a
+ *  mesma dos botoes da `MobileNav` e a que o deslize horizontal percorre. */
+const MOBILE_PANE_ORDER: MobilePane[] = ["rail", "graph", "detail"];
+
+/** Deslize para a esquerda: avanca um painel, sem sair da ponta. */
+const nextMobilePane = (pane: MobilePane): MobilePane =>
+  MOBILE_PANE_ORDER[Math.min(MOBILE_PANE_ORDER.length - 1, MOBILE_PANE_ORDER.indexOf(pane) + 1)];
+
+/** Deslize para a direita: volta um painel, sem sair da ponta. */
+const prevMobilePane = (pane: MobilePane): MobilePane =>
+  MOBILE_PANE_ORDER[Math.max(0, MOBILE_PANE_ORDER.indexOf(pane) - 1)];
+
+/* ------------------------------------------------------------------ */
 
 /**
  * Cabecalho dos paineis de coluna unica (rail e detalhe): rotulo e volta ao
@@ -185,6 +205,9 @@ export function App() {
   // `mobilePane` escolhido na barra de navegacao inferior.
   const compact = useLayoutMode() === "compact";
   const mobilePane = useShellState(selectMobilePane);
+  // O deslize entre paineis e gesto de dedo: com mouse as colunas ja
+  // navegam por teclado e clique, entao o envoltorio fica inerte.
+  const touch = useViewportValue(selectIsTouch);
 
   useHotkeys({
     onRefresh: () => void doRefresh(),
@@ -280,47 +303,54 @@ export function App() {
         <Toolbar className="border-b border-border bg-surface-rail" />
 
         {compact ? (
-          /* --- coluna unica: um painel por vez, escolhido na barra inferior.
-                 Nao ha Splitters — nao ha nada para arrastar. --- */
-          <div className="flex h-full min-h-0 flex-col">
-            {mobilePane === "rail" ? (
-              <>
-                <CompactPaneHeader title={t("mobile.nav.repo")} onBack={() => setMobilePane("graph")} />
-                <RailPanels className="min-h-0 flex-1 overflow-y-auto bg-surface-rail" />
-              </>
-            ) : mobilePane === "detail" ? (
-              <>
-                <CompactPaneHeader title={t("mobile.nav.detail")} onBack={() => setMobilePane("graph")} />
-                <SidePanel className="min-h-0 flex-1 bg-card" />
-              </>
-            ) : (
-              <main className="min-h-0 flex-1 bg-surface-graph">
-                {emptyLog && commits.length === 0 && !loadingLog ? (
-                  <EmptyRepo />
-                ) : (
-                  <GraphView
-                    commits={commits}
-                    refs={refs}
-                    selected={selected}
-                    primary={primary}
-                    reveal={reveal}
-                    onRevealed={clearReveal}
-                    /* duplo clique num chip de branch da View Tree troca para ela */
-                    onRefActivate={doActivateRef}
-                    /* botao direito: no chip, o menu da ref; na linha, o do commit */
-                    onRefContextMenu={onRefContextMenu}
-                    onContextMenu={onCommitContextMenu}
-                    loading={loadingLog}
-                    onSelect={selectCommit}
-                    /* A densidade compacta e a entrega do onda 2B do grafo; o
-                       prop ja existe no contrato, entao o pedido sai daqui. */
-                    density="compact"
-                    className="h-full"
-                  />
-                )}
-              </main>
-            )}
-          </div>
+          /* --- coluna unica: um painel por vez, escolhido na barra inferior
+                 ou no deslize horizontal (so dedo, ver `PaneSwipe`). Nao ha
+                 Splitters — nao ha nada para arrastar. --- */
+          <PaneSwipe
+            enabled={touch}
+            onSwipeLeft={() => setMobilePane(nextMobilePane(mobilePane))}
+            onSwipeRight={() => setMobilePane(prevMobilePane(mobilePane))}
+          >
+            <div className="flex h-full min-h-0 flex-col">
+              {mobilePane === "rail" ? (
+                <>
+                  <CompactPaneHeader title={t("mobile.nav.repo")} onBack={() => setMobilePane("graph")} />
+                  <RailPanels className="min-h-0 flex-1 overflow-y-auto bg-surface-rail" />
+                </>
+              ) : mobilePane === "detail" ? (
+                <>
+                  <CompactPaneHeader title={t("mobile.nav.detail")} onBack={() => setMobilePane("graph")} />
+                  <SidePanel className="min-h-0 flex-1 bg-card" />
+                </>
+              ) : (
+                <main className="min-h-0 flex-1 bg-surface-graph">
+                  {emptyLog && commits.length === 0 && !loadingLog ? (
+                    <EmptyRepo />
+                  ) : (
+                    <GraphView
+                      commits={commits}
+                      refs={refs}
+                      selected={selected}
+                      primary={primary}
+                      reveal={reveal}
+                      onRevealed={clearReveal}
+                      /* duplo clique num chip de branch da View Tree troca para ela */
+                      onRefActivate={doActivateRef}
+                      /* botao direito: no chip, o menu da ref; na linha, o do commit */
+                      onRefContextMenu={onRefContextMenu}
+                      onContextMenu={onCommitContextMenu}
+                      loading={loadingLog}
+                      onSelect={selectCommit}
+                      /* A densidade compacta e a entrega do onda 2B do grafo; o
+                         prop ja existe no contrato, entao o pedido sai daqui. */
+                      density="compact"
+                      className="h-full"
+                    />
+                  )}
+                </main>
+              )}
+            </div>
+          </PaneSwipe>
         ) : (
           /* --- tres colunas com divisorias arrastaveis (o layout original) --- */
           <div
