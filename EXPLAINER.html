@@ -7,8 +7,8 @@
 
   1. TOKENS INLINE  — substituição simples de string. Cada token {{NOME}} é
      trocado pelo valor real:
-       v2  2026-08-09  main  Adaptação completa do GitCraque para touch e mobile — 3 ondas, 15 sub-agentes, 718 testes, gate 100% verde
-       3  15  15
+       0.3.0  2026-08-09  main  Ajustes de grafo (margem esquerda, métricas desktop), DnD mobile (touch drag merge/cherry-pick), scroll horizontal no mobile com auto-scroll ao clicar, e correção de bug de {{TASK_SUMMARY}}lt;button{{TASK_SUMMARY}}gt; aninhado.
+       1  13  5
      Os tokens inline aparecem na navbar, no hero, nos cards de estatística,
      no rodapé e na tabela de placeholders da aba "Visão geral".
 
@@ -241,7 +241,7 @@
         </button>
       </li>
     </ul>
-    <span class="navbar-text small text-body-secondary d-none d-md-inline">vv2 · 2026-08-09</span>
+    <span class="navbar-text small text-body-secondary d-none d-md-inline">v0.3.0 · 2026-08-09</span>
   </div>
 </nav>
 
@@ -250,9 +250,9 @@
   <header class="explainer-hero rounded-4 p-4 p-md-5 mb-4">
     <span class="badge badge-accent mb-3"><i class="bi bi-clipboard-data me-1"></i>Relatório de execução</span>
     <h1 class="display-6 fw-semibold text-white mb-2">O que aconteceu nesta execução</h1>
-    <p class="lead text-white-50 mb-3">Adaptação completa do GitCraque para touch e mobile — 3 ondas, 15 sub-agentes, 718 testes, gate 100% verde</p>
+    <p class="lead text-white-50 mb-3">Ajustes de grafo (margem esquerda, métricas desktop), DnD mobile (touch drag merge/cherry-pick), scroll horizontal no mobile com auto-scroll ao clicar, e correção de bug de {{TASK_SUMMARY}}lt;button{{TASK_SUMMARY}}gt; aninhado.</p>
     <div class="d-flex flex-wrap gap-2">
-      <span class="badge badge-accent">vv2</span>
+      <span class="badge badge-accent">v0.3.0</span>
       <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-09</span>
       <span class="badge badge-soft"><i class="bi bi-git-branch me-1"></i>main</span>
     </div>
@@ -264,7 +264,7 @@
     <div class="tab-pane fade show active" id="pane-visao" role="tabpanel"
          aria-labelledby="tab-visao" tabindex="0" data-print-title="Visão geral">
       <h2 class="h4 pane-title">Resumo da execução</h2>
-      <p class="text-body-secondary">Adaptação completa do GitCraque para touch e mobile — 3 ondas, 15 sub-agentes, 718 testes, gate 100% verde</p>
+      <p class="text-body-secondary">Ajustes de grafo (margem esquerda, métricas desktop), DnD mobile (touch drag merge/cherry-pick), scroll horizontal no mobile com auto-scroll ao clicar, e correção de bug de {{TASK_SUMMARY}}lt;button{{TASK_SUMMARY}}gt; aninhado.</p>
 
       <div class="alert alert-primary d-flex gap-2" role="alert">
         <i class="bi bi-info-circle-fill flex-shrink-0"></i>
@@ -276,7 +276,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-layers fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">3</div>
+              <div class="display-6 fw-bold stat-value">1</div>
               <div class="text-body-secondary small">Ondas executadas</div>
             </div>
           </div>
@@ -285,7 +285,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-robot fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">15</div>
+              <div class="display-6 fw-bold stat-value">13</div>
               <div class="text-body-secondary small">Sub-agentes</div>
             </div>
           </div>
@@ -294,21 +294,13 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-git-commit fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">15</div>
+              <div class="display-6 fw-bold stat-value">5</div>
               <div class="text-body-secondary small">Commits (squash)</div>
             </div>
           </div>
         </div>
       </div>
 
-      <h2 class="h4 pane-title mt-5">Como este documento é gerado</h2>
-      <p>O orquestrador, na fase COMMIT-FINAL, gera o explainer a partir deste template:</p>
-<pre><code class="language-bash"># Gera o explainer a partir do template
-./scripts/generate-explainer.sh &gt; EXPLAINER.html
-# Ou preenche manualmente os placeholders v2, 2026-08-09, main, ...</code></pre>
-      <p class="text-body-secondary small">O template é <code>templates/html-explainer.html</code> — arquivo único, sem build: abre por file:// e imprime em PDF com todas as abas.</p>
-
-      <details class="mt-4">
         <summary class="text-body-secondary">Placeholders usados na geração</summary>
         <div class="table-responsive mt-2">
           <table class="table table-sm align-middle">
@@ -342,29 +334,8 @@
       <p>Uma linha por sub-agente. Cada sub-agente trabalha numa worktree Git nomeada; a integração é squash-merge um a um, com gate (build + testes) entre merges. Worktrees e branches <code>wt/*</code> são removidos ao fim de cada onda.</p>
 
       <!-- {{WAVES_TABLE}} begin -->
-<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Onda</th><th>Worktree</th><th>Tarefas</th><th class="text-end">Commits</th><th>Status</th></tr></thead><tbody>
-<tr><td><span class="badge badge-accent">1</span></td><td><code>onda1-viewport-foundation</code></td><td>useViewport, safe-area, dvh, tap targets</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">1</span></td><td><code>onda1-i18n-touch-catalog</code></td><td>52 chaves × 4 idiomas, catálogo de toque</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">1</span></td><td><code>test-onda1-viewport-hook</code></td><td>91 testes para useViewport</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">1</span></td><td><code>test-onda1-i18n-parity</code></td><td>11 invariantes estruturais de i18n</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2A</span></td><td><code>onda2a-touch-primitives</code></td><td>useLongPress, useLayoutMode, useShellStore</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2A</span></td><td><code>onda2a-shared-parts</code></td><td>variante touch, alvos 44px, bottom sheet</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2A</span></td><td><code>test-onda2a-hooks-parts</code></td><td>106 testes + fix imports</td><td class="text-end">2</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-graph-touch</code></td><td>Grafo: colunas colapsadas, densidade, tooltip→linha</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-dnd-touch</code></td><td>Sensor por atraso, cancelLongPress</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-dialogs-touch</code></td><td>14 diálogos bottom sheet, drag-to-dismiss</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-viewer-touch</code></td><td>Diff/markdown em tela estreita</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-shell-controls</code></td><td>Toolbar compacta, busca sheet, rail long press</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-shell-panels</code></td><td>Painéis com long press, seção Layout, ConfirmHost</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-shell-layout</code></td><td>MobileNav, coluna única, safe-area</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">3</span></td><td><code>onda3-swipe-panes</code></td><td>Swipe horizontal entre painéis</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">3</span></td><td><code>onda3-touch-audit</code></td><td>Auditoria de alvos de toque + test:touch</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-<tr><td><span class="badge badge-accent">3</span></td><td><code>onda3-keyboard-parity</code></td><td>Portas tocáveis para Esc e paleta ⌘K</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
-</tbody></table></div>
-<!-- {{WAVES_TABLE}} end -->
-
-      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos dados reais da execução.</p>
-
+<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th scope="col">Onda</th><th scope="col">Worktree</th><th scope="col">Tarefas</th><th scope="col" class="text-end">Commits</th><th scope="col">Status</th></tr></thead><tbody><tr><td><span class="badge badge-accent">Onda 1</span></td><td><code>onda1-fix-button-nesting</code></td><td>Corrigir &lt;button&gt; aninhado no CommitFiles — span com role=button para blame</td><td class="text-end">1</td><td><span class="badge badge-ok">Concluída</span></td></tr><tr><td><span class="badge badge-accent">Onda 1</span></td><td><code>onda1-desktop-graph-sizing</code></td><td>Ajustar métricas desktop (paddingLeft 36, nodeRadius 14, strokeWidth 2.5, laneWidth 26, rowHeight 64)</td><td class="text-end">1</td><td><span class="badge badge-ok">Concluída</span></td></tr><tr><td><span class="badge badge-accent">Onda 1</span></td><td><code>onda1-mobile-drag-intents</code></td><td>Melhorar DnD mobile: RefChip escala no arraste, dica no overlay, terminologia i18n</td><td class="text-end">1</td><td><span class="badge badge-ok">Concluída</span></td></tr><tr><td><span class="badge badge-accent">Onda 1</span></td><td><code>onda1-mobile-scroll-fix</code></td><td>Scroll horizontal fixo (piso 480px), auto-scroll ao revelar e ao clicar, fórmula laneX corrigida</td><td class="text-end">1</td><td><span class="badge badge-ok">Concluída</span></td></tr><tr><td><span class="badge badge-soft">Test</span></td><td><code>test-onda1-graph</code></td><td>20 novos testes: paint tripwires, piso 480px, aritmética de scroll, regressão da fórmula</td><td class="text-end">1</td><td><span class="badge badge-ok">Concluída</span></td></tr></tbody></table></div>
+      <!-- {{WAVES_TABLE}} end -->
       <h3 class="h6 mt-4 text-body-secondary">Legenda de status</h3>
       <div class="d-flex flex-wrap gap-2">
         <span class="badge badge-ok">Concluída</span>
@@ -379,44 +350,16 @@
       <h2 class="h4 pane-title">Arquivos modificados</h2>
       <p>Diff stats da execução: <span class="diff-plus">+</span> linhas adicionadas, <span class="diff-minus">−</span> removidas.</p>
 
-      <!-- {{FILES_TABLE}} begin --><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Arquivo</th><th>Tipo</th><th class="text-end">Diff</th></tr></thead><tbody>
-<tr><td><code>web/src/app/MobileNav.tsx</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+168</td></tr>
-<tr><td><code>web/src/app/PaneSwipe.tsx</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+106</td></tr>
-<tr><td><code>web/src/app/CommandPaletteHost.tsx</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+57</td></tr>
-<tr><td><code>web/src/app/commands.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+226</td></tr>
-<tr><td><code>web/src/hooks/useLongPress.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+423</td></tr>
-<tr><td><code>web/src/hooks/useLayoutMode.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+80</td></tr>
-<tr><td><code>web/src/dnd/sensors.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+35</td></tr>
-<tr><td><code>web/src/__audit__/touch-targets.domtest.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+195</td></tr>
-<tr><td><code>scripts/verify-touch.mjs</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+120</td></tr>
-<tr><td><code>web/src/app/App.tsx</code></td><td><span class="badge badge-accent">mod</span></td><td class="text-end"><span class="diff-plus">+196</span> <span class="diff-minus">−58</span></td></tr>
-<tr><td><code>web/src/styles/theme.css</code></td><td><span class="badge badge-accent">mod</span></td><td class="text-end"><span class="diff-plus">+130</span> <span class="diff-minus">−5</span></td></tr>
-<tr><td><code>~50 outros arquivos</code></td><td><span class="badge badge-accent">mod</span></td><td class="text-end"><span class="diff-plus">+3000</span> <span class="diff-minus">−600</span></td></tr>
-</tbody></table></div><!-- {{FILES_TABLE}} end -->
-
-      <p class="text-body-secondary small">Exemplo demonstrativo — valores aproximados, substituídos na geração.</p>
-
+      <!-- {{FILES_TABLE}} begin -->
+<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th scope="col">Arquivo</th><th scope="col">Tipo</th><th scope="col" class="text-end">Diff</th></tr></thead><tbody><tr><td><code>web/src/panels/DetailPanel.tsx</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+14</span> <span class="diff-minus">-4</span></td></tr><tr><td><code>web/src/graph/paint.ts</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+15</span> <span class="diff-minus">-15</span></td></tr><tr><td><code>web/src/graph/GraphView.tsx</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+60</span> <span class="diff-minus">-6</span></td></tr><tr><td><code>web/src/graph/shell.ts</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+13</span> <span class="diff-minus">-1</span></td></tr><tr><td><code>web/src/dnd/GitDndProvider.tsx</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+45</span> <span class="diff-minus">-18</span></td></tr><tr><td><code>web/src/dnd/sensors.ts</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+16</span></td></tr><tr><td><code>web/src/graph/RefChip.tsx</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+16</span> <span class="diff-minus">-2</span></td></tr><tr><td><code>web/src/i18n/locales/{pt,en,es,zh}.ts</code></td><td><span class="badge badge-accent">modificado</span></td><td class="text-end"><span class="diff-plus">+10</span></td></tr><tr><td><code>web/src/graph/__tests__/paint.test.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+71</td></tr><tr><td><code>web/src/graph/__tests__/scroll.test.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+103</td></tr><tr><td><code>web/src/graph/__tests__/scroll.domtest.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+113</td></tr><tr><td><code>web/src/graph/__tests__/shell.test.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+88</td></tr></tbody></table></div>
+      <!-- {{FILES_TABLE}} end -->
       <h2 class="h4 pane-title mt-4">Commits (squash)</h2>
       <p>Histórico final do branch principal: um commit squash por sub-agente. Nenhuma worktree ou branch <code>wt/*</code> sobra ao final.</p>
 
-      <!-- {{COMMITS_LIST}} begin --><ul class="list-group list-group-flush">
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">74d78285</span><strong>onda3-keyboard-parity</strong>: portas tocaveis para Esc e ⌘K, paleta reativada</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">1510534a</span><strong>onda3-touch-audit</strong>: auditoria de alvos de toque e teste DOM</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">3e039633</span><strong>onda3-swipe-panes</strong>: swipe horizontal entre paineis</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">93784223</span><strong>onda2b-shell-layout</strong>: coluna unica com MobileNav</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">b59b453c</span><strong>onda2b-shell-panels</strong>: paineis, seção Layout, ConfirmHost</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">28542d8e</span><strong>onda2b-shell-controls</strong>: toolbar compacta, busca sheet, rail</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">b7b11418</span><strong>onda2b-viewer-touch</strong>: diff e markdown estreitos</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">f716f80e</span><strong>onda2b-dialogs-touch</strong>: drag-to-dismiss, RepoPicker</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">32e522ee</span><strong>onda2b-dnd-touch</strong>: sensor por atraso, cancelLongPress</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">a2ed9c26</span><strong>onda2b-graph-touch</strong>: colunas colapsadas, densidade</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">235878d2</span><strong>test-onda2a-hooks-parts</strong>: 106 testes</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">44e25dcb</span><strong>fix</strong>: extensao .ts nos imports</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">ab13b0f9</span><strong>onda2a-shared-parts</strong>: variante touch, alvos 44px</li>
-<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">cf796238</span><strong>onda2a-touch-primitives</strong>: toque longo e layout</li>
-</ul><!-- {{COMMITS_LIST}} end -->
+      <!-- {{COMMITS_LIST}} begin -->
+<ul class="list-group list-group-flush"><li class="list-group-item d-flex gap-3 align-items-start"><span class="badge badge-soft font-monospace">1f8f3713</span><div><strong>onda1-fix-button-nesting:</strong> corrige &lt;button&gt; aninhado no CommitFiles — span com role=button para blame</div></li><li class="list-group-item d-flex gap-3 align-items-start"><span class="badge badge-soft font-monospace">bfe81700</span><div><strong>onda1-desktop-graph-sizing:</strong> ajusta métricas desktop — paddingLeft 36, nodeRadius 14, strokeWidth 2.5, laneWidth 26, rowHeight 64</div></li><li class="list-group-item d-flex gap-3 align-items-start"><span class="badge badge-soft font-monospace">db16e005</span><div><strong>onda1-mobile-drag-intents:</strong> melhora DnD mobile — RefChip escala no arraste, dica no overlay, terminologia i18n</div></li><li class="list-group-item d-flex gap-3 align-items-start"><span class="badge badge-soft font-monospace">10d351c5</span><div><strong>onda1-mobile-scroll-fix:</strong> scroll horizontal fixo (piso 480px), auto-scroll ao revelar e ao clicar, fórmula laneX corrigida</div></li><li class="list-group-item d-flex gap-3 align-items-start"><span class="badge badge-soft font-monospace">000c3120</span><div><strong>test-onda1-graph:</strong> 20 novos testes — paint tripwires, piso 480px, aritmética de scroll, regressão da fórmula corrigida</div></li></ul>
+      <!-- {{COMMITS_LIST}} end -->
 
-      <p class="text-body-secondary small mt-2">Exemplo demonstrativo — hashes fictícios, substituídos na geração.</p>
     </div>
 
     <!-- ══════════════ ABA 4 · DE-PARA (BEFORE/AFTER) ══════════════ -->
@@ -455,8 +398,8 @@
       </div>
 
       <!-- {{BEFORE_AFTER}} begin -->
-<div class="row g-3 mb-4"><div class="col-lg-6"><div class="card depara-antes"><div class="card-header"><strong>Antes</strong></div><div class="card-body"><ul class="list-unstyled small"><li>Layout 3 colunas fixas — inutilizável &lt;900px</li><li>Zero breakpoints, zero safe-area, sem dvh</li><li>Alvos 28px (size-7), Splitter 4px</li><li>Menu só por botão direito (onContextMenu)</li><li>DnD sequestra scroll (distance:6)</li><li>Campos com zoom no iOS (font &lt;16px)</li><li>Grafo 5 colunas fixas — não cabe em 390px</li><li>Diálogos centralizados, sem bottom sheet</li><li>AiBar/Toasts colidem com home indicator</li><li>Sem swipe entre painéis</li><li>503 testes</li></ul></div></div></div><div class="col-lg-6"><div class="card depara-depois"><div class="card-header"><strong>Depois</strong></div><div class="card-body"><ul class="list-unstyled small"><li>Coluna única &lt;768px com MobileNav de 4 abas</li><li>safe-area tokens, dvh, viewport-fit=cover</li><li>Alvos 44px (touch:min-h-tap), WCAG 2.2</li><li>Toque longo (longPressMenu) + "⋯" nos arrastáveis</li><li>DnD sensor por atraso (250ms), cancelLongPress</li><li>font-size: max(16px, 1rem) nos campos</li><li>Grafo 3 colunas compacto, densidade por prop</li><li>14 diálogos bottom sheet com drag-to-dismiss</li><li>AiBar/Toasts acima da nav bar + safe-area</li><li>Swipe horizontal entre rail↔graph↔detail</li><li>718 testes (+ auditoria touch)</li></ul></div></div></div></div>
-<!-- {{BEFORE_AFTER}} end -->
+<div class="row g-3 mb-4"><div class="col-lg-6"><div class="card h-100 depara-antes"><div class="card-header"><i class="bi bi-arrow-left-circle me-1"></i><strong>Antes</strong></div><div class="card-body"><p class="card-text text-body-secondary">Estado inicial do repositório.</p><ul class="list-unstyled mb-0 d-grid gap-2"><li><code>paint.ts</code> — paddingLeft 24, nodeRadius 18, strokeWidth 3, laneWidth 30, rowHeight 72</li><li><code>DetailPanel.tsx</code> — &lt;button&gt; de blame dentro de &lt;button&gt; da linha (bug de hidratação)</li><li><code>shell.ts</code> — compactContentWidth sem piso mínimo</li><li><code>GraphView.tsx</code> — sem scroll horizontal no compacto, sem auto-scroll ao revelar</li><li><code>GitDndProvider.tsx</code> — silêncio no drop sem alvo (mouse e touch)</li><li><code>RefChip.tsx</code> — alvo de drop pequeno (~21px) sem adaptação para toque</li></ul></div></div></div><div class="col-lg-6"><div class="card h-100 depara-depois"><div class="card-header"><i class="bi bi-arrow-right-circle me-1"></i><strong>Depois</strong></div><div class="card-body"><p class="card-text text-body-secondary">Estado final após a execução.</p><ul class="list-unstyled mb-0 d-grid gap-2"><li><code>paint.ts</code> — paddingLeft 36, nodeRadius 14, strokeWidth 2.5, laneWidth 26, rowHeight 64</li><li><code>DetailPanel.tsx</code> — &lt;span role="button"&gt; com keyboard handlers, sem aninhamento</li><li><code>shell.ts</code> — MIN_COMPACT_CONTENT_WIDTH=480, compactContentWidth com piso real</li><li><code>GraphView.tsx</code> — auto-scroll horizontal no reveal (com guarda) + click-to-scroll no handleSelect (modo compacto)</li><li><code>GitDndProvider.tsx</code> — dica "Arraste sobre um ramo" no overlay durante drag sem alvo em touch</li><li><code>RefChip.tsx</code> — touch:scale-150 durante arraste (alvo cresce 2.25x sem reflow)</li><li>+4 arquivos de teste (20 novos testes, 53→73)</li></ul></div></div></div></div>
+      <!-- {{BEFORE_AFTER}} end -->
 
       <h2 class="h4 pane-title">Impacto</h2>
       <p>O que cada mudança significa para quem usa o deep-orchestrator:</p>
@@ -543,20 +486,10 @@
       <h2 class="h4 pane-title">Premissas inferidas sem perguntar</h2>
       <p>O orquestrador opera em autonomia total: nenhuma pergunta foi feita ao usuário. Toda premissa assumida fica registrada aqui — para revisão e reprodutibilidade.</p>
 
-      <!-- {{DECISIONS}} begin --><ul class="list-group list-group-flush">
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P1.</strong> Mobile = navegador móvel apontando para servidor local. Bind 127.0.0.1 NÃO alterado (regra de segurança).</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P2.</strong> Escopo: web/**, sem mudanças em server/**, sem novas rotas.</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P3.</strong> Breakpoints 768/1280. Tablet decide por orientação. Ponteiro grosseiro detectado separado da largura.</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P4.</strong> Contratos congelados: mudanças só aditivas. state/store.ts não tocado.</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P5.</strong> Nenhuma dependência npm nova. Medições em navegador usam ws já instalado.</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P6.</strong> Densidade do grafo entra por prop (nunca useViewport) — o render de servidor devolve desktop.</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P7.</strong> Componente sheet do catálogo NÃO usado (touchAction:none quebra scroll). Backdrop + FocusTrap + ScrollLock mantidos.</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P8.</strong> Arraste vence toque longo (250ms &lt; 500ms). Menu de nó arrastável usa botão "⋯".</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P9.</strong> iOS Safari: sem evento contextmenu. Callout nativo morre por CSS (longpress-menu utility).</div></li>
-<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P10.</strong> Paleta de comandos re-ativada (removida em julho). Wrapper sobre motion-ui — sem editar catálogo.</div></li>
-</ul><!-- {{DECISIONS}} end -->
+      <!-- {{DECISIONS}} begin -->
+<ul class="list-group list-group-flush"><li class="list-group-item d-flex gap-3 align-items-start"><i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i><div><strong>Onda única com 4 agentes paralelos:</strong> as 4 sub-tarefas tocam arquivos disjuntos (zero conflito de merge).</div></li><li class="list-group-item d-flex gap-3 align-items-start"><i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i><div><strong>Métricas desktop reduzidas proporcionalmente:</strong> nodeRadius 18→14, strokeWidth 3→2.5, laneWidth 30→26, rowHeight 72→64. METRICS_COMPACT intocado (usuário aprovou o mobile).</div></li><li class="list-group-item d-flex gap-3 align-items-start"><i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i><div><strong>Piso de 480px para scroll horizontal:</strong> o piso original de 320px era inerte em celulares reais. 480px força scroll em telas < 480px.</div></li><li class="list-group-item d-flex gap-3 align-items-start"><i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i><div><strong>Toast substituído por dica proativa:</strong> o toast de "drop sem destino" gerava falso-positivo no toque (dedo parado 250ms ativa drag). Substituído por dica visual no overlay durante o arraste.</div></li><li class="list-group-item d-flex gap-3 align-items-start"><i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i><div><strong>Terminologia i18n consistente:</strong> "Drop sem destino" → "Arraste sobre um ramo", alinhado com o vocabulário canônico do app ("mesclar ou rebasear").</div></li><li class="list-group-item d-flex gap-3 align-items-start"><i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i><div><strong>Onda 2 cancelada:</strong> o REPLAN identificou o click-to-scroll como faltante, mas o FIX agent já o implementou na própria onda1-mobile-scroll-fix.</div></li><li class="list-group-item d-flex gap-3 align-items-start"><i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i><div><strong>Testing subwave combinada:</strong> testes de grafo e DnD+shell unificados após a Onda 1, já que a Onda 2 foi cancelada.</div></li></ul>
+      <!-- {{DECISIONS}} end -->
 
-      <p class="text-body-secondary small mt-2">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelas decisões reais da execução.</p>
     </div>
 
     <!-- ══════════════ ABA 6 · TIMELINE ══════════════ -->
@@ -565,24 +498,16 @@
       <h2 class="h4 pane-title">Linha do tempo da execução</h2>
       <p>As quatro fases do orquestrador e o que aconteceu em cada uma.</p>
 
-      <!-- {{TIMELINE}} begin --><ol class="timeline list-unstyled mb-0">
-<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 0</span><strong>DELIMITAR</strong></div><p class="mb-0 text-body-secondary small">MODE=normal, BASE_DIR=/home/ondokai/Projects/GitCraque, BASE_BRANCH=main. 0 worktrees de terceiros.</p></li>
-<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 1</span><strong>ANALYZE</strong></div><p class="mb-0 text-body-secondary small">12 problemas mapeados: layout 3-colunas, sem breakpoints, alvos pequenos, dependência de hover, sem toque longo, DnD sequestra scroll, campos com zoom, grafo 5 colunas, diálogos centralizados, safe-area ignorada, atalhos sem equivalente tocável.</p></li>
-<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 2</span><strong>PLAN</strong></div><p class="mb-0 text-body-secondary small">3 ondas, 15 sub-agentes. Onda 1: fundação (viewport, i18n). Onda 2A: primitivos de toque. Onda 2B: 7 agentes paralelos. Onda 3: swipe, auditoria, keyboard parity. REPLAN após cada onda.</p></li>
-<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 1</strong></div><p class="mb-0 text-body-secondary small">4 agentes. useViewport (useSyncExternalStore + rAF), tokens safe-area, dvh, catálogo i18n 52×4, 102 testes.</p></li>
-<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 2A</strong></div><p class="mb-0 text-body-secondary small">3 agentes. useLongPress (máquina de estados de módulo), useLayoutMode, variante touch CSS, alvos 44px, bottom sheet. Revisão adversarial: 7 perguntas, 0 bloqueadores. 106 testes.</p></li>
-<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 2B</strong></div><p class="mb-0 text-body-secondary small">7 agentes paralelos. Grafo 5→3 colunas, sensor por atraso, 14 diálogos bottom sheet, diff/markdown estreitos, toolbar compacta, painéis long press, MobileNav + coluna única. Gate: 718 testes.</p></li>
-<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 3</strong></div><p class="mb-0 text-body-secondary small">3 agentes. Swipe horizontal entre painéis, auditoria de alvos de toque (npm run test:touch), portas tocáveis para Esc e ⌘K.</p></li>
-<li class="timeline-item"><div class="d-flex gap-2 mb-1"><span class="badge badge-ok">Fase 4</span><strong>COMMIT-FINAL</strong></div><p class="mb-0 text-body-secondary small">AGENTS.md atualizado (718 testes), EXPLAINER.html gerado, 15 squash commits, zero worktrees remanescentes, contenção provada.</p></li>
-</ol><!-- {{TIMELINE}} end -->
+      <!-- {{TIMELINE}} begin -->
+<ol class="timeline list-unstyled mb-0"><li class="timeline-item mb-4"><div class="d-flex flex-wrap align-items-center gap-2 mb-1"><span class="badge badge-accent">Fase 0</span><strong>DELIMITAR-O-MUNDO</strong></div><p class="mb-0 text-body-secondary small">MODE=normal, BASE_DIR=/home/ondokai/Projects/GitCraque, BASE_BRANCH=main. 724 créditos Brave.</p></li><li class="timeline-item mb-4"><div class="d-flex flex-wrap align-items-center gap-2 mb-1"><span class="badge badge-accent">Fase 1</span><strong>ANALYZE</strong></div><p class="mb-0 text-body-secondary small">Leitura do código: paint.ts (métricas), DetailPanel.tsx (bug button), GraphView.tsx/shell.ts (scroll), dnd/* (touch drag), i18n/locales. Project-router carregado com 4 skills de domínio.</p></li><li class="timeline-item mb-4"><div class="d-flex flex-wrap align-items-center gap-2 mb-1"><span class="badge badge-accent">Fase 2</span><strong>PLAN</strong></div><p class="mb-0 text-body-secondary small">1 onda, 4 agentes em paralelo (arquivos disjuntos). TASK_PLAN.md publicado.</p></li><li class="timeline-item mb-4"><div class="d-flex flex-wrap align-items-center gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>EXECUTE-ONDA 1</strong></div><p class="mb-0 text-body-secondary small">4 agentes disparados em paralelo. REPLAN identificou click-to-scroll faltante → Onda 2. Revisão adversarial encontrou 3 problemas em mobile-scroll e 3 em mobile-drag → 2 agentes de FIX. Squash-merge um a um com gate verde. Testing subwave: +20 testes (73 total).</p></li><li class="timeline-item"><div class="d-flex flex-wrap align-items-center gap-2 mb-1"><span class="badge badge-ok">Fase 4</span><strong>COMMIT-FINAL</strong></div><p class="mb-0 text-body-secondary small">5 squash commits. Gate completo: 718 testes verdes (server 350 + graph 73 + dnd 25 + viewer 82 + i18n 11 + hooks 197). Contenção OK. EXPLAINER.html gerado.</p></li></ol>
+      <!-- {{TIMELINE}} end -->
 
-      <p class="text-body-secondary small mt-3">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pela timeline real da execução.</p>
     </div>
 
   </div>
 
   <footer class="text-body-secondary small border-top mt-5 pt-3">
-    Gerado por <strong>deep-orchestrator</strong> vv2 · 2026-08-09 · branch main.
+    Gerado por <strong>deep-orchestrator</strong> v0.3.0 · 2026-08-09 · branch main.
     Documento de arquivo único — salve, abra com duplo clique ou imprima em PDF (todas as abas entram no papel).
   </footer>
 
