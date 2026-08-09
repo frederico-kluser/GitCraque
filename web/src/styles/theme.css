@@ -16,6 +16,24 @@
 :root {
   --radius: 0.625rem;
 
+  /*
+   * Recortes do aparelho (notch, ilha dinamica, barra de gestos). Valem
+   * ZERO ate a pagina declarar `viewport-fit=cover` no meta viewport —
+   * ver `web/index.html`. Em qualquer tela sem recorte o fallback `0px`
+   * mantem tudo como sempre foi.
+   */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+
+  /*
+   * Lado minimo de um alvo de toque. A WCAG 2.2 (2.5.8, AA) exige 24px;
+   * 44px e a regua da Apple (HIG) e a de 48dp do Material, e e a que se
+   * sente bem com o polegar. Usamos a maior.
+   */
+  --tap-target: 44px;
+
   --background: oklch(0.985 0.002 250);
   --foreground: oklch(0.21 0.012 260);
   --card: oklch(1 0 0);
@@ -175,6 +193,22 @@
   --color-diff-del-bg: var(--diff-del-bg);
   --color-diff-del-fg: var(--diff-del-fg);
 
+  /*
+   * Espacamentos nomeados. O namespace `--spacing-*` do Tailwind v4 rende
+   * a familia inteira de utilitarios com esse nome, entao a onda seguinte
+   * escreve classe e nunca `style={{}}`:
+   *   --spacing-safe-top    -> pt-safe-top,    mt-safe-top,    top-safe-top
+   *   --spacing-safe-right  -> pr-safe-right,  mr-safe-right,  right-safe-right
+   *   --spacing-safe-bottom -> pb-safe-bottom, mb-safe-bottom, bottom-safe-bottom
+   *   --spacing-safe-left   -> pl-safe-left,   ml-safe-left,   left-safe-left
+   *   --spacing-tap         -> size-tap, min-h-tap, min-w-tap, h-tap, w-tap, p-tap, gap-tap
+   */
+  --spacing-safe-top: var(--safe-top);
+  --spacing-safe-right: var(--safe-right);
+  --spacing-safe-bottom: var(--safe-bottom);
+  --spacing-safe-left: var(--safe-left);
+  --spacing-tap: var(--tap-target);
+
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -206,10 +240,17 @@
     border-color: var(--border);
     @apply border-border outline-ring/50;
   }
+  /*
+   * `100%` mede a viewport COM a barra de endereco do navegador movel; quando
+   * ela se retrai a caixa fica maior que a tela e o app "pula". `100dvh` mede o
+   * que esta visivel AGORA. A primeira linha e o fallback de quem nao tem `dvh`
+   * — so aqui na raiz, nao saia espalhando.
+   */
   html,
   body,
   #root {
     height: 100%;
+    height: 100dvh;
   }
   body {
     background-color: var(--background);
@@ -218,25 +259,99 @@
     overscroll-behavior: none;
     @apply bg-background text-foreground;
   }
-  /* barra de rolagem discreta, coerente com o tema */
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
-    border-radius: 999px;
-    border: 2px solid transparent;
-    background-clip: content-box;
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
-    background-clip: content-box;
+  /*
+   * Barra de rolagem discreta, coerente com o tema — SO em ponteiro fino.
+   * Um trilho de 10px e um `:hover` de polegar nao existem no dedo, e estilizar
+   * `::-webkit-scrollbar` desliga a barra flutuante do sistema, que e a certa no
+   * celular. Fora de `(pointer: fine)` nao ha regra nenhuma e a nativa volta.
+   */
+  @media (pointer: fine) {
+    ::-webkit-scrollbar {
+      width: 10px;
+      height: 10px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: color-mix(in oklch, var(--muted-foreground) 30%, transparent);
+      border-radius: 999px;
+      border: 2px solid transparent;
+      background-clip: content-box;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+      background-clip: content-box;
+    }
   }
   html {
+    /*
+     * O Safari infla a tipografia sozinho ao girar para paisagem. `100%` diz
+     * "o tamanho que eu pedi e o tamanho que eu quero".
+     */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
     @apply font-sans;
+  }
+
+  /*
+   * Bases fisicas do toque.
+   *
+   * `touch-action: manipulation` mata o atraso de 300ms que o navegador espera
+   * para ver se vem um segundo toque — e NAO desliga rolagem nem pinca. Nunca
+   * desligue o gesto por completo, e nunca trave a escala no meta viewport:
+   * impedir o zoom da pagina e falha de acessibilidade.
+   */
+  button,
+  a,
+  [role="button"],
+  input,
+  select,
+  summary {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+  }
+
+  @media (pointer: coarse) {
+    /*
+     * `-webkit-overflow-scrolling` e herdada, entao declarar na raiz basta para
+     * todo conteiner rolavel interno ganhar a inercia (no-op no iOS moderno, que
+     * ja rola assim). `overscroll-behavior` NAO e herdada: o `none` do `body`
+     * abaixo barra o puxar-para-recarregar da pagina sem alcancar as caixas
+     * rolaveis de dentro.
+     */
+    html {
+      -webkit-overflow-scrolling: touch;
+    }
+  }
+}
+
+/*
+ * FORA DE QUALQUER `@layer` — de proposito, e nao mova para dentro.
+ *
+ * O Safari do iPhone da zoom sozinho em QUALQUER campo com fonte abaixo de
+ * 16px, e nao desfaz o zoom ao sair do campo. `max()` respeita quem tiver
+ * aumentado a fonte base do navegador.
+ *
+ * Dentro de `@layer base` a regra era MORTA: as utilitarias do Tailwind
+ * (`text-xs`, `text-sm`, `text-[14px]`) saem em `@layer utilities`, e camada
+ * posterior vence camada anterior independentemente de especificidade e de
+ * media query. Uma declaracao normal fora de camada vence TODA declaracao
+ * normal dentro de camada — e o unico jeito de ganhar sem `!important`.
+ *
+ * O seletor e o elemento nu de proposito: o campo do command palette usa
+ * `text-[14px]` (valor arbitrario, e o arquivo pertence ao shadcn CLI), entao
+ * mirar so em `.text-xs`/`.text-sm` deixaria campo zoomando. O preco e que a
+ * regra tambem limita a 16px um campo que quisesse ser MAIOR; hoje nenhum e —
+ * o maior do app tem 14px. Campo que precise passar de 16px em toque declara o
+ * proprio tamanho aqui neste bloco, tambem fora de camada.
+ *
+ * So em `(pointer: coarse)`: no mouse a tipografia de 12px/14px fica intacta.
+ */
+@media (pointer: coarse) {
+  input,
+  textarea,
+  select {
+    font-size: max(16px, 1rem);
   }
 }

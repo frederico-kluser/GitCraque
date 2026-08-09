@@ -2,8 +2,26 @@
 <html lang="pt-BR" class="dark">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- `viewport-fit=cover` e o que faz `env(safe-area-inset-*)` valer alguma
+         coisa: sem ele o navegador ja recua o conteudo e os insets vem zerados.
+         NAO trave nem limite a escala aqui: impedir o zoom da pagina e falha de
+         acessibilidade (WCAG 1.4.4) e esta proibido neste app. -->
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="color-scheme" content="dark light" />
+    <!-- Cor da barra do navegador. Os valores sao os literais de `--background`
+         de cada tema em `web/src/styles/theme.css` — meta nao le `var()`, entao
+         mantenha os dois em sincronia na mao. Segue o tema do SISTEMA; uma
+         escolha manual em `useTheme` nao repinta esta barra. -->
+    <meta name="theme-color" content="oklch(0.985 0.002 250)" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="oklch(0.185 0.012 262)" media="(prefers-color-scheme: dark)" />
+    <!-- Aberto pela tela de inicio: sem barra do navegador, conteudo por baixo
+         da barra de status (par obrigatorio do `viewport-fit=cover` acima).
+         Nao ha manifest nem service worker — instalavel de verdade esta fora
+         de escopo de proposito. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="GitCraque" />
     <!-- Recorte quadrado do rosto em `docs/logo.png`. Servidos de `web/public`,
          que o Vite copia cru para `dist/` (nao ha `publicDir` configurado). -->
     <link rel="icon" href="/favicon.ico" sizes="16x16 32x32 48x48" />

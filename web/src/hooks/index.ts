@@ -30,6 +30,23 @@ export type { DiffStats, FileDelta } from "./useWorkingDiff";
 export { useCommitActivity, relativeDateToDays } from "./useCommitActivity";
 export type { CommitActivity } from "./useCommitActivity";
 
+/* Fundacao de tela e ponteiro: quem decide layout le `isMobile`/`isTablet`,
+ * quem decide tamanho de alvo le `isTouch`/`coarsePointer`. Sao perguntas
+ * diferentes — ver o cabecalho de `useViewport.ts`. */
+export {
+  useViewport,
+  useViewportValue,
+  getViewport,
+  BREAKPOINTS,
+  selectIsMobile,
+  selectIsTablet,
+  selectIsDesktop,
+  selectIsTouch,
+  selectCoarsePointer,
+  selectLandscape,
+} from "./useViewport";
+export type { Viewport } from "./useViewport";
+
 export {
   useShellState,
   getShellState,
@@ -45,6 +62,7 @@ export {
   closeChanges,
   toggleChanges,
   setCommitDraft,
+  setMobilePane,
   askConfirm,
   closeConfirm,
   openContextMenu,
@@ -58,6 +76,7 @@ export {
   selectContextMenu,
   selectChangesOpen,
   selectSettingsOpen,
+  selectMobilePane,
   RAIL_RANGE,
   DETAIL_RANGE,
   AUTO_FETCH_OPTIONS,
@@ -65,6 +84,7 @@ export {
 export type {
   ShellState,
   ThemeMode,
+  MobilePane,
   CommitDraft,
   ConfirmAction,
   ConfirmField,

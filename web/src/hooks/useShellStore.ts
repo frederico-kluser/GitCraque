@@ -86,6 +86,15 @@ export type ConfirmField =
 export type ThemeMode = "light" | "dark";
 
 /**
+ * Qual painel ocupa a tela quando o layout e de coluna unica.
+ *
+ * Num celular o grid de tres colunas nao cabe: rail, grafo e detalhe
+ * passam a se revezar. Os tres nomes sao os das colunas do desktop, para
+ * que a mesma palavra signifique a mesma coisa nos dois layouts.
+ */
+export type MobilePane = "rail" | "graph" | "detail";
+
+/**
  * Rascunho do commit.
  *
  * Mora aqui, e nao no `StatusPanel`, por um motivo mecanico: o painel de
@@ -125,6 +134,15 @@ export interface ShellState {
   confirm: ConfirmAction | null;
   /** menu de contexto aberto agora, com o ponto do clique. */
   contextMenu: ContextMenuRequest | null;
+  /**
+   * Painel visivel no layout de coluna unica. Ignorado quando as tres colunas
+   * cabem na tela.
+   *
+   * Efemero como `changesOpen`: NAO vai para o localStorage. Voltar num painel
+   * lateral porque foi ali que a pessoa parou tres dias atras seria pior do que
+   * voltar sempre no grafo, que e a tela principal do produto.
+   */
+  mobilePane: MobilePane;
 }
 
 const STORAGE_KEY = "gitcraque.shell";
@@ -152,6 +170,7 @@ const DEFAULTS: ShellState = {
   commitDraft: EMPTY_DRAFT,
   confirm: null,
   contextMenu: null,
+  mobilePane: "graph",
 };
 
 /** So o que faz sentido sobreviver ao reload. */
@@ -212,6 +231,7 @@ const INITIAL: ShellState = {
   commitDraft: EMPTY_DRAFT,
   confirm: null,
   contextMenu: null,
+  mobilePane: DEFAULTS.mobilePane,
 };
 
 let state: ShellState = INITIAL;
@@ -290,6 +310,13 @@ export const toggleChanges = () => set((s) => ({ changesOpen: !s.changesOpen }))
 
 export const setCommitDraft = (patch: Partial<CommitDraft>) =>
   set((s) => ({ commitDraft: { ...s.commitDraft, ...patch } }));
+
+/* ------------------------------------------------------------------ */
+/* Navegacao de coluna unica                                           */
+/* ------------------------------------------------------------------ */
+
+/** Troca o painel visivel quando so cabe um. Sem efeito no layout de tres colunas. */
+export const setMobilePane = (mobilePane: MobilePane) => set({ mobilePane });
 
 export const askConfirm = (confirm: Omit<ConfirmAction, "id"> & { id?: string }) =>
   set({ confirm: { id: confirm.id ?? `confirm-${Date.now().toString(36)}`, ...confirm } });
@@ -380,3 +407,4 @@ export const selectCommitDraft = (s: ShellState) => s.commitDraft;
 export const selectContextMenu = (s: ShellState) => s.contextMenu;
 export const selectChangesOpen = (s: ShellState) => s.changesOpen;
 export const selectSettingsOpen = (s: ShellState) => s.settingsOpen;
+export const selectMobilePane = (s: ShellState) => s.mobilePane;
