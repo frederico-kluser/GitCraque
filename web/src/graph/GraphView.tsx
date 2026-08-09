@@ -395,7 +395,7 @@ export function GraphView({
         onKeyDown={handleKeyDown}
         style={graphVars(graphWidth, metrics) as CSSProperties}
         className={cn(
-          "flex h-full min-h-0 flex-col outline-none",
+          "flex h-full min-h-0 flex-col bg-surface-graph outline-none",
           "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
           className,
         )}

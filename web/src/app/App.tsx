@@ -13,8 +13,6 @@
  */
 import { useEffect, useRef } from "react";
 import { FolderX, GitCommitHorizontal, PlugZap } from "lucide-react";
-import logoMark from "@/assets/logo-mark.webp";
-import { cn } from "@/lib/utils";
 import { GraphView } from "@/graph";
 import { GitDndProvider } from "@/dnd";
 import { DialogHost, RepoPicker } from "@/dialogs";
@@ -139,8 +137,6 @@ export function App() {
   const repoCwd = useAppState((s) => s.repo?.cwd ?? null);
   const emptyLog = useAppState((s) => s.log?.empty ?? false);
   const connection = useAppState((s) => s.connection);
-  // A marca d'agua acompanha o grafo: some apenas na tela de repositorio vazio.
-  const showWatermark = !(emptyLog && commits.length === 0 && !loadingLog);
 
   const railWidth = useShellState((s) => s.railWidth);
   const detailWidth = useShellState((s) => s.detailWidth);
@@ -248,45 +244,27 @@ export function App() {
             onChange={setRailWidth}
           />
 
-          <main className="relative min-h-0 bg-surface-graph">
-            {/* Marca d'agua: logo do produto, decorativa e sempre atras do
-                grafo. O catalogo nao tem overlay de fundo, entao e um <img>
-                proprio, sempre montado — a transicao de opacidade cuida do
-                aparecer e do sumir. */}
-            <img
-              src={logoMark}
-              alt=""
-              width={400}
-              height={289}
-              draggable={false}
-              className={cn(
-                "pointer-events-none absolute inset-0 z-0 m-auto h-auto w-[min(18rem,60%)]",
-                "transition-opacity duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
-                showWatermark ? "opacity-10" : "opacity-0",
-              )}
-            />
-            <div className="relative z-[1] h-full">
-              {emptyLog && commits.length === 0 && !loadingLog ? (
-                <EmptyRepo />
-              ) : (
-                <GraphView
-                  commits={commits}
-                  refs={refs}
-                  selected={selected}
-                  primary={primary}
-                  reveal={reveal}
-                  onRevealed={clearReveal}
-                  /* duplo clique num chip de branch da View Tree troca para ela */
-                  onRefActivate={doActivateRef}
-                  /* botao direito: no chip, o menu da ref; na linha, o do commit */
-                  onRefContextMenu={onRefContextMenu}
-                  onContextMenu={onCommitContextMenu}
-                  loading={loadingLog}
-                  onSelect={selectCommit}
-                  className="h-full"
-                />
-              )}
-            </div>
+          <main className="min-h-0 bg-surface-graph">
+            {emptyLog && commits.length === 0 && !loadingLog ? (
+              <EmptyRepo />
+            ) : (
+              <GraphView
+                commits={commits}
+                refs={refs}
+                selected={selected}
+                primary={primary}
+                reveal={reveal}
+                onRevealed={clearReveal}
+                /* duplo clique num chip de branch da View Tree troca para ela */
+                onRefActivate={doActivateRef}
+                /* botao direito: no chip, o menu da ref; na linha, o do commit */
+                onRefContextMenu={onRefContextMenu}
+                onContextMenu={onCommitContextMenu}
+                loading={loadingLog}
+                onSelect={selectCommit}
+                className="h-full"
+              />
+            )}
           </main>
 
           <Splitter
