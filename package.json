@@ -63,6 +63,7 @@
     "test:viewer": "node --test \"web/src/viewer/__tests__/*.test.mjs\"",
     "test:i18n": "node --test \"web/src/i18n/__tests__/*.test.mjs\"",
     "test:hooks": "node --test \"web/src/hooks/__tests__/*.test.mjs\"",
+    "test:touch": "node scripts/verify-touch.mjs",
     "test:e2e": "node scripts/verify-e2e.mjs",
     "prepack": "npm run build && node -e \"require('node:fs').statSync('web/dist/index.html')\""
   },
