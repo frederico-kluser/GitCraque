@@ -52,13 +52,29 @@ is unchanged. `useDropFeedback(target, scope)` must receive the *same* scope as
 `useDroppableTarget` or feedback never matches.
 
 **dnd-kit configuration that was chosen, not defaulted**
-(`web/src/dnd/GitDndProvider.tsx`): `PointerSensor` with
-`activationConstraint: {distance: 6}` so a plain click stays a selection
-(`:206-210`); collision is `pointerWithin` falling back to `rectIntersection`
-(`:194-197`) because `closestCenter` misbehaves with small adjacent branch chips;
-`MeasuringStrategy.Always` (`:318`) because the commit list is virtualized and
-scrolls mid-drag. Payload reads are defensive — bad `data` yields `null`, never a
-throw (`:138-150`).
+(`web/src/dnd/GitDndProvider.tsx`): ONE `PointerSensor`, its constraint picked
+by `activationConstraintFor(getViewport().coarsePointer)` from
+`web/src/dnd/sensors.ts` — `{distance: 6}` on a fine pointer so a plain click
+stays a selection, `{delay: 250, tolerance: 5}` on `(pointer: coarse)` so
+scrolling by touch never becomes a drag. Two traps, both load-bearing: never add
+a `TouchSensor` next to the `PointerSensor` (double activation), and never pass
+`{distance}` and `{delay, tolerance}` together — dnd-kit types the constraint as
+a union and silently ignores `distance` when both are present, so `sensors.ts`
+types it as the union itself. `onDragStart` calls `cancelLongPress()` (from
+`@/hooks`): drag always beats the long-press menu because
+`DND_DELAY_MS = 250 < LONG_PRESS_MS = 500` (`sensors.ts:34`, mirrored from
+`useShellStore.ts`). Collision is `pointerWithin` falling back to
+`rectIntersection` (`:194-197`) because `closestCenter` misbehaves with small
+adjacent branch chips; `MeasuringStrategy.Always` (`:318`) because the commit
+list is virtualized and scrolls mid-drag. Payload reads are defensive — bad
+`data` yields `null`, never a throw (`:138-150`).
+
+**The dnd suites test only the pure modules.** `intents.test.mjs`, `ids.test.mjs`
+and `sensors.test.mjs` load `intents.ts`, `ids.ts`, `sensors.ts` — never
+`GitDndProvider.tsx` (a `.tsx` cannot be imported at runtime). The provider's
+sensor configuration is covered indirectly: `sensors.test.mjs` proves
+`activationConstraintFor` returns exactly one union member per pointer, which is
+what the provider passes to `useSensor`.
 
 **`preview` is argv without the leading `git`.** The UI prepends it
 (`web/src/panels/parts.tsx:173`). Endpoints must come from `INTENT_ENDPOINTS`

@@ -4,9 +4,12 @@
  *
  * Tres responsabilidades, e so estas:
  *
- *  1. Sensores. `PointerSensor` com `distance: 6` para que um clique simples num
- *     commit continue sendo selecao (o grafo depende disso) e `KeyboardSensor`
- *     para arrastar sem mouse.
+ *  1. Sensores. `PointerSensor` com o ativador escolhido pelo ponteiro
+ *     (`activationConstraintFor`, de `sensors.ts`): no mouse, `distance: 6`
+ *     para que um clique simples num commit continue sendo selecao (o grafo
+ *     depende disso); no toque, `delay: 250` com `tolerance: 5`, senao rolar
+ *     com o dedo viraria arrasto. Mais `KeyboardSensor` para arrastar sem
+ *     mouse.
  *  2. Feedback de validade em tempo real. A cada `onDragOver` a intencao e
  *     resolvida contra o alvo sob o cursor e publicada por contexto; os alvos
  *     leem com `useDropFeedback(id)` e se pintam de aceita/recusa.
@@ -43,6 +46,7 @@ import {
   useMotionUITheme,
   useMotionUITransition,
 } from "@/components/motion-ui/ui-theme";
+import { cancelLongPress, getViewport } from "@/hooks";
 import { t } from "@/i18n";
 import type { MessageKey } from "@/i18n";
 import { cn, short, truncate } from "@/lib/utils";
@@ -58,6 +62,7 @@ import type { GitDndProviderProps } from "@/types/modules";
 import { encodeId } from "./bindings";
 import type { DndScope } from "./bindings";
 import { resolveDragIntent } from "./intents";
+import { activationConstraintFor } from "./sensors";
 
 /* ------------------------------------------------------------------ */
 /* Contexto de feedback                                                */
@@ -204,8 +209,14 @@ export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
   const [feedback, setFeedback] = useState<FeedbackValue>(EMPTY);
 
   const sensors = useSensors(
-    // 6px de folga: um clique simples num commit continua sendo selecao.
-    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    // Um sensor so, com o ativador escolhido pelo ponteiro (`getViewport` le a
+    // media query `(pointer: coarse)` na hora do render). Nada de TouchSensor
+    // ao lado do PointerSensor: os dois disparariam ativacao dupla. E o
+    // @dnd-kit trata o ativador como UNION — { distance } OU { delay,
+    // tolerance }; passar os dois juntos faz o distance ser ignorado.
+    useSensor(PointerSensor, {
+      activationConstraint: activationConstraintFor(getViewport().coarsePointer),
+    }),
     useSensor(KeyboardSensor),
   );
 
@@ -226,6 +237,12 @@ export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
   }, []);
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
+    // Regra da onda 2a: o arraste SEMPRE vence o menu de toque longo. O timer
+    // do menu (LONG_PRESS_MS = 500) segue correndo depois que o arraste ja
+    // acordou (DND_DELAY_MS = 250) — sem este cancelamento o menu abriria no
+    // meio do arrasto, com a linha colada no dedo e o alvo de soltura
+    // escondido atras do popup.
+    cancelLongPress();
     setFeedback({ source: asDragPayload(event.active.data.current), overId: null, intent: null });
   }, []);
 
