@@ -33,6 +33,7 @@ export const es: Messages = {
   "common.missingFromDisk": "desapareció del disco",
   "common.opened": "abierto",
   "common.binaryShort": "bin",
+  "common.back": "Volver",
 
   /* ---------------------------------------------------------------- */
   /* Idioma                                                            */
@@ -1339,4 +1340,118 @@ export const es: Messages = {
   "ai.locked.unlock": "Desbloquear",
   "ai.locked.hint":
     "La clave va directo al servidor y se queda solo ahí, con permiso 0600. El navegador nunca la recibe de vuelta.",
+
+  /* ---------------------------------------------------------------- */
+  /* Táctil y pantallas estrechas — móvil, tableta y pantallas táctiles */
+  /*                                                                    */
+  /* `mobile.*` es lo que solo existe cuando la pantalla muestra UN     */
+  /* panel a la vez; `touch.*` es el vocabulario de gestos, válido en   */
+  /* cualquier tamaño de pantalla sin ratón. Lo demás entra en el       */
+  /* espacio de nombres del componente que ya existe.                   */
+  /* ---------------------------------------------------------------- */
+
+  /* -- navegación de panel único -- */
+  "mobile.nav.label": "Navegación entre paneles",
+  "mobile.nav.repo": "Repo",
+  "mobile.nav.history": "Historial",
+  "mobile.nav.detail": "Detalle",
+  "mobile.nav.changes": "Cambios",
+  "mobile.nav.announce": "Mostrando el panel {panel}.",
+  "mobile.panel.close": "Cerrar panel",
+  "mobile.panel.close.title": "Cerrar este panel y volver al historial",
+
+  /* -- orientación del dispositivo -- */
+  "mobile.orientation.hint": "Gira el dispositivo en horizontal — el historial gana anchura.",
+
+  /* -- gestos táctiles; ningún texto de aquí habla de ratón -- */
+  "touch.longPress.menu": "Mantén pulsado para ver las opciones",
+  "touch.longPress.drag": "Mantén pulsado para arrastrar",
+  "touch.swipeDown.dismiss": "Desliza hacia abajo para cerrar",
+  "touch.swipe.panel": "Desliza hacia los lados para cambiar de panel",
+  "touch.grabber.label": "Tirador — desliza hacia abajo para cerrar",
+  "touch.dnd.hint":
+    "En este dispositivo el arrastre empieza con una pulsación larga: mantén pulsado el elemento hasta que se despegue de la lista.",
+
+  /* -- barra comprimida: lo que no cupo se vuelve menú -- */
+  "toolbar.overflow.label": "Abrir las demás acciones de la barra",
+  "toolbar.overflow.title": "Más acciones",
+  "toolbar.network.label": "Acciones de red — fetch, pull y push",
+  "toolbar.network.group": "Red",
+
+  /* -- búsqueda de commits recogida en un botón -- */
+  "search.open": "Abrir la búsqueda de commits",
+  "search.close": "Cerrar la búsqueda de commits",
+
+  /* -- grafo en pantalla estrecha: autor, fecha y hash desaparecen -- */
+  "graph.meta.reveal": "Mostrar el autor, la fecha y el hash de este commit",
+  "graph.meta.hide": "Ocultar el autor, la fecha y el hash de este commit",
+  "graph.column.meta": "Detalles",
+  "graph.hint.horizontalScroll":
+    "Con muchas líneas paralelas, el historial también se desplaza hacia los lados.",
+
+  /* -- preferencia de diseño, en el modal de ajustes -- */
+  "settings.layout.title": "Diseño",
+  "settings.layout.mode": "Modo de visualización",
+  "settings.layout.mode.auto": "Automático",
+  "settings.layout.mode.compact": "Compacto",
+  "settings.layout.mode.full": "Completo",
+  "settings.layout.mode.hint":
+    "Automático sigue el tamaño de la pantalla: una columna cada vez en el móvil y las tres en el ordenador. Compacto y Completo fijan la elección en cualquier pantalla.",
+  "settings.layout.touchTargets": "Áreas táctiles más grandes",
+  "settings.layout.touchTargets.hint":
+    "Agranda botones, filas y zonas pulsables aunque haya ratón. Útil en pantallas táctiles de cualquier tamaño.",
+
+  /* -- commit sin teclado físico: el atajo no sirve de pista -- */
+  "commit.button.touchTitle": "Toca para crear el commit con los archivos preparados",
+
+  /* ---------------------------------------------------------------- */
+  /* Variantes táctiles de texto que YA EXISTÍA y enseña un gesto de   */
+  /* ratón. La clave original se queda intacta — con puntero fino es   */
+  /* la más precisa. El componente elige la hermana `.touch` según     */
+  /* `isTouch`. Ninguna de ellas puede citar ratón, clic ni botón      */
+  /* derecho.                                                          */
+  /* ---------------------------------------------------------------- */
+  "detail.empty.body.touch":
+    "Toca un commit del View Tree. Para un intervalo, activa Seleccionar varios: el primer y el último toque marcan los extremos y habilitan el squash.",
+  "detail.files.hint.touch": "toca para ver el diff abajo",
+  "detail.working.hint.touch": "toca para ver el diff",
+  "detail.stash.body.touch":
+    "Cambios guardados en este stash. Toca para aplicar, o usa el menú para hacer pop.",
+  "graph.refChip.hint.touch":
+    "{ref} — toca dos veces para cambiar a esta rama; mantén pulsada y arrástrala sobre otra para hacer merge o rebase",
+  "action.checkout.inUse.body.touch":
+    "La rama está activa en el worktree {worktree}. Tócalo en Worktrees para ir allí — cambiar de worktree no hace checkout.",
+  "picker.favorites.note.touch":
+    "Mantén pulsada el asa para arrastrar y ordenar, el lápiz pone un alias, la estrella desancla. A diferencia de los recientes, aquí nada entra ni sale solo.",
+  "favorites.reorderTitle.touch": "Mantén pulsado para arrastrar y reordenar",
+
+  /* ---------------------------------------------------------------- */
+  /* Selección de intervalo sin ⇧ — un modo de selección múltiple      */
+  /* detrás de un botón.                                               */
+  /*                                                                   */
+  /* La fila de commit YA es origen de arrastre, y en táctil el        */
+  /* arrastre empieza con una pulsación larga (`touch.longPress.drag`).*/
+  /* Por eso el intervalo NO puede ser una pulsación larga: sería el   */
+  /* mismo gesto físico en el mismo elemento. La salida es un modo     */
+  /* explícito, activado por un botón, donde un toque simple acumula — */
+  /* y mientras está activo el arrastre queda suspendido.              */
+  /* ---------------------------------------------------------------- */
+  "selection.touch.enter": "Seleccionar varios",
+  "selection.touch.exit": "Finalizar selección",
+  "selection.touch.hint":
+    "Toca el primer commit y luego el último — el intervalo entre ambos queda marcado. Mientras el modo esté activo, el arrastre queda suspendido.",
+
+  /* -- búsqueda de commits ascendida a hoja a pantalla completa -- */
+  "search.sheet.title": "Búsqueda de commits",
+
+  /* -- el rail como cajón lateral, cuando no se vuelve pestaña -- */
+  "rail.drawer.open": "Abrir las referencias del repositorio",
+  "rail.drawer.close": "Cerrar las referencias del repositorio",
+
+  /* -- la barra de IA se sienta justo donde va la navegación inferior -- */
+  "agent.collapse": "Contraer la barra de IA",
+  "agent.expand": "Desplegar la barra de IA",
+
+  /* -- sin la zona de arrastre de 4px, volver al valor por defecto necesita botón -- */
+  "app.splitter.reset": "Restaurar las anchuras predeterminadas de las columnas",
 };

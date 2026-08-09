@@ -33,6 +33,7 @@ export const en: Messages = {
   "common.missingFromDisk": "gone from disk",
   "common.opened": "open",
   "common.binaryShort": "bin",
+  "common.back": "Back",
 
   /* ---------------------------------------------------------------- */
   /* Language                                                          */
@@ -1324,4 +1325,116 @@ export const en: Messages = {
   "ai.locked.unlock": "Unlock",
   "ai.locked.hint":
     "The key goes straight to the server and stays there, with 0600 permissions. The browser never gets it back.",
+
+  /* ---------------------------------------------------------------- */
+  /* Touch and narrow screens — phone, tablet and touchscreens         */
+  /*                                                                   */
+  /* `mobile.*` is what only exists when the screen shows ONE panel at */
+  /* a time; `touch.*` is the gesture vocabulary, true on any screen   */
+  /* size without a mouse. Everything else joins the namespace of the  */
+  /* component that already exists.                                    */
+  /* ---------------------------------------------------------------- */
+
+  /* -- single-panel navigation -- */
+  "mobile.nav.label": "Panel navigation",
+  "mobile.nav.repo": "Repo",
+  "mobile.nav.history": "History",
+  "mobile.nav.detail": "Detail",
+  "mobile.nav.changes": "Changes",
+  "mobile.nav.announce": "Showing the {panel} panel.",
+  "mobile.panel.close": "Close panel",
+  "mobile.panel.close.title": "Close this panel and go back to the history",
+
+  /* -- device orientation -- */
+  "mobile.orientation.hint": "Turn the device to landscape — the history gets wider.",
+
+  /* -- touch gestures; no text here mentions a mouse -- */
+  "touch.longPress.menu": "Touch and hold to see the options",
+  "touch.longPress.drag": "Touch and hold to drag",
+  "touch.swipeDown.dismiss": "Swipe down to close",
+  "touch.swipe.panel": "Swipe sideways to switch panels",
+  "touch.grabber.label": "Drag handle — swipe down to close",
+  "touch.dnd.hint":
+    "On this device dragging starts with a long press: hold the item until it lifts off the list.",
+
+  /* -- squeezed toolbar: whatever did not fit becomes a menu -- */
+  "toolbar.overflow.label": "Open the remaining toolbar actions",
+  "toolbar.overflow.title": "More actions",
+  "toolbar.network.label": "Network actions — fetch, pull and push",
+  "toolbar.network.group": "Network",
+
+  /* -- commit search collapsed into a button -- */
+  "search.open": "Open commit search",
+  "search.close": "Close commit search",
+
+  /* -- graph on a narrow screen: author, date and hash drop out -- */
+  "graph.meta.reveal": "Show this commit's author, date and hash",
+  "graph.meta.hide": "Hide this commit's author, date and hash",
+  "graph.column.meta": "Details",
+  "graph.hint.horizontalScroll": "With many parallel lanes, the history also scrolls sideways.",
+
+  /* -- layout preference, in the settings modal -- */
+  "settings.layout.title": "Layout",
+  "settings.layout.mode": "Display mode",
+  "settings.layout.mode.auto": "Automatic",
+  "settings.layout.mode.compact": "Compact",
+  "settings.layout.mode.full": "Full",
+  "settings.layout.mode.hint":
+    "Automatic follows the screen size: one column at a time on a phone, all three on a computer. Compact and Full pin the choice on any screen.",
+  "settings.layout.touchTargets": "Larger touch targets",
+  "settings.layout.touchTargets.hint":
+    "Grows buttons, rows and clickable areas even when a mouse is present. Useful on a touchscreen of any size.",
+
+  /* -- committing without a physical keyboard: the shortcut is no hint -- */
+  "commit.button.touchTitle": "Tap to create the commit with the staged files",
+
+  /* ---------------------------------------------------------------- */
+  /* Touch variants of text that ALREADY EXISTED and teaches a mouse  */
+  /* gesture. The original key stays untouched — on a fine pointer it */
+  /* is the more precise one. The component picks the `.touch` sibling */
+  /* by `isTouch`. None of these may mention a mouse, a click or a    */
+  /* right click.                                                     */
+  /* ---------------------------------------------------------------- */
+  "detail.empty.body.touch":
+    "Tap a commit in the View Tree. For a range, turn on Select multiple: the first and last tap mark the ends and unlock the squash.",
+  "detail.files.hint.touch": "tap to see the diff below",
+  "detail.working.hint.touch": "tap to see the diff",
+  "detail.stash.body.touch":
+    "Changes saved in this stash. Tap to apply, or use the menu to pop them.",
+  "graph.refChip.hint.touch":
+    "{ref} — tap twice to switch to this branch; touch and hold to drag it onto another and merge or rebase",
+  "action.checkout.inUse.body.touch":
+    "The branch is checked out in worktree {worktree}. Tap it under Worktrees to go there — switching worktrees does not check out.",
+  "picker.favorites.note.touch":
+    "Touch and hold the handle to drag and reorder, the pencil sets a nickname, the star unpins. Unlike recents, nothing comes or goes here on its own.",
+  "favorites.reorderTitle.touch": "Touch and hold to drag and reorder",
+
+  /* ---------------------------------------------------------------- */
+  /* Range selection without ⇧ — a multi-select mode behind a button. */
+  /*                                                                  */
+  /* The commit row IS already a drag source, and on touch a drag     */
+  /* starts with a long press (`touch.longPress.drag`). So the range  */
+  /* CANNOT be a long press: it would be the same physical gesture on */
+  /* the same element. The way out is an explicit mode, toggled by a  */
+  /* button, where a plain tap accumulates — and while it is on,      */
+  /* dragging is suspended.                                           */
+  /* ---------------------------------------------------------------- */
+  "selection.touch.enter": "Select multiple",
+  "selection.touch.exit": "Done selecting",
+  "selection.touch.hint":
+    "Tap the first commit and then the last one — the range between them gets marked. While the mode is on, dragging is suspended.",
+
+  /* -- commit search promoted to a full-screen sheet -- */
+  "search.sheet.title": "Commit search",
+
+  /* -- the rail as a side drawer, when it does not become a tab -- */
+  "rail.drawer.open": "Open the repository references",
+  "rail.drawer.close": "Close the repository references",
+
+  /* -- the AI bar sits exactly where the bottom navigation goes -- */
+  "agent.collapse": "Collapse the AI bar",
+  "agent.expand": "Expand the AI bar",
+
+  /* -- with no 4px drag target, going back to the default needs a button -- */
+  "app.splitter.reset": "Restore the default column widths",
 };

@@ -42,6 +42,7 @@ export const pt = {
   "common.missingFromDisk": "sumiu do disco",
   "common.opened": "aberto",
   "common.binaryShort": "bin",
+  "common.back": "Voltar",
 
   /* ---------------------------------------------------------------- */
   /* Idioma                                                            */
@@ -1344,4 +1345,115 @@ export const pt = {
   "ai.locked.unlock": "Desbloquear",
   "ai.locked.hint":
     "A chave vai direto para o servidor e fica só lá, com permissão 0600. O navegador nunca a recebe de volta.",
+
+  /* ---------------------------------------------------------------- */
+  /* Toque e tela estreita — celular, tablet e telas sensiveis ao toque */
+  /*                                                                    */
+  /* `mobile.*` e o que so existe quando a tela mostra UM painel por    */
+  /* vez; `touch.*` e o vocabulario de gesto, que vale em qualquer      */
+  /* tamanho de tela sem mouse. O resto entra no namespace do           */
+  /* componente que ja existe.                                          */
+  /* ---------------------------------------------------------------- */
+
+  /* -- navegacao de painel unico -- */
+  "mobile.nav.label": "Navegação entre painéis",
+  "mobile.nav.repo": "Repo",
+  "mobile.nav.history": "Histórico",
+  "mobile.nav.detail": "Detalhe",
+  "mobile.nav.changes": "Alterações",
+  "mobile.nav.announce": "Painel {panel} em exibição.",
+  "mobile.panel.close": "Fechar painel",
+  "mobile.panel.close.title": "Fechar este painel e voltar ao histórico",
+
+  /* -- orientacao do aparelho -- */
+  "mobile.orientation.hint": "Gire o aparelho para o modo paisagem — o histórico ganha largura.",
+
+  /* -- gestos de toque; nenhum texto aqui fala de mouse -- */
+  "touch.longPress.menu": "Toque e segure para ver as opções",
+  "touch.longPress.drag": "Toque e segure para arrastar",
+  "touch.swipeDown.dismiss": "Arraste para baixo para fechar",
+  "touch.swipe.panel": "Deslize para o lado para trocar de painel",
+  "touch.grabber.label": "Alça — arraste para baixo para fechar",
+  "touch.dnd.hint":
+    "Neste aparelho o arrasto começa com um toque longo: segure o item até ele descolar da lista.",
+
+  /* -- toolbar comprimida: o que nao coube vira menu -- */
+  "toolbar.overflow.label": "Abrir as demais ações da barra",
+  "toolbar.overflow.title": "Mais ações",
+  "toolbar.network.label": "Ações de rede — fetch, pull e push",
+  "toolbar.network.group": "Rede",
+
+  /* -- busca de commits recolhida num botao -- */
+  "search.open": "Abrir a busca de commits",
+  "search.close": "Fechar a busca de commits",
+
+  /* -- grafo em tela estreita: autor, data e hash somem -- */
+  "graph.meta.reveal": "Mostrar autor, data e hash deste commit",
+  "graph.meta.hide": "Esconder autor, data e hash deste commit",
+  "graph.column.meta": "Detalhes",
+  "graph.hint.horizontalScroll": "Com muitas linhas paralelas, o histórico rola também para o lado.",
+
+  /* -- preferencia de layout, no modal de configuracoes -- */
+  "settings.layout.title": "Layout",
+  "settings.layout.mode": "Modo de exibição",
+  "settings.layout.mode.auto": "Automático",
+  "settings.layout.mode.compact": "Compacto",
+  "settings.layout.mode.full": "Completo",
+  "settings.layout.mode.hint":
+    "Automático segue o tamanho da tela: uma coluna por vez no celular, as três no computador. Compacto e Completo cravam a escolha em qualquer tela.",
+  "settings.layout.touchTargets": "Alvos de toque maiores",
+  "settings.layout.touchTargets.hint":
+    "Aumenta botões, linhas e áreas clicáveis mesmo quando há mouse. Útil em tela sensível ao toque de qualquer tamanho.",
+
+  /* -- commit sem teclado fisico: o atalho nao serve de dica -- */
+  "commit.button.touchTitle": "Toque para criar o commit com os arquivos preparados",
+
+  /* ---------------------------------------------------------------- */
+  /* Variantes de toque de texto que JA EXISTIA e ensina gesto de      */
+  /* mouse. A chave original fica intacta — em ponteiro fino ela e     */
+  /* mais precisa. O componente escolhe a irma `.touch` por `isTouch`. */
+  /* Nenhuma delas pode citar mouse, clique ou botao direito.          */
+  /* ---------------------------------------------------------------- */
+  "detail.empty.body.touch":
+    "Toque num commit da View Tree. Para um intervalo, ligue Selecionar vários: o primeiro e o último toque marcam as pontas e liberam o squash.",
+  "detail.files.hint.touch": "toque para ver o diff embaixo",
+  "detail.working.hint.touch": "toque para ver o diff",
+  "detail.stash.body.touch":
+    "Alterações guardadas neste stash. Toque para aplicar, ou use o menu para aplicar com pop.",
+  "graph.refChip.hint.touch":
+    "{ref} — toque duas vezes para trocar para esta branch; toque e segure para arrastar sobre outra e mesclar ou rebasear",
+  "action.checkout.inUse.body.touch":
+    "A branch está checada na worktree {worktree}. Toque nela em Worktrees para ir até lá — trocar de worktree não faz checkout.",
+  "picker.favorites.note.touch":
+    "Toque e segure na alça para arrastar e ordenar, o lápis dá um apelido, a estrela desafixa. Ao contrário dos recentes, nada entra nem sai daqui sozinho.",
+  "favorites.reorderTitle.touch": "Toque e segure para arrastar e reordenar",
+
+  /* ---------------------------------------------------------------- */
+  /* Selecao de intervalo sem ⇧ — modo de selecao multipla por botao.  */
+  /*                                                                   */
+  /* A linha de commit JA e origem de arraste, e em toque o arraste    */
+  /* comeca com toque longo (`touch.longPress.drag`). Por isso o       */
+  /* intervalo NAO pode ser um toque longo: seria o mesmo gesto        */
+  /* fisico no mesmo elemento. O caminho e um modo explicito, ligado   */
+  /* por botao, em que o toque simples acumula — e enquanto ele estiver */
+  /* ligado o arrasto fica suspenso.                                   */
+  /* ---------------------------------------------------------------- */
+  "selection.touch.enter": "Selecionar vários",
+  "selection.touch.exit": "Concluir seleção",
+  "selection.touch.hint":
+    "Toque no primeiro commit e depois no último — o intervalo entre eles fica marcado. Enquanto o modo estiver ligado, o arrasto fica suspenso.",
+
+  /* -- busca de commits promovida a folha de tela cheia -- */
+  "search.sheet.title": "Busca de commits",
+
+  /* -- rail como gaveta lateral, quando ele nao vira aba -- */
+  "rail.drawer.open": "Abrir as referências do repositório",
+  "rail.drawer.close": "Fechar as referências do repositório",
+
+  /* -- faixa de IA: ela ocupa o lugar da barra de navegacao de baixo -- */
+  "agent.collapse": "Recolher a faixa de IA",
+  "agent.expand": "Abrir a faixa de IA",
+
+  /* -- sem alvo de arraste de 4px, restaurar o padrao precisa de botao -- */
+  "app.splitter.reset": "Restaurar as larguras padrão das colunas",
 } as const;

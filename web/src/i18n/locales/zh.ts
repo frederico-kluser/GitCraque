@@ -35,6 +35,7 @@ export const zh: Messages = {
   "common.missingFromDisk": "已从磁盘消失",
   "common.opened": "已打开",
   "common.binaryShort": "二进制",
+  "common.back": "返回",
 
   /* ---------------------------------------------------------------- */
   /* 语言                                                              */
@@ -1280,4 +1281,108 @@ export const zh: Messages = {
   "ai.locked.placeholder": "sk-or-v1-…",
   "ai.locked.unlock": "解锁",
   "ai.locked.hint": "密钥直接送到服务器并只留在那里，权限为 0600。浏览器永远拿不回它。",
+
+  /* ---------------------------------------------------------------- */
+  /* 触摸与窄屏 —— 手机、平板以及触摸屏                                  */
+  /*                                                                   */
+  /* `mobile.*` 只在屏幕一次只显示一个面板时才存在；`touch.*` 是手势词汇， */
+  /* 在任何没有鼠标的屏幕尺寸上都成立。其余的键归入已有组件的命名空间。      */
+  /* ---------------------------------------------------------------- */
+
+  /* -- 单面板导航 -- */
+  "mobile.nav.label": "面板导航栏",
+  "mobile.nav.repo": "仓库",
+  "mobile.nav.history": "历史",
+  "mobile.nav.detail": "详情",
+  "mobile.nav.changes": "更改",
+  "mobile.nav.announce": "正在显示{panel}面板。",
+  "mobile.panel.close": "关闭面板",
+  "mobile.panel.close.title": "关闭此面板并返回历史",
+
+  /* -- 设备方向 -- */
+  "mobile.orientation.hint": "把设备转到横屏 —— 历史会更宽。",
+
+  /* -- 触摸手势；这里没有一句提到鼠标 -- */
+  "touch.longPress.menu": "长按查看选项",
+  "touch.longPress.drag": "长按后拖动",
+  "touch.swipeDown.dismiss": "向下滑动关闭",
+  "touch.swipe.panel": "左右滑动切换面板",
+  "touch.grabber.label": "拖动手柄 —— 向下滑动关闭",
+  "touch.dnd.hint": "在此设备上，拖动要先长按：按住条目，直到它从列表中浮起。",
+
+  /* -- 压缩后的工具栏：放不下的操作收进菜单 -- */
+  "toolbar.overflow.label": "打开工具栏其余的操作",
+  "toolbar.overflow.title": "更多操作",
+  "toolbar.network.label": "网络操作 —— fetch、pull 和 push",
+  "toolbar.network.group": "网络",
+
+  /* -- 收成一个按钮的提交搜索 -- */
+  "search.open": "打开提交搜索",
+  "search.close": "关闭提交搜索",
+
+  /* -- 窄屏上的提交图：作者、日期和哈希会隐藏 -- */
+  "graph.meta.reveal": "显示该提交的作者、日期和哈希",
+  "graph.meta.hide": "隐藏该提交的作者、日期和哈希",
+  "graph.column.meta": "元信息",
+  "graph.hint.horizontalScroll": "并行分支较多时，历史还可以左右滚动。",
+
+  /* -- 布局偏好，位于设置弹窗 -- */
+  "settings.layout.title": "布局",
+  "settings.layout.mode": "显示模式",
+  "settings.layout.mode.auto": "自动",
+  "settings.layout.mode.compact": "紧凑",
+  "settings.layout.mode.full": "完整",
+  "settings.layout.mode.hint":
+    "自动会跟随屏幕尺寸：手机上一次显示一栏，电脑上三栏并排。紧凑和完整则在任何屏幕上固定这一选择。",
+  "settings.layout.touchTargets": "更大的触摸目标",
+  "settings.layout.touchTargets.hint":
+    "即使连接了鼠标，也放大按钮、行和可点击区域。适合任何尺寸的触摸屏。",
+
+  /* -- 没有实体键盘时的提交：快捷键帮不上忙 -- */
+  "commit.button.touchTitle": "点按即可用已暂存的文件创建提交",
+
+  /* ---------------------------------------------------------------- */
+  /* 已有文案的触摸变体：原文教的是鼠标手势。原键保持不变 —— 在精确指针上   */
+  /* 它更准确；组件按 `isTouch` 选择 `.touch` 姊妹键。这些键一律不得出现   */
+  /* 鼠标、点击或右键。                                                 */
+  /* ---------------------------------------------------------------- */
+  "detail.empty.body.touch":
+    "点按 View Tree 中的一个提交。若要选择区间，先开启「多选」：第一次和最后一次点按标出两端，压缩随即可用。",
+  "detail.files.hint.touch": "点按可在下方查看 diff",
+  "detail.working.hint.touch": "点按查看差异",
+  "detail.stash.body.touch": "此储藏中的更改。点按应用，或使用菜单弹出。",
+  "graph.refChip.hint.touch":
+    "{ref} —— 点按两次可切换到该分支；长按后拖到另一个分支上可合并或变基",
+  "action.checkout.inUse.body.touch":
+    "该分支已在工作树 {worktree} 中检出。在「工作树」中点按它即可前往 —— 切换工作树不会执行 checkout。",
+  "picker.favorites.note.touch":
+    "长按手柄即可拖动排序，铅笔可设置别名，星标可取消固定。与最近项不同，这里的内容不会自行增减。",
+  "favorites.reorderTitle.touch": "长按后拖动即可排序",
+
+  /* ---------------------------------------------------------------- */
+  /* 没有 ⇧ 的区间选择 —— 由按钮开启的多选模式。                          */
+  /*                                                                   */
+  /* 提交行本来就是拖动源，而在触摸屏上拖动要先长按                       */
+  /* （`touch.longPress.drag`）。所以区间选择不能用长按：那是同一元素上的  */
+  /* 同一个物理手势。出路是一个由按钮显式开启的模式，在其中单次点按即可     */
+  /* 累加 —— 该模式开启期间拖动暂停。                                    */
+  /* ---------------------------------------------------------------- */
+  "selection.touch.enter": "多选",
+  "selection.touch.exit": "完成选择",
+  "selection.touch.hint":
+    "先点按第一个提交，再点按最后一个 —— 两者之间的区间随即被标记。该模式开启期间，拖动会暂停。",
+
+  /* -- 提升为全屏面板的提交搜索 -- */
+  "search.sheet.title": "提交搜索",
+
+  /* -- 不做标签页时，侧栏改为侧边抽屉 -- */
+  "rail.drawer.open": "打开仓库引用",
+  "rail.drawer.close": "关闭仓库引用",
+
+  /* -- AI 条正好坐在底部导航栏的位置上 -- */
+  "agent.collapse": "收起 AI 条",
+  "agent.expand": "展开 AI 条",
+
+  /* -- 没有 4px 的拖动区，恢复默认就需要一个按钮 -- */
+  "app.splitter.reset": "恢复默认列宽",
 };
