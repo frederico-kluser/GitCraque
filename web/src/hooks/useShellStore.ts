@@ -9,8 +9,8 @@
  */
 import { useCallback, useSyncExternalStore } from "react";
 import type { ComponentType, MouseEvent as ReactMouseEvent } from "react";
-import { useLongPress } from "./useLongPress";
-import type { LongPressBundle } from "./useLongPress";
+import { useLongPress } from "./useLongPress.ts";
+import type { LongPressBundle } from "./useLongPress.ts";
 
 /* ------------------------------------------------------------------ */
 /* Itens de menu — o MESMO item serve ao "⋯" e ao botao direito        */

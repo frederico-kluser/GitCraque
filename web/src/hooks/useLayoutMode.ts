@@ -12,9 +12,9 @@
  * so tiraria da pessoa a possibilidade de discordar da tela — que e justamente
  * o que `compact` e `full` existem para permitir.
  */
-import { getShellState, selectLayoutMode, useShellState } from "./useShellStore";
+import { getShellState, selectLayoutMode, useShellState } from "./useShellStore.ts";
 import type { LayoutMode } from "./useShellStore";
-import { getViewport, useViewportValue } from "./useViewport";
+import { getViewport, useViewportValue } from "./useViewport.ts";
 import type { Viewport } from "./useViewport";
 
 /**
