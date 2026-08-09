@@ -46,6 +46,7 @@ import {
   toggleChanges,
   toggleFavorite,
   useCommitActivity,
+  useLayoutMode,
   useProjects,
   useShellState,
   useTrickle,
@@ -70,7 +71,7 @@ import { cn } from "@/lib/utils";
 import type { ConnectionState } from "@/lib/ws";
 import type { MessageKey } from "@/i18n";
 import type { PanelProps } from "@/types/modules";
-import { Chip, FOCUS_RING, SectionLabel, ToolButton } from "./parts";
+import { ActionMenu, Chip, FOCUS_RING, SectionLabel, ToolButton } from "./parts";
 
 /* ------------------------------------------------------------------ */
 /* Rede: fetch / pull / push                                           */
@@ -121,7 +122,11 @@ function NetButton({
       announce={`${label}: ${state}`}
       aria-label={label}
     >
-      {state === "ok" ? t("common.ok") : state === "error" ? t("common.error") : label}
+      {/* No toque o rotulo some — so o icone (e o glifo de estado) ficam no
+          pill, que encolhe o bastante para a fileira compacta caber em 390px. */}
+      <span className="touch:hidden">
+        {state === "ok" ? t("common.ok") : state === "error" ? t("common.error") : label}
+      </span>
     </MultiStateButton>
   );
 }
@@ -202,7 +207,7 @@ function StarToggle({ path, name, pinned }: { path: string; name: string; pinned
         void toggleFavorite(path, name);
       }}
       className={cn(
-        "shrink-0 rounded p-1 outline-none",
+        "shrink-0 rounded p-1 outline-none touch:size-tap",
         "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
         "hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
         pinned ? "text-warning" : "text-muted-foreground hover:text-warning",
@@ -237,7 +242,7 @@ function ProjectRow({
       onClick={onSelect}
       disabled={current || missing}
       className={cn(
-        "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 outline-none select-none",
+        "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 outline-none select-none touch:min-h-tap",
         "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
         current && "data-[disabled]:opacity-100",
         missing && "data-[disabled]:opacity-45",
@@ -274,7 +279,7 @@ function ProjectSelector() {
       <Menu.Trigger
         title={t("toolbar.project.trigger")}
         className={cn(
-          "flex max-w-[18rem] min-w-0 items-center gap-2.5 rounded-lg border border-transparent px-2 py-1 text-left",
+          "flex max-w-[18rem] min-w-0 items-center gap-2.5 rounded-lg border border-transparent px-2 py-1 text-left touch:min-h-tap",
           "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
           "hover:border-border hover:bg-accent data-[popup-open]:border-border data-[popup-open]:bg-accent",
           FOCUS_RING,
@@ -314,7 +319,7 @@ function ProjectSelector() {
                 unico jeito de fixar o projeto em que se esta trabalhando era
                 abrir o seletor e procura-lo numa das quatro abas. */}
             {cwd && (
-              <div className="mx-1 flex items-center gap-2.5 rounded-sm px-1.5 py-2">
+              <div className="mx-1 flex items-center gap-2.5 rounded-sm px-1.5 py-2 touch:min-h-tap">
                 <FolderGit2 className="size-3.5 shrink-0 text-primary" />
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-1.5">
@@ -387,7 +392,7 @@ function ProjectSelector() {
             <Menu.Item
               onClick={openRepoPicker}
               className={cn(
-                "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-xs outline-none select-none",
+                "flex cursor-default items-center gap-2.5 rounded-sm px-2.5 py-2 text-xs outline-none select-none touch:min-h-tap",
                 "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
               )}
             >
@@ -439,7 +444,7 @@ function CommitButton() {
         aria-expanded={open}
         title={title}
         className={cn(
-          "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium",
+          "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium touch:min-h-tap",
           "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
           dirty
             ? "border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90"
@@ -463,7 +468,7 @@ function CommitButton() {
 /* Seletor de worktree                                                 */
 /* ------------------------------------------------------------------ */
 
-function WorktreeSelector() {
+function WorktreeSelector({ compact }: { compact?: boolean }) {
   const worktrees = useAppState(selectWorktrees);
   const cwd = useAppState((s) => s.worktrees?.cwd ?? s.repo?.cwd ?? null);
   const active = worktrees.find((w) => w.isActive) ?? worktrees.find((w) => w.isMain) ?? null;
@@ -471,30 +476,39 @@ function WorktreeSelector() {
   return (
     <Menu.Root>
       {/* A worktree ativa e marcada por uma borda ESTATICA em primary — sem
-          efeito animado correndo pela borda. */}
+          efeito animado correndo pela borda. No compacto o gatilho encolhe a
+          uma linha (rotulo so) para o caminho nao competir com o nome do
+          repositorio pelos pixels da tela. */}
       <Menu.Trigger
         title={t("toolbar.worktree.trigger")}
         className={cn(
-          "flex max-w-[22rem] min-w-0 items-center gap-2.5 rounded-lg border bg-card px-3 py-1.5 text-left",
+          "flex min-w-0 items-center rounded-lg border bg-card text-left touch:min-h-tap",
           "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
           "hover:bg-accent data-[popup-open]:bg-accent",
           active ? "border-primary/40" : "border-border",
           FOCUS_RING,
+          compact ? "max-w-[10rem] gap-2 px-2.5 py-1.5" : "max-w-[22rem] gap-2.5 px-3 py-1.5",
         )}
       >
         <FolderTree className="size-4 shrink-0 text-primary" />
-        <span className="min-w-0 flex-1">
-          <span className="flex items-center gap-1.5">
-            <span className="truncate text-xs font-semibold text-foreground">
-              {active?.label ?? t("toolbar.worktree.none")}
+        {compact ? (
+          <span className="truncate text-xs font-semibold text-foreground">
+            {active?.label ?? t("toolbar.worktree.none")}
+          </span>
+        ) : (
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-1.5">
+              <span className="truncate text-xs font-semibold text-foreground">
+                {active?.label ?? t("toolbar.worktree.none")}
+              </span>
+              {active?.branch && <Chip tone="primary">{active.branch}</Chip>}
             </span>
-            {active?.branch && <Chip tone="primary">{active.branch}</Chip>}
+            {/* O caminho absoluto na cara: a troca e por diretorio. */}
+            <span className="block truncate font-mono text-[10px] text-muted-foreground">
+              {active?.path ?? cwd ?? "—"}
+            </span>
           </span>
-          {/* O caminho absoluto na cara: a troca e por diretorio. */}
-          <span className="block truncate font-mono text-[10px] text-muted-foreground">
-            {active?.path ?? cwd ?? "—"}
-          </span>
-        </span>
+        )}
         <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" />
       </Menu.Trigger>
 
@@ -523,7 +537,7 @@ function WorktreeSelector() {
                 onClick={() => void doSwitchWorktree(wt)}
                 disabled={wt.isActive}
                 className={cn(
-                  "flex cursor-default flex-col gap-0.5 rounded-sm px-2.5 py-2 outline-none select-none",
+                  "flex cursor-default flex-col gap-0.5 rounded-sm px-2.5 py-2 outline-none select-none touch:min-h-tap",
                   "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
                   "data-[disabled]:opacity-100",
                 )}
@@ -626,8 +640,82 @@ export function Toolbar({ className }: PanelProps) {
 
   const stateOf = (op: "fetch" | "pull" | "push"): NetState => (net.op === op ? net.state : "idle");
 
+  // O dedo nao tem hover nem espaco: no layout compacto a barra vira duas
+  // linhas deterministas em vez de uma fileira que quebra sozinha — a de cima
+  // e a identidade (projeto, worktree, demais acoes no "⋯"), a de baixo e o
+  // trabalho do dia (commit, branch, busca, desfazer, fetch). Fora da fileira
+  // ficam as acoes menos urgentes: abrir outro repo, stash, recarregar,
+  // configuracoes, pull e push — todas no menu de estouro.
+  const compact = useLayoutMode() === "compact";
+
   return (
     <header className={cn("flex flex-col", className)}>
+      {compact ? (
+        <div className="flex flex-col gap-y-2 px-4 py-2">
+          {/* --- linha 1: identidade do repositorio e troca de worktree --- */}
+          <div className="flex items-center gap-3">
+            <ProjectSelector />
+
+            <WorktreeSelector compact />
+
+            <span className="min-w-0 flex-1" />
+
+            <ActionMenu
+              label={t("toolbar.overflow.label")}
+              title={t("toolbar.overflow.title")}
+              className="touch:size-tap"
+              items={[
+                { label: t("toolbar.action.open"), icon: FolderGit2, onSelect: openRepoPicker },
+                { label: t("toolbar.action.stash"), icon: Archive, onSelect: openStashPush },
+                {
+                  label: t("toolbar.action.refresh.title"),
+                  icon: RefreshCw,
+                  onSelect: () => void doRefresh(),
+                },
+                { label: t("settings.open"), icon: Settings, onSelect: openSettings },
+                {
+                  separatorBefore: true,
+                  label: t("action.pull"),
+                  icon: ArrowDownToLine,
+                  onSelect: () => runNet("pull", () => doPull()),
+                  disabled: busy,
+                },
+                {
+                  label: t("action.push.title"),
+                  icon: ArrowUpFromLine,
+                  onSelect: openPushDialog,
+                  disabled: busy,
+                },
+              ]}
+            />
+          </div>
+
+          {/* --- linha 2: o que fazer com o repositorio aberto --- */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            <CommitButton />
+
+            <ToolButton icon={<GitBranchPlus className="size-3.5" />} onClick={() => openCreateBranch()}>
+              {/* O rotulo volta com o ponteiro fino; no toque o icone basta. */}
+              <span className="touch:hidden">{t("toolbar.action.branch")}</span>
+            </ToolButton>
+
+            <span className="min-w-0 flex-1" />
+
+            {/* Busca de commits: no toque, a lupa abre a tela cheia. */}
+            <CommitSearch />
+
+            <UndoRedo />
+
+            <NetButton
+              label={t("action.fetch")}
+              icon={<ArrowDownToLine className="size-3.5" />}
+              state={stateOf("fetch")}
+              busy={busy}
+              onClick={() => runNet("fetch", doFetch)}
+            />
+          </div>
+        </div>
+      ) : (
       <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-2">
         {/* --- identidade: e o seletor de projeto --- */}
         <div className="flex min-w-0 items-center gap-3">
@@ -750,6 +838,7 @@ export function Toolbar({ className }: PanelProps) {
         <div className="h-7 w-px bg-border" />
         <ConnectionBadge connection={connection} />
       </div>
+      )}
 
       {/* --- barra de progresso da operacao em curso --- */}
       <AnimatePresence>

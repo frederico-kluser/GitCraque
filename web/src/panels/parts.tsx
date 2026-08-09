@@ -219,11 +219,14 @@ export function MenuItems({ items }: { items: ActionMenuItem[] }) {
 export function ActionMenu({
   items,
   label,
+  title,
   trigger,
   className,
 }: {
   items: ActionMenuItem[];
   label?: string;
+  /** Dica de hover do gatilho — o "⋯" da toolbar usa para o `toolbar.overflow.title`. */
+  title?: string;
   trigger?: ReactNode;
   className?: string;
 }) {
@@ -258,6 +261,7 @@ export function ActionMenu({
       <Menu.Root>
         <Menu.Trigger
           aria-label={menuLabel}
+          title={title}
           className={cn(
             "inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
             "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",

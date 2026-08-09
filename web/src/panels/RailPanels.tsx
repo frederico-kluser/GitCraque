@@ -69,7 +69,8 @@ import {
   tagMenu,
   worktreeMenu,
 } from "@/app/menus";
-import { contextMenuFor } from "@/hooks";
+import { longPressMenu, withLongPress } from "@/hooks";
+import type { MenuItemSpec } from "@/hooks";
 import { t } from "@/i18n";
 import { cn, isHttpsRemote, short } from "@/lib/utils";
 import type { Branch, Remote, RemoteBranch, StashEntry, Tag, Worktree } from "@/types/git";
@@ -98,7 +99,7 @@ function RailSection({
       <div className="flex items-center gap-1 pr-2">
         <AccordionTrigger
           inset
-          className="flex-1 px-3 py-2.5"
+          className="flex-1 px-3 py-2.5 touch:min-h-tap"
           indicator={<AccordionChevron className="size-3.5" />}
         >
           <span className="flex items-center gap-2">
@@ -115,12 +116,23 @@ function RailSection({
   );
 }
 
-/** Linha base do rail: mesma altura, mesmo hover, mesmo anel de foco. */
+/**
+ * Linha base do rail: mesma altura, mesmo hover, mesmo anel de foco.
+ *
+ * `menu` abre O MESMO menu do botao direito por toque longo — o dedo nao tem
+ * botao direito. O bundle do `longPressMenu` carrega o proprio `onContextMenu`
+ * (com a guarda contra o `contextmenu` sintetico do Android), entao quem passa
+ * `menu` nao precisa (nem deve) passar `onContextMenu` por fora.
+ *
+ * No toque a linha cresce para 44px de altura minima e perde selecao de texto
+ * (`longpress-menu` recorta callout e selecao SO no toque): e o preco de o dedo
+ * parado abrir o menu em vez de selecionar texto.
+ */
 function RailRow({
   active,
   highlighted,
   onClick,
-  onContextMenu,
+  menu,
   children,
   className,
   innerRef,
@@ -129,18 +141,32 @@ function RailRow({
   active?: boolean;
   highlighted?: boolean;
   onClick?: () => void;
-  onContextMenu?: (event: React.MouseEvent) => void;
+  /** O mesmo menu do clique direito, aberto por toque longo. `label` e `build`
+      sao os argumentos do `longPressMenu` — a lista e montada na hora do gesto. */
+  menu?: { label: string; build: () => MenuItemSpec[] };
   children: React.ReactNode;
   className?: string;
   innerRef?: (node: HTMLElement | null) => void;
   dragProps?: Record<string, unknown>;
 }) {
+  const press = menu ? longPressMenu(menu.label, menu.build) : null;
+  /*
+   * Linhas arrastaveis recebem os DOIS bundles encadeados: o do @dnd-kit
+   * primeiro (o arraste por toque acorda antes do menu e o cancela), o do toque
+   * longo depois. O `as` e o mesmo que o `RefChip` do grafo usa: o
+   * `SyntheticListenerMap` do @dnd-kit e `Record<string, Function>`, e o mapa
+   * que aqui chega e um objeto com atributos e listeners misturados.
+   */
+  const spread =
+    press && dragProps
+      ? withLongPress(dragProps as Record<string, Function> | undefined, press)
+      : (press ?? dragProps);
+
   return (
     <div
       ref={innerRef}
-      {...dragProps}
+      {...spread}
       onClick={onClick}
-      onContextMenu={onContextMenu}
       role={onClick ? "button" : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={
@@ -156,6 +182,7 @@ function RailRow({
       className={cn(
         "group flex items-center gap-1.5 rounded-md px-2 py-1.5 transition-colors",
         "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+        "touch:min-h-tap longpress-menu",
         onClick && "cursor-pointer",
         active ? "bg-primary/12" : "hover:bg-accent",
         highlighted && "ring-1 ring-primary ring-inset",
@@ -177,7 +204,7 @@ function WorktreeRow({ wt }: { wt: Worktree }) {
     <RailRow
       active={wt.isActive}
       onClick={wt.isActive ? undefined : () => void doSwitchWorktree(wt)}
-      onContextMenu={contextMenuFor(`Worktree ${wt.label}`, () => worktreeMenu(wt))}
+      menu={{ label: `Worktree ${wt.label}`, build: () => worktreeMenu(wt) }}
     >
       <FolderTree className={cn("size-3.5 shrink-0", wt.isActive ? "text-primary" : "text-muted-foreground")} />
       <div className="min-w-0 flex-1">
@@ -299,7 +326,7 @@ function BranchRow({ branch, selected }: { branch: Branch; selected: boolean }) 
       active={branch.isHead}
       highlighted={droppable.isOver || selected}
       onClick={() => selectRef(branch.fullName)}
-      onContextMenu={contextMenuFor(`Branch ${branch.name}`, () => branchMenu(branch))}
+      menu={{ label: `Branch ${branch.name}`, build: () => branchMenu(branch) }}
       className={cn(draggable.isDragging && "opacity-40")}
     >
       <GitBranch
@@ -386,7 +413,7 @@ function RemoteBranchRow({ rb, selected }: { rb: RemoteBranch; selected: boolean
     <RailRow
       highlighted={selected}
       onClick={() => selectRef(rb.fullName)}
-      onContextMenu={contextMenuFor(rb.name, () => remoteBranchMenu(rb))}
+      menu={{ label: rb.name, build: () => remoteBranchMenu(rb) }}
       className="pl-6"
     >
       <Cloud className="size-3 shrink-0 text-muted-foreground" />
@@ -413,7 +440,7 @@ function RemoteBlock({
     <div className="rounded-md border border-border bg-card/60">
       <RailRow
         onClick={() => setOpen((v) => !v)}
-        onContextMenu={contextMenuFor(`Remoto ${remote.name}`, () => remoteMenu(remote))}
+        menu={{ label: `Remoto ${remote.name}`, build: () => remoteMenu(remote) }}
         className="rounded-b-none"
       >
         {https ? (
@@ -526,7 +553,7 @@ function TagRow({ tag, selected }: { tag: Tag; selected: boolean }) {
     <RailRow
       highlighted={selected}
       onClick={() => selectRef(tag.fullName)}
-      onContextMenu={contextMenuFor(`Tag ${tag.name}`, () => tagMenu(tag))}
+      menu={{ label: `Tag ${tag.name}`, build: () => tagMenu(tag) }}
     >
       <TagIcon className="size-3.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
@@ -586,7 +613,7 @@ function StashRow({ stash }: { stash: StashEntry }) {
         selectRef(stash.ref);
         void showStashDiff(stash.ref);
       }}
-      onContextMenu={contextMenuFor(stash.ref, () => stashMenu(stash))}
+      menu={{ label: stash.ref, build: () => stashMenu(stash) }}
     >
       <Archive className="size-3.5 shrink-0 text-muted-foreground" />
       <div className="min-w-0 flex-1">
