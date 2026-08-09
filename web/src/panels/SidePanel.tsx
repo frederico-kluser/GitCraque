@@ -29,6 +29,10 @@ import { useMotionUITheme, useMotionUITransition } from "@/components/motion-ui/
 import { closeBlame, closeFile, useAppState } from "@/state/store";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
+/* Arte da marca, a mesma do vazio do DetailPanel. Importada de `src/assets`
+ * (e nao de `public/`): o Vite versiona o nome e o arquivo cai no ramo
+ * `immutable` da estatica. */
+import logoMark from "@/assets/logo-mark.webp";
 import type { PanelProps } from "@/types/modules";
 import { BlamePanel } from "./BlamePanel";
 import { DetailPanel } from "./DetailPanel";
@@ -56,7 +60,7 @@ export function SidePanel({ className }: PanelProps) {
   }, [primary]);
 
   return (
-    <aside className={cn("grid min-h-0 min-w-0", className)} aria-label={t("side.label")}>
+    <aside className={cn("relative grid min-h-0 min-w-0", className)} aria-label={t("side.label")}>
       {/* Uma celula so: as duas telas se sobrepoem enquanto o crossfade corre,
           sem posicionamento absoluto e sem a coluna pular de altura. */}
       <AnimatePresence initial={false}>
@@ -77,6 +81,21 @@ export function SidePanel({ className }: PanelProps) {
           )}
         </motion.div>
       </AnimatePresence>
+
+      {/* Selo da marca, sempre visivel no rodape do sidebar — em qualquer tela
+          (detalhe, view ou blame), nao so no vazio. Decorativo: opacidade
+          baixa para nao competir com o conteudo, `pointer-events-none` para
+          nao roubar clique, e fora do fluxo (`absolute`) para nao mexer no
+          grid do crossfade acima. A arte continua tambem no vazio do
+          DetailPanel, que a mostra maior e centralizada. */}
+      <img
+        src={logoMark}
+        alt=""
+        width={400}
+        height={289}
+        draggable={false}
+        className="pointer-events-none absolute right-3 bottom-3 w-[7.5rem] opacity-15 select-none"
+      />
     </aside>
   );
 }
