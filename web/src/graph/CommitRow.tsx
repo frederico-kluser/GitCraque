@@ -14,10 +14,10 @@
  * todos de `paint.ts`. Este arquivo so decide QUANDO cada forma existe; a forma
  * em si vem de la. Para mudar o visual, va em `paint.ts`.
  *
- * UMA EXCECAO: o corpo de um commit comum NAO vem de `paint.ts` — e o retrato
- * do autor, desenhado aqui a partir de `gravatar.ts` (o desenho continua sem
- * decidir tamanho; o raio vem de `metrics`). O anel da lane que borda o
- * retrato e o traco que `paint.ts` ja punha no corpo.
+ * UMA EXCECAO: o corpo de um commit — comum ou merge — NAO vem de `paint.ts`
+ * e o retrato do autor, desenhado aqui a partir de `gravatar.ts` (o desenho
+ * continua sem decidir tamanho; o raio vem de `metrics`). O anel da lane que
+ * borda o retrato e o traco que `paint.ts` ja punha no corpo.
  */
 import { memo, useEffect, useId, useState } from "react";
 import type { MouseEvent } from "react";
@@ -90,6 +90,9 @@ const NODE_GROUP_CLASS = cn(
  * `metrics` (via props) e o anel usa a cor da lane da linha. O pedido ao
  * Gravatar sai no DOBRO do tamanho exibido para nao borrar em tela retina,
  * como o tooltip faz com o `avatarPx`.
+ *
+ * Com `isMerge`, o retrato cresce do delta do merge e o fallback vira a bola
+ * cheia da cor da lane — o merge e bola cheia, nao rosquinha.
  */
 function CommitAvatarNode({
   name,
@@ -97,13 +100,18 @@ function CommitAvatarNode({
   radius,
   strokeWidth,
   laneColor,
+  isMerge,
 }: {
   name: string;
   email: string;
   radius: number;
   strokeWidth: number;
   laneColor: string;
+  isMerge?: boolean;
 }) {
+  /* o corpo do merge e a bola cheia maior (`NODE.mergeDelta`): o retrato
+     cresce junto, senao o anel do merge comeria a borda da foto. */
+  const r = isMerge ? radius + NODE.mergeDelta : radius;
   const [url, setUrl] = useState<string | null>(null);
   const [failed, setFailed] = useState(false);
   /* id unico para o `clipPath` da foto. O `useId` do React traz ":" no id e
@@ -115,13 +123,13 @@ function CommitAvatarNode({
     setFailed(false);
     setUrl(null);
     /* o digest e assincrono: a URL so existe um tick depois do e-mail */
-    void gravatarUrl(email, radius * 4).then((next) => {
+    void gravatarUrl(email, r * 4).then((next) => {
       if (alive) setUrl(next);
     });
     return () => {
       alive = false;
     };
-  }, [email, radius]);
+  }, [email, r]);
 
   const initials = initialsOf(name, email);
 
@@ -129,18 +137,19 @@ function CommitAvatarNode({
     return (
       <>
         {/* Um circulo so resolve o anel E o fundo: o fill sai da lane do autor
-            (`avatarLane`, deterministica pelo e-mail) e o traco e a cor da
-            lane do commit — o anel de borda que o corpo tinha. */}
+            (`avatarLane`, deterministica pelo e-mail) — no merge, da propria
+            lane do commit, porque la a bola e cheia — e o traco e a cor da
+            lane do commit, o anel de borda que o corpo tinha. */}
         <circle
-          r={radius}
-          fill={laneVar(avatarLane(email || name))}
+          r={r}
+          fill={isMerge ? laneColor : laneVar(avatarLane(email || name))}
           stroke={laneColor}
           strokeWidth={strokeWidth}
         />
         <text
           textAnchor="middle"
           dominantBaseline="central"
-          fontSize={radius * 0.7}
+          fontSize={r * 0.7}
           fontWeight="500"
           className="fill-white"
         >
@@ -154,16 +163,16 @@ function CommitAvatarNode({
     <>
       {/* O anel da lane por cima da foto, como borda: a foto e recortada um
           pouco menor (strokeWidth/2) para o traco nao comer a borda dela. */}
-      <circle r={radius} fill="none" stroke={laneColor} strokeWidth={strokeWidth} />
+      <circle r={r} fill="none" stroke={laneColor} strokeWidth={strokeWidth} />
       <clipPath id={clipId}>
-        <circle r={radius - strokeWidth / 2} />
+        <circle r={r - strokeWidth / 2} />
       </clipPath>
       <image
         href={url}
-        x={-(radius - strokeWidth / 2)}
-        y={-(radius - strokeWidth / 2)}
-        width={2 * (radius - strokeWidth / 2)}
-        height={2 * (radius - strokeWidth / 2)}
+        x={-(r - strokeWidth / 2)}
+        y={-(r - strokeWidth / 2)}
+        width={2 * (r - strokeWidth / 2)}
+        height={2 * (r - strokeWidth / 2)}
         clipPath={`url(#${clipId})`}
         preserveAspectRatio="xMidYMid slice"
         aria-hidden
@@ -390,11 +399,12 @@ export const CommitRow = memo(function CommitRow({
               isRoot: node.isRoot,
               isHead,
             }).map((shape) => {
-              /* o corpo de um commit comum NAO e desenhado por `paint.ts`:
-                 no lugar dele entra o retrato do autor, logo abaixo — e o
-                 miolo da raiz tambem, para nao pintar por cima da foto. O
-                 anel de HEAD e o anel do merge continuam vindo de la. */
-              if (!node.isMerge && (shape.key === "body" || shape.key === "root-core")) {
+              /* o corpo de um commit — comum ou merge — NAO e desenhado por
+                 `paint.ts`: no lugar dele entra o retrato do autor, logo
+                 abaixo — e o miolo da raiz tambem, para nao pintar por cima
+                 da foto. O anel de HEAD e o anel do merge continuam vindo de
+                 la (no merge o anel fica por fora do retrato, de moldura). */
+              if (shape.key === "body" || (!node.isMerge && shape.key === "root-core")) {
                 return null;
               }
               return (
@@ -408,18 +418,19 @@ export const CommitRow = memo(function CommitRow({
                 />
               );
             })}
-            {/* O retrato do autor: corpo da bolinha de todo commit nao-merge,
-                com o anel colorido da lane como borda. Vive dentro do grupo que
-                cresce no hover — a escala continua valendo para ele. */}
-            {!node.isMerge && (
-              <CommitAvatarNode
-                name={commit.authorName}
-                email={commit.authorEmail}
-                radius={metrics.nodeRadius}
-                strokeWidth={metrics.strokeWidth}
-                laneColor={laneColor}
-              />
-            )}
+            {/* O retrato do autor: corpo da bolinha de todo commit — comum ou
+                merge —, com o anel colorido da lane como borda. No merge o
+                anel externo (`merge-ring`) continua por fora, de moldura.
+                Vive dentro do grupo que cresce no hover — a escala continua
+                valendo para ele. */}
+            <CommitAvatarNode
+              name={commit.authorName}
+              email={commit.authorEmail}
+              radius={metrics.nodeRadius}
+              strokeWidth={metrics.strokeWidth}
+              laneColor={laneColor}
+              isMerge={node.isMerge}
+            />
             {/* A raiz nao muda de corpo por causa do retrato: o miolo cheio
                 continua por cima da foto — e o que distingue o commit sem pai.
                 Espelha o root-core de `paint.ts` (mesmo raio e mesma cor,
