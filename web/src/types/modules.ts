@@ -164,6 +164,25 @@ export interface GraphViewProps {
   onRevealed?: () => void;
   /** metricas opcionais; o modulo tem defaults sensatos */
   metrics?: Partial<GraphMetrics>;
+  /**
+   * ACRESCENTADO pela frente da casca (aditivo — nada removido nem renomeado).
+   *
+   * Densidade da coluna do grafo. `"comfortable"` e o desenho de sempre;
+   * `"compact"` e o de tela pequena, onde a linha encolhe para caber mais
+   * historia na altura de um celular.
+   *
+   * Entra por PROP, e nao por um `useViewport` dentro do grafo, por um motivo
+   * mecanico: o `getServerSnapshot` do `useViewport` devolve desktop, e
+   * `graph/__tests__/virtualization.domtest.ts` renderiza o `GraphView` com
+   * `renderToStaticMarkup` — um hook faria o caminho movel nunca ser
+   * exercitado e a suite reportaria verde para sempre. Como prop, o teste
+   * escolhe a densidade e ve as duas.
+   *
+   * Irmao de `metrics`: quem quiser um numero especifico continua passando
+   * `metrics`, que vence campo a campo. Esta prop e o atalho nomeado para o
+   * conjunto inteiro.
+   */
+  density?: "comfortable" | "compact";
   /** exibido quando `commits` esta vazio por carregamento */
   loading?: boolean;
   className?: string;

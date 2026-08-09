@@ -9,6 +9,8 @@
  */
 import { useCallback, useSyncExternalStore } from "react";
 import type { ComponentType, MouseEvent as ReactMouseEvent } from "react";
+import { useLongPress } from "./useLongPress";
+import type { LongPressBundle } from "./useLongPress";
 
 /* ------------------------------------------------------------------ */
 /* Itens de menu — o MESMO item serve ao "⋯" e ao botao direito        */
@@ -95,6 +97,19 @@ export type ThemeMode = "light" | "dark";
 export type MobilePane = "rail" | "graph" | "detail";
 
 /**
+ * PREFERENCIA de layout — o que a pessoa escolheu, nao o que esta na tela.
+ *
+ *   auto    — segue o tamanho da tela (o default, e o que quase todo mundo quer)
+ *   compact — forca coluna unica mesmo num monitor grande
+ *   full    — forca as tres colunas mesmo num celular
+ *
+ * Quem quer saber o layout QUE VALE AGORA nao le isto: le `useLayoutMode()`,
+ * de `useLayoutMode.ts`, que cruza esta preferencia com o viewport e devolve
+ * so `"compact" | "full"`. Sao dois tipos porque sao duas perguntas.
+ */
+export type LayoutMode = "auto" | "compact" | "full";
+
+/**
  * Rascunho do commit.
  *
  * Mora aqui, e nao no `StatusPanel`, por um motivo mecanico: o painel de
@@ -143,6 +158,28 @@ export interface ShellState {
    * voltar sempre no grafo, que e a tela principal do produto.
    */
   mobilePane: MobilePane;
+  /** Preferencia de layout. Persistida. Ver `LayoutMode` e `useLayoutMode()`. */
+  layoutMode: LayoutMode;
+  /**
+   * "Alvos de toque maiores mesmo com mouse". Persistida.
+   *
+   * Escreve a classe `touch-ui` no `<html>` — ver `applyTouchTargets`. Ela e
+   * SO a preferencia manual: o ponteiro grosseiro nativo ja e coberto pela
+   * media query `(pointer: coarse)` da variante `touch` do `theme.css`, e
+   * duplicar a origem daria dois lugares para desligar a mesma coisa.
+   */
+  forceTouchTargets: boolean;
+  /**
+   * Multi-selecao por toque ligada. EFEMERO — nao persiste.
+   *
+   * No mouse a multi-selecao e Ctrl+clique e Shift+clique; um dedo nao tem
+   * modificador nenhum, entao o modo e explicito: ligado, tocar numa linha
+   * ALTERNA a selecao em vez de substitui-la. Efemero pelo mesmo motivo do
+   * `mobilePane`: voltar num modo de selecao ligado tres dias depois seria
+   * uma armadilha, porque nada na tela explica por que o toque parou de fazer
+   * o que sempre fez.
+   */
+  touchSelectionMode: boolean;
 }
 
 const STORAGE_KEY = "gitcraque.shell";
@@ -158,6 +195,43 @@ const EMPTY_DRAFT: CommitDraft = { message: "", amend: false, signoff: false };
  */
 export const AUTO_FETCH_OPTIONS = [0, 30_000, 60_000, 300_000, 900_000] as const;
 
+/* ------------------------------------------------------------------ */
+/* Os dois tempos do dedo parado — e a regra que os liga               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Quanto o dedo fica parado antes de o MENU DE CONTEXTO abrir.
+ *
+ * 500ms e o limiar de toque longo do Android e do iOS. Copiar a plataforma nao
+ * e preguica: e o unico numero que a pessoa ja tem no corpo.
+ */
+export const LONG_PRESS_MS = 500;
+
+/**
+ * Quanto o dedo fica parado antes de o ARRASTE acordar (o `delay` do
+ * `TouchSensor` do @dnd-kit). Consumido pela frente do dnd.
+ *
+ * ## A REGRA, e ela vale nos dois sentidos
+ *
+ * `DND_DELAY_MS` **tem de ser menor** que `LONG_PRESS_MS`, e quem ativa o
+ * arraste **tem de chamar `cancelLongPress()`** no `onDragStart`.
+ *
+ * Sem a primeira metade, o menu abre e a linha comeca a ser arrastada por
+ * baixo dele. Sem a segunda, o timer do menu continua correndo depois que o
+ * arraste ja acordou, e o menu aparece no meio do arrasto — com a linha colada
+ * no dedo e o alvo de soltura escondido atras do popup.
+ *
+ * O intervalo entre os dois (250ms) e a folga em que o gesto ja e arraste e
+ * ainda nao seria menu; e nele que o `cancelLongPress()` roda.
+ *
+ * CONSEQUENCIA que a onda seguinte precisa decidir, nao contornar: num no que e
+ * arrastavel E tem menu, o arraste vence sempre — segurar o dedo parado ali
+ * nunca chega aos 500ms. O menu daquele no tem de ter outra porta, e a porta
+ * que ja existe no app e o botao "⋯" (`ActionMenu`, de `panels/parts.tsx`),
+ * que serve o MESMO `MenuItemSpec[]`.
+ */
+export const DND_DELAY_MS = 250;
+
 const DEFAULTS: ShellState = {
   theme: "dark",
   railWidth: 264,
@@ -171,10 +245,16 @@ const DEFAULTS: ShellState = {
   confirm: null,
   contextMenu: null,
   mobilePane: "graph",
+  layoutMode: "auto",
+  forceTouchTargets: false,
+  touchSelectionMode: false,
 };
 
 /** So o que faz sentido sobreviver ao reload. */
-type Persisted = Pick<ShellState, "theme" | "railWidth" | "detailWidth" | "autoFetchMs">;
+type Persisted = Pick<
+  ShellState,
+  "theme" | "railWidth" | "detailWidth" | "autoFetchMs" | "layoutMode" | "forceTouchTargets"
+>;
 
 function readPersisted(): Partial<Persisted> {
   if (typeof localStorage === "undefined") return {};
@@ -193,6 +273,8 @@ function writePersisted(s: ShellState) {
     railWidth: s.railWidth,
     detailWidth: s.detailWidth,
     autoFetchMs: s.autoFetchMs,
+    layoutMode: s.layoutMode,
+    forceTouchTargets: s.forceTouchTargets,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(slice));
@@ -219,12 +301,32 @@ function initialAutoFetch(stored: Partial<Persisted>): number {
     : DEFAULTS.autoFetchMs;
 }
 
+/** As tres unicas preferencias de layout, pelo mesmo motivo do `initialAutoFetch`. */
+const LAYOUT_MODES: readonly LayoutMode[] = ["auto", "compact", "full"];
+
+function initialLayoutMode(stored: Partial<Persisted>): LayoutMode {
+  const value = stored.layoutMode;
+  return LAYOUT_MODES.includes(value as LayoutMode) ? (value as LayoutMode) : DEFAULTS.layoutMode;
+}
+
+/**
+ * `JSON.parse` devolve o que estiver escrito la — `"true"`, `1`, um objeto. So
+ * o booleano de verdade passa; qualquer outra coisa cai no default.
+ */
+function initialForceTouch(stored: Partial<Persisted>): boolean {
+  return typeof stored.forceTouchTargets === "boolean"
+    ? stored.forceTouchTargets
+    : DEFAULTS.forceTouchTargets;
+}
+
 const stored = readPersisted();
 const INITIAL: ShellState = {
   ...DEFAULTS,
   ...stored,
   theme: initialTheme(stored),
   autoFetchMs: initialAutoFetch(stored),
+  layoutMode: initialLayoutMode(stored),
+  forceTouchTargets: initialForceTouch(stored),
   // nunca restaura estado efemero
   settingsOpen: false,
   changesOpen: false,
@@ -232,15 +334,19 @@ const INITIAL: ShellState = {
   confirm: null,
   contextMenu: null,
   mobilePane: DEFAULTS.mobilePane,
+  touchSelectionMode: DEFAULTS.touchSelectionMode,
 };
 
 let state: ShellState = INITIAL;
 const listeners = new Set<() => void>();
 
-// Aplica o tema antes do primeiro render: evita o flash de tema errado.
+/* Antes do primeiro render, pelo mesmo motivo nos dois casos: o tema evita o
+   flash de cor errada, e a classe `touch-ui` evita a interface nascer com alvo
+   de mouse e crescer no frame seguinte. */
 if (typeof document !== "undefined") {
   document.documentElement.classList.toggle("dark", INITIAL.theme === "dark");
   document.documentElement.style.colorScheme = INITIAL.theme;
+  document.documentElement.classList.toggle("touch-ui", INITIAL.forceTouchTargets);
 }
 
 function set(patch: Partial<ShellState> | ((s: ShellState) => Partial<ShellState>)) {
@@ -285,6 +391,44 @@ export const toggleTheme = () => setTheme(state.theme === "dark" ? "light" : "da
 
 /** Intervalo do fetch automatico. `0` desliga a rotina. */
 export const setAutoFetchMs = (autoFetchMs: number) => set({ autoFetchMs });
+
+/* ------------------------------------------------------------------ */
+/* Layout e alvos de toque                                             */
+/* ------------------------------------------------------------------ */
+
+/** Preferencia bruta. Quem quer o layout que VALE agora usa `useLayoutMode()`. */
+export const setLayoutMode = (layoutMode: LayoutMode) => set({ layoutMode });
+
+/**
+ * Escreve a classe `touch-ui` no <html> — irma exata do `applyTheme`.
+ *
+ * CONTRATO com o `theme.css`: a variante `touch` do Tailwind casa com
+ * `@media (pointer: coarse)` OU com estar dentro de `.touch-ui`. A media query
+ * cobre o dedo nativo; esta classe cobre APENAS a preferencia manual de quem
+ * usa mouse e quer alvo grande assim mesmo. Um componente escreve
+ * `touch:min-h-tap` e nunca sabe de qual das duas origens veio.
+ */
+export function applyTouchTargets(force: boolean) {
+  if (typeof document === "undefined") return;
+  document.documentElement.classList.toggle("touch-ui", force);
+}
+
+export function setForceTouchTargets(forceTouchTargets: boolean) {
+  applyTouchTargets(forceTouchTargets);
+  set({ forceTouchTargets });
+}
+
+export const toggleForceTouchTargets = () => setForceTouchTargets(!state.forceTouchTargets);
+
+/* ------------------------------------------------------------------ */
+/* Multi-selecao por toque                                             */
+/* ------------------------------------------------------------------ */
+
+/** Efemero: um dedo nao tem Ctrl nem Shift, entao o modo e explicito. */
+export const setTouchSelectionMode = (touchSelectionMode: boolean) => set({ touchSelectionMode });
+
+export const toggleTouchSelectionMode = () =>
+  set((s) => ({ touchSelectionMode: !s.touchSelectionMode }));
 
 /* ---- modal de configuracoes ---- */
 export const openSettings = () => set({ settingsOpen: true });
@@ -366,6 +510,31 @@ export function contextMenuFor(label: string, build: () => MenuItemSpec[]) {
   };
 }
 
+/**
+ * O MESMO menu, com a porta do dedo aberta. **E esta a funcao que a interface
+ * deve usar** — `contextMenuFor` continua valendo, mas so serve o mouse.
+ *
+ * Devolve um BUNDLE de cinco props, nao um handler solto, porque o toque longo
+ * e uma maquina de estados: arma no `pointerdown`, desiste no `pointermove` que
+ * passa da tolerancia, morre no `pointercancel`. O `onContextMenu` de dentro do
+ * bundle e o `contextMenuFor` de sempre, com a guarda contra o `contextmenu`
+ * sintetico que o Chrome Android manda depois do toque longo.
+ *
+ * ENCADEAR com o @dnd-kit e obrigatorio onde ha arraste — `withLongPress`:
+ *
+ *   <span {...withLongPress(drag.listeners, longPressMenu(label, build))} />
+ *
+ * A lista e montada no `build()`, na hora do gesto, exatamente como no clique
+ * direito: os rotulos seguem o idioma atual e o menu ve o estado de agora.
+ * Lista vazia nao abre menu nenhum (regra do `openContextMenu`).
+ */
+export function longPressMenu(label: string, build: () => MenuItemSpec[]): LongPressBundle {
+  return useLongPress({
+    delayMs: LONG_PRESS_MS,
+    onLongPress: (point) => openContextMenu({ label, x: point.x, y: point.y, items: build() }),
+  });
+}
+
 /* ------------------------------------------------------------------ */
 /* Ponte do ⌘Enter                                                     */
 /* ------------------------------------------------------------------ */
@@ -408,3 +577,6 @@ export const selectContextMenu = (s: ShellState) => s.contextMenu;
 export const selectChangesOpen = (s: ShellState) => s.changesOpen;
 export const selectSettingsOpen = (s: ShellState) => s.settingsOpen;
 export const selectMobilePane = (s: ShellState) => s.mobilePane;
+export const selectLayoutMode = (s: ShellState) => s.layoutMode;
+export const selectForceTouchTargets = (s: ShellState) => s.forceTouchTargets;
+export const selectTouchSelectionMode = (s: ShellState) => s.touchSelectionMode;

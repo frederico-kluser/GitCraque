@@ -47,6 +47,33 @@ export {
 } from "./useViewport";
 export type { Viewport } from "./useViewport";
 
+/* O botao direito do dedo. `longPressMenu` (abaixo, do shell store) e o que a
+ * interface usa; estes tres sao a mecanica por baixo — `withLongPress` para
+ * encadear com os `listeners` do @dnd-kit, `chain` para um handler solto e
+ * `cancelLongPress` para o motor de arraste matar o menu ao acordar. */
+export {
+  useLongPress,
+  longPressHandlers,
+  withLongPress,
+  chain,
+  cancelLongPress,
+  MOVE_TOLERANCE_PX,
+  GHOST_WINDOW_MS,
+} from "./useLongPress";
+export type {
+  LongPressBundle,
+  LongPressOptions,
+  LongPressOrigin,
+  LongPressPoint,
+  LongPressPointerEvent,
+  LongPressMouseEvent,
+} from "./useLongPress";
+
+/* Uma coluna ou tres. `useLayoutMode()` e o que `App.tsx` observa; a
+ * preferencia crua e `selectLayoutMode`, do shell store. */
+export { useLayoutMode, getLayoutMode, resolveLayout, selectAutoLayout } from "./useLayoutMode";
+export type { ResolvedLayout } from "./useLayoutMode";
+
 export {
   useShellState,
   getShellState,
@@ -63,11 +90,18 @@ export {
   toggleChanges,
   setCommitDraft,
   setMobilePane,
+  setLayoutMode,
+  applyTouchTargets,
+  setForceTouchTargets,
+  toggleForceTouchTargets,
+  setTouchSelectionMode,
+  toggleTouchSelectionMode,
   askConfirm,
   closeConfirm,
   openContextMenu,
   closeContextMenu,
   contextMenuFor,
+  longPressMenu,
   registerCommitHandler,
   requestCommit,
   selectTheme,
@@ -77,14 +111,20 @@ export {
   selectChangesOpen,
   selectSettingsOpen,
   selectMobilePane,
+  selectLayoutMode,
+  selectForceTouchTargets,
+  selectTouchSelectionMode,
   RAIL_RANGE,
   DETAIL_RANGE,
   AUTO_FETCH_OPTIONS,
+  LONG_PRESS_MS,
+  DND_DELAY_MS,
 } from "./useShellStore";
 export type {
   ShellState,
   ThemeMode,
   MobilePane,
+  LayoutMode,
   CommitDraft,
   ConfirmAction,
   ConfirmField,
