@@ -133,7 +133,7 @@ function ConflictEditor({
         <button
           type="button"
           onClick={onBack}
-          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          className="text-xs text-muted-foreground hover:text-foreground transition-colors touch:inline-flex touch:min-h-tap touch:min-w-tap touch:items-center touch:justify-center touch:px-2"
         >
           ← {t("conflict.editor.back")}
         </button>
@@ -408,7 +408,7 @@ export function ConflictDialog() {
                     <button
                       type="button"
                       onClick={() => openFile(path)}
-                      className="w-full bg-surface-inset px-3 py-2 font-mono text-xs text-destructive hover:bg-surface-rail text-left transition-colors cursor-pointer"
+                      className="w-full bg-surface-inset px-3 py-2 font-mono text-xs text-destructive hover:bg-surface-rail text-left transition-colors cursor-pointer touch:min-h-tap touch:py-2.5"
                     >
                       {path}
                     </button>

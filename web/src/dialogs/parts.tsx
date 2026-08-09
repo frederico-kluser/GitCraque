@@ -11,7 +11,7 @@
  * sobre elementos nativos — que e o que mantem o `useFocusTrap` do overlay
  * previsivel: um elemento focavel por controle, sem input escondido ao lado.
  */
-import { AnimatePresence, motion } from "motion/react";
+import { AnimatePresence, motion, useMotionValue } from "motion/react";
 import {
   useEffect,
   useId,
@@ -27,6 +27,7 @@ import {
   useMotionUITheme,
   useMotionUITransition,
 } from "@/components/motion-ui/ui-theme";
+import { selectIsMobile, useViewportValue } from "@/hooks";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 
@@ -80,6 +81,20 @@ export function DialogShell({
 
   useFocusTrap({ active: open, container: panelRef, onEscape: onClose });
   useScrollLock(open);
+
+  /*
+   * Gesto de arrastar para fechar do bottom sheet. `drag` so existe abaixo de
+   * 768px — onde o puxador aparece — e nunca no corpo rolavel: so o puxador e
+   * o cabecalho arrastam, o scroll da lista fica intacto.
+   */
+  const isMobile = useViewportValue(selectIsMobile);
+  const dragY = useMotionValue(0);
+
+  // Reabriu (ou o mesmo painel ficou montado apos uma saida cancelada):
+  // o arrasto volta a zero, senao o sheet reabriria deslocado.
+  useEffect(() => {
+    if (open) dragY.set(0);
+  }, [open, dragY]);
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (!onEnter || event.key !== "Enter" || event.shiftKey) return;
@@ -148,33 +163,55 @@ export function DialogShell({
             )}
           >
             {/*
-             * Puxador do bottom sheet — a assinatura visual que diz "isto sai
-             * por baixo". `aria-hidden` de proposito: o gesto de arrastar para
-             * fechar e da onda seguinte, dona dos dialogos concretos, e anunciar
-             * "arraste para baixo para fechar" (`touch.grabber.label`) antes de
-             * o gesto existir seria promessa falsa. Quem implementar o gesto
-             * troca o `aria-hidden` pelo rotulo.
+             * Puxador + cabecalho: a zona de arrasto do bottom sheet. So estes
+             * dois arrastam (`drag="y"`), nunca o corpo — o corpo e um irmao
+             * rolavel e o gesto nao rouba o scroll dele. `dragConstraints` com
+             * `top: 0` impede que o sheet suba; `dragElastic: 0.1` da a
+             * resistencia na borda de cima; `dragSnapToOrigin` devolve o sheet
+             * ao lugar quando o arrasto nao chega ao limite.
+             *
+             * Acima de 768px nao ha sheet nem puxador (`md:hidden`), e o
+             * dialogo volta ao cartao centralizado: `drag` fica desligado.
              */}
-            <div aria-hidden className="flex shrink-0 justify-center pt-2 pb-1 md:hidden">
-              <span className="h-1 w-9 rounded-full bg-border" />
-            </div>
-
-            <header className="border-b border-border px-5 py-4">
-              <h2
-                id={titleId}
-                className={cn(
-                  "font-heading text-base font-semibold",
-                  tone === "destructive" && "text-destructive",
-                )}
+            <motion.div
+              style={{ y: dragY }}
+              drag={isMobile ? "y" : false}
+              dragConstraints={{ top: 0 }}
+              dragElastic={0.1}
+              dragSnapToOrigin
+              onDragEnd={(_event, info) => {
+                // Fecha arrastando 30% da altura do sheet OU num puxao para
+                // baixo a mais de 500px/s — os dois numeros de produto.
+                const height = panelRef.current?.getBoundingClientRect().height ?? 0;
+                if (info.offset.y > height * 0.3 || info.velocity.y > 500) onClose();
+              }}
+              className="shrink-0"
+            >
+              <div
+                role="img"
+                aria-label={t("touch.grabber.label")}
+                className="flex shrink-0 justify-center pt-2 pb-1 md:hidden"
               >
-                {title}
-              </h2>
-              {description ? (
-                <p id={descId} className="mt-1 text-sm text-muted-foreground">
-                  {description}
-                </p>
-              ) : null}
-            </header>
+                <span className="h-1 w-9 rounded-full bg-border" />
+              </div>
+
+              <header className="border-b border-border px-5 py-4">
+                <h2
+                  id={titleId}
+                  className={cn(
+                    "font-heading text-base font-semibold",
+                    tone === "destructive" && "text-destructive",
+                  )}
+                >
+                  {title}
+                </h2>
+                {description ? (
+                  <p id={descId} className="mt-1 text-sm text-muted-foreground">
+                    {description}
+                  </p>
+                ) : null}
+              </header>
+            </motion.div>
 
             <div className="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4">{children}</div>
 

@@ -277,10 +277,10 @@ export function EstrelaFavorito({
       title={fixado ? t("favorites.unpinTitle") : t("favorites.pinTitle")}
       onClick={() => controle.alternar(path, nome)}
       className={cn(
-        "shrink-0 rounded p-1.5 outline-none transition-opacity hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring",
+        "shrink-0 rounded p-1.5 outline-none transition-opacity hover:bg-accent focus-visible:ring-2 focus-visible:ring-ring touch:size-tap",
         fixado
           ? "text-warning"
-          : "text-muted-foreground hover:text-warning focus-visible:opacity-100 group-hover:opacity-100",
+          : "text-muted-foreground hover:text-warning focus-visible:opacity-100 group-hover:opacity-100 touch:opacity-100",
         !fixado && !sempreVisivel && "opacity-0",
       )}
     >
@@ -396,6 +396,7 @@ function LinhaFavorito({
         transition={{ ...snap }}
         className={cn(
           "group relative flex items-center gap-2 rounded-md border border-transparent px-2 py-2 text-left",
+          "touch:min-h-tap",
           selecionado && "border-border bg-accent",
           !desabilitado && !arrastando && "hover:border-border hover:bg-accent",
           !fav.exists && "opacity-50",
@@ -419,7 +420,7 @@ function LinhaFavorito({
             onKeyDown={teclasDaAlca}
             aria-label={t("favorites.reorder", { name: titulo })}
             title={t("favorites.reorderTitle")}
-            className="shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing"
+            className="shrink-0 cursor-grab touch-none rounded p-1 text-muted-foreground outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing touch:size-tap"
           >
             <GripVertical className="size-3.5" />
           </button>
@@ -481,7 +482,7 @@ function LinhaFavorito({
                 onClick={onEditar}
                 aria-label={t("favorites.rename", { name: titulo })}
                 title={t("favorites.renameTitle")}
-                className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100"
+                className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 outline-none transition-opacity hover:bg-accent hover:text-foreground focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-ring group-hover:opacity-100 touch:opacity-100 touch:size-tap"
               >
                 <Pencil className="size-3.5" />
               </button>
@@ -489,7 +490,7 @@ function LinhaFavorito({
               <button
                 type="button"
                 onClick={() => controle.remover(fav.path)}
-                className="shrink-0 rounded px-2 py-1 text-[11px] font-medium text-muted-foreground outline-none hover:bg-accent hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring"
+                className="shrink-0 rounded px-2 py-1 text-[11px] font-medium text-muted-foreground outline-none hover:bg-accent hover:text-destructive focus-visible:ring-2 focus-visible:ring-ring touch:min-h-tap touch:min-w-tap touch:px-3"
               >
                 <Trash2 className="mr-1 inline size-3" />
                 {t("favorites.remove")}
@@ -551,7 +552,7 @@ function RotuloEditor({
             onCancelar();
           }
         }}
-        className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+        className="min-w-0 flex-1 rounded border border-input bg-background px-2 py-1 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring touch:min-h-tap touch:py-2"
       />
       <span className="shrink-0 text-[11px] text-muted-foreground">{t("favorites.editHint")}</span>
     </span>
@@ -684,7 +685,7 @@ export function PainelFavoritos({
         <button
           type="button"
           onClick={controle.recarregar}
-          className="rounded px-1.5 py-0.5 underline underline-offset-2 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="rounded px-1.5 py-0.5 underline underline-offset-2 outline-none hover:bg-accent hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring touch:inline-flex touch:min-h-tap touch:min-w-tap touch:items-center touch:px-2"
         >
           {t("common.retry")}
         </button>

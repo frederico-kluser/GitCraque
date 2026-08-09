@@ -152,6 +152,7 @@ function Linha({
     <div
       className={cn(
         "group relative flex items-center gap-3 rounded-md border border-transparent px-3 py-2 text-left",
+        "touch:min-h-tap",
         selecionado && "border-border bg-accent",
         !desabilitado && "hover:border-border hover:bg-accent",
         desabilitado && "opacity-50",
@@ -221,6 +222,11 @@ function BotaoAbrir({
         "shrink-0 rounded border border-border px-2 py-1 text-[11px] font-medium text-foreground",
         "opacity-0 transition-opacity hover:bg-accent focus-visible:opacity-100",
         "group-hover:opacity-100 disabled:cursor-not-allowed disabled:opacity-40",
+        /*
+         * No toque nao existe hover: a acao da linha fica sempre visivel, e
+         * o botao cresce ate o alvo de 44px.
+         */
+        "touch:opacity-100 touch:min-h-tap touch:min-w-tap touch:px-3",
       )}
     >
       {t("picker.browse.open")}
@@ -505,14 +511,14 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
           autoComplete="off"
           placeholder={t("picker.search.placeholder")}
           aria-label={t("picker.search.aria")}
-          className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring"
+          className="w-full rounded-md border border-input bg-background py-2 pl-9 pr-9 text-sm outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring touch:min-h-tap touch:py-2.5 touch:pr-14"
         />
         {busca ? (
           <button
             type="button"
             onClick={() => setBusca("")}
             aria-label={t("picker.search.clear")}
-            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+            className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground touch:size-tap"
           >
             <X className="size-3.5" />
           </button>
@@ -536,32 +542,38 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
         onValueChange={(v) => setAba(v as Aba)}
         className="flex min-h-0 flex-1 flex-col gap-3"
       >
-        <SmoothTabsList ariaLabel={t("picker.tabs.aria")}>
-          <SmoothTabsTab value="favoritos">
-            <Star
-              className="mr-1.5 inline size-3.5"
-              fill={favoritos.entries.length ? "currentColor" : "none"}
-            />
-            {t("picker.tab.favorites")}{" "}
-            {favoritos.entries.length ? `(${favoritos.entries.length})` : ""}
-          </SmoothTabsTab>
-          <SmoothTabsTab value="recentes">
-            <Clock className="mr-1.5 inline size-3.5" />
-            {t("picker.tab.recents")} {recentes?.length ? `(${recentes.length})` : ""}
-          </SmoothTabsTab>
-          <SmoothTabsTab value="buscar">
-            <Search className="mr-1.5 inline size-3.5" />
-            {t("picker.tab.search")} {globais?.length ? `(${globais.length})` : ""}
-          </SmoothTabsTab>
-          <SmoothTabsTab value="procurar">
-            <Radar className="mr-1.5 inline size-3.5" />
-            {t("picker.tab.scan")} {encontrados?.length ? `(${encontrados.length})` : ""}
-          </SmoothTabsTab>
-          <SmoothTabsTab value="navegar">
-            <FolderOpen className="mr-1.5 inline size-3.5" />
-            {t("picker.tab.browse")}
-          </SmoothTabsTab>
-        </SmoothTabsList>
+        {/*
+         * Abaixo de 768px as cinco abas nao cabem lado a lado: a lista rola
+         * na horizontal em vez de estourar a largura do sheet.
+         */}
+        <div className="overflow-x-auto">
+          <SmoothTabsList ariaLabel={t("picker.tabs.aria")}>
+            <SmoothTabsTab value="favoritos">
+              <Star
+                className="mr-1.5 inline size-3.5"
+                fill={favoritos.entries.length ? "currentColor" : "none"}
+              />
+              {t("picker.tab.favorites")}{" "}
+              {favoritos.entries.length ? `(${favoritos.entries.length})` : ""}
+            </SmoothTabsTab>
+            <SmoothTabsTab value="recentes">
+              <Clock className="mr-1.5 inline size-3.5" />
+              {t("picker.tab.recents")} {recentes?.length ? `(${recentes.length})` : ""}
+            </SmoothTabsTab>
+            <SmoothTabsTab value="buscar">
+              <Search className="mr-1.5 inline size-3.5" />
+              {t("picker.tab.search")} {globais?.length ? `(${globais.length})` : ""}
+            </SmoothTabsTab>
+            <SmoothTabsTab value="procurar">
+              <Radar className="mr-1.5 inline size-3.5" />
+              {t("picker.tab.scan")} {encontrados?.length ? `(${encontrados.length})` : ""}
+            </SmoothTabsTab>
+            <SmoothTabsTab value="navegar">
+              <FolderOpen className="mr-1.5 inline size-3.5" />
+              {t("picker.tab.browse")}
+            </SmoothTabsTab>
+          </SmoothTabsList>
+        </div>
 
         {/* sem altura propria: a area das abas e quem absorve a folga da
             altura fixa do seletor */}
@@ -619,7 +631,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                           onClick={() => void esquecer(r.path)}
                           aria-label={t("picker.recents.forget", { name: r.name })}
                           title={t("picker.recents.forgetTitle")}
-                          className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100"
+                          className="shrink-0 rounded p-1.5 text-muted-foreground opacity-0 transition-opacity hover:bg-accent hover:text-destructive focus-visible:opacity-100 group-hover:opacity-100 touch:opacity-100 touch:size-tap"
                         >
                           <Trash2 className="size-3.5" />
                         </button>
@@ -814,6 +826,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
                   onClick={() => void irPara(m.path)}
                   className={cn(
                     "max-w-[16ch] truncate rounded px-1 py-0.5 font-mono hover:bg-accent hover:text-foreground",
+                    "touch:inline-flex touch:min-h-tap touch:min-w-tap touch:items-center touch:px-2",
                     i === todas.length - 1 && "text-foreground",
                   )}
                 >

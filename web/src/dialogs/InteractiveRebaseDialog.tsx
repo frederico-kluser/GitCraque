@@ -168,7 +168,7 @@ export function InteractiveRebaseDialog({ open, commits, onClose }: InteractiveR
 
                 return (
                   <div key={hash} className="space-y-2 bg-surface-inset px-3 py-2">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 touch:flex-wrap">
                       <span className="w-6 shrink-0 text-center text-xs text-muted-foreground">
                         {idx + 1}
                       </span>
@@ -176,7 +176,7 @@ export function InteractiveRebaseDialog({ open, commits, onClose }: InteractiveR
                       <select
                         value={action}
                         onChange={(e) => setAction(hash, e.target.value as RebaseInteractiveAction)}
-                        className="h-8 w-24 shrink-0 rounded-md border border-border bg-surface px-2 text-xs text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring"
+                        className="h-8 w-24 shrink-0 rounded-md border border-border bg-surface px-2 text-xs text-foreground outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring touch:min-h-tap"
                         aria-label={`${t("rebaseInteractive.actionFor")} ${short(hash)}`}
                       >
                         {ACTION_OPTIONS.map((o) => (
@@ -189,14 +189,14 @@ export function InteractiveRebaseDialog({ open, commits, onClose }: InteractiveR
                       <code className="w-14 shrink-0 font-mono text-xs text-muted-foreground">
                         {short(hash)}
                       </code>
-                      <span className="truncate text-xs text-foreground">
+                      <span className="min-w-0 truncate text-xs text-foreground">
                         {commit ? truncate(commit.subject, 60) : t("squash.outOfLog")}
                       </span>
 
                       <div className="ml-auto flex shrink-0 gap-0.5">
                         <button
                           type="button"
-                          className="inline-flex h-7 w-7 items-center justify-center rounded text-xs text-muted-foreground transition-colors hover:bg-surface hover:text-foreground disabled:opacity-30"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded text-xs text-muted-foreground transition-colors hover:bg-surface hover:text-foreground disabled:opacity-30 touch:size-tap"
                           aria-label={t("rebaseInteractive.moveUp")}
                           disabled={idx === 0}
                           onClick={() => moveUp(idx)}
@@ -205,7 +205,7 @@ export function InteractiveRebaseDialog({ open, commits, onClose }: InteractiveR
                         </button>
                         <button
                           type="button"
-                          className="inline-flex h-7 w-7 items-center justify-center rounded text-xs text-muted-foreground transition-colors hover:bg-surface hover:text-foreground disabled:opacity-30"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded text-xs text-muted-foreground transition-colors hover:bg-surface hover:text-foreground disabled:opacity-30 touch:size-tap"
                           aria-label={t("rebaseInteractive.moveDown")}
                           disabled={idx >= ordered.length - 1}
                           onClick={() => moveDown(idx)}
