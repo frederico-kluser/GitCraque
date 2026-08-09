@@ -122,7 +122,15 @@ export function ContextMenuHost() {
                `opacity` e `transform`; a caixa nao anima. */
             className={`${MENU_POPUP_CLASS} origin-[var(--transform-origin)] transition-[opacity,transform] duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)] data-[ending-style]:scale-[0.97] data-[ending-style]:opacity-0 data-[starting-style]:scale-[0.97] data-[starting-style]:opacity-0`}
           >
-            <MenuItems items={shown?.items ?? []} />
+            {/* Num celular um menu de commit chega a ~14 itens de 44px (616px)
+                — mais do que a tela em paisagem. `MENU_POPUP_CLASS` so limita
+                a largura, e o Base UI ja vira o popup para nao passar do topo
+                e do rodape da tela; o que falta e a rolagem para o que nao
+                cabe. Vive nesta caixa, dentro da moldura, e nao na classe do
+                popup, para nao brigar com o `overflow-hidden` da moldura. */}
+            <div className="max-h-[min(60dvh,32rem)] overflow-y-auto">
+              <MenuItems items={shown?.items ?? []} />
+            </div>
           </Menu.Popup>
         </Menu.Positioner>
       </Menu.Portal>

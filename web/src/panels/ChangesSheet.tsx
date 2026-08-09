@@ -21,7 +21,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Backdrop, useFocusTrap, useScrollLock } from "@/components/motion-ui/overlay";
 import { useMotionUITheme, useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { useAppState } from "@/state/store";
-import { closeChanges, selectChangesOpen, useShellState } from "@/hooks";
+import { closeChanges, selectChangesOpen, useLayoutMode, useShellState } from "@/hooks";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { Chip, FOCUS_RING } from "./parts";
@@ -32,6 +32,9 @@ const SHEET_WIDTH = "min(32rem, 100vw - 2rem)";
 
 export function ChangesSheet() {
   const open = useShellState(selectChangesOpen);
+  /* No compacto a gaveta nao desliza da borda: vira tela cheia, cobrindo a
+     barra de navegacao. O painel interno e o mesmo. */
+  const compact = useLayoutMode() === "compact";
   const changeCount = useAppState((s) => s.status?.entries.length ?? 0);
   const openFile = useAppState((s) => s.openFile);
   const panelRef = useRef<HTMLDivElement>(null);
@@ -58,8 +61,9 @@ export function ChangesSheet() {
     if (openFile) closeChanges();
   }, [openFile]);
 
-  // Deslocamento de entrada: para fora pela DIREITA, que e de onde ela vem.
-  const hidden = calm ? "translateX(0px)" : "translateX(24px)";
+  // Deslocamento de entrada: para fora pela DIREITA no desktop (e de onde
+  // ela vem); para BAIXO no compacto, onde ela vira tela cheia.
+  const hidden = calm ? "translateX(0px)" : compact ? "translateY(24px)" : "translateX(24px)";
 
   return (
     <AnimatePresence>
@@ -80,13 +84,27 @@ export function ChangesSheet() {
             aria-modal="true"
             aria-label={t("changes.sheet.label")}
             initial={still ? false : { opacity: 0, transform: hidden }}
-            animate={{ opacity: 1, transform: "translateX(0px)" }}
+            animate={{ opacity: 1, transform: compact ? "translateY(0px)" : "translateX(0px)" }}
             exit={still ? undefined : { opacity: 0, transform: hidden }}
             transition={{ ...ui }}
-            style={{ width: SHEET_WIDTH }}
-            className="relative z-10 flex h-full min-h-0 flex-col border-l border-border bg-card text-card-foreground shadow-2xl"
+            style={{ width: compact ? "100%" : SHEET_WIDTH }}
+            className={cn(
+              "relative z-10 flex h-full min-h-0 flex-col bg-card text-card-foreground shadow-2xl",
+              /* Tela cheia no compacto: sem borda (nao ha coluna a separar) e
+                 com o recorte de seguranca embaixo, onde mora a barra de
+                 gestos do aparelho. */
+              !compact && "border-l border-border",
+              compact && "pb-safe-bottom",
+            )}
           >
-            <header className="flex shrink-0 items-center gap-2 border-b border-border bg-surface-rail px-3 py-2">
+            <header
+              className={cn(
+                "flex shrink-0 items-center gap-2 border-b border-border bg-surface-rail px-3 py-2",
+                /* No compacto o cabecalho cola na borda de cima, que num
+                   celular com entalhe fica atras da barra de status. */
+                compact && "pt-safe-top",
+              )}
+            >
               <GitCommitHorizontal className="size-4 shrink-0 text-primary" />
               <h2 className="font-heading text-sm font-semibold text-foreground">
                 {t("changes.sheet.title")}

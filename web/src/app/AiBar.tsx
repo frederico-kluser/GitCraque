@@ -38,6 +38,7 @@ import { CornerDownLeft, KeyRound, Loader2, Lock, Sparkles, X } from "lucide-rea
 
 import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
+import { useLayoutMode } from "@/hooks";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { FOCUS_RING, SectionLabel, ToolButton } from "@/panels/parts";
@@ -218,6 +219,10 @@ export function AiBar() {
   const agent = useAppState(selectAgent);
   const ai = useAppState(selectAi);
   const gentle = useMotionUITransition("gentle");
+  /* No compacto o rodape da tela e a barra de navegacao: a faixa sobe na
+     altura dela (56px + recorte de seguranca) mais a folga de 1.5rem. Sem
+     isso ela ficaria escondida atras da barra. */
+  const compact = useLayoutMode() === "compact";
 
   const busy = agent.phase === "transcribing" || agent.phase === "running";
   // A bolha de resposta abre quando ha o que mostrar. `idle` e o repouso: so a
@@ -241,7 +246,12 @@ export function AiBar() {
   if (!ai.checked) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex flex-col items-center gap-2">
+    <div
+      className={cn(
+        "pointer-events-none fixed inset-x-0 z-40 flex flex-col items-center gap-2",
+        compact ? "bottom-[calc(56px+1.5rem+env(safe-area-inset-bottom,0px))]" : "bottom-6",
+      )}
+    >
       <AnimatePresence>
         {open && (
           <motion.section

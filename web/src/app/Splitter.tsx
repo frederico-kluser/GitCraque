@@ -12,6 +12,7 @@
  */
 import { useCallback, useRef } from "react";
 import { cn } from "@/lib/utils";
+import { useLayoutMode } from "@/hooks";
 
 const KEYBOARD_STEP = 16;
 
@@ -29,6 +30,11 @@ export interface SplitterProps {
 }
 
 export function Splitter({ axis, value, sign = 1, min, max, label, onChange }: SplitterProps) {
+  /* Coluna unica nao tem o que dividir: o App ja nao monta as divisorias no
+     compacto, e esta guarda existe para nenhum ponto de montagem futuro
+     renderizar uma divisoria fantasma num celular. */
+  if (useLayoutMode() === "compact") return null;
+
   const origin = useRef({ pointer: 0, value: 0 });
 
   const onPointerDown = useCallback(

@@ -12,7 +12,7 @@
  * que explica por que ele e escrito a mao).
  */
 import { useEffect, useRef } from "react";
-import { FolderX, GitCommitHorizontal, PlugZap } from "lucide-react";
+import { FolderX, GitCommitHorizontal, PlugZap, X } from "lucide-react";
 import { GraphView } from "@/graph";
 import { GitDndProvider } from "@/dnd";
 import { DialogHost, RepoPicker } from "@/dialogs";
@@ -33,20 +33,26 @@ import {
   RAIL_RANGE,
   openContextMenu,
   requestCommit,
+  selectMobilePane,
   setCommitDraft,
   setDetailWidth,
+  setMobilePane,
   setRailWidth,
   useAutoFetch,
   useDocumentTitle,
   useHotkeys,
+  useLayoutMode,
   useLifecycleRecovery,
   useRepoPoll,
   useShellState,
 } from "@/hooks";
 import type { CommitRef } from "@/types/git";
+import { cn } from "@/lib/utils";
+import { FOCUS_RING } from "@/panels/parts";
 import { doActivateRef, doRefresh } from "./actions";
 import { commitMenu, refMenu } from "./menus";
 import { AiBar } from "./AiBar";
+import { MobileNav } from "./MobileNav";
 import { ConfirmHost } from "./ConfirmHost";
 import { ContextMenuHost } from "./ContextMenuHost";
 import { SettingsDialog } from "./SettingsDialog";
@@ -118,6 +124,39 @@ function EmptyRepo() {
 
 /* ------------------------------------------------------------------ */
 
+/**
+ * Cabecalho dos paineis de coluna unica (rail e detalhe): rotulo e volta ao
+ * historico. No desktop os paineis sao vizinhos e a volta e olhar para o
+ * lado; num celular alguem que entrou no rail ou no detalhe precisa de um
+ * botao para sair, e e este. Nao existe no layout de tres colunas.
+ */
+function CompactPaneHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  return (
+    <header className="flex shrink-0 items-center gap-1 border-b border-border bg-surface-rail pr-2">
+      <button
+        type="button"
+        onClick={onBack}
+        aria-label={t("mobile.panel.close")}
+        title={t("mobile.panel.close.title")}
+        className={cn(
+          "flex size-8 shrink-0 items-center justify-center rounded-md text-muted-foreground",
+          "transition-colors hover:bg-accent hover:text-foreground",
+          "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+          "touch:min-h-tap touch:min-w-tap",
+          FOCUS_RING,
+        )}
+      >
+        <X className="size-4" />
+      </button>
+      <h2 className="min-w-0 flex-1 truncate py-2 font-heading text-xs font-semibold text-foreground">
+        {title}
+      </h2>
+    </header>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+
 export function App() {
   useEffect(() => {
     bootstrap();
@@ -140,6 +179,12 @@ export function App() {
 
   const railWidth = useShellState((s) => s.railWidth);
   const detailWidth = useShellState((s) => s.detailWidth);
+
+  // Uma coluna ou tres: a decisao cruza a preferencia da pessoa com o
+  // tamanho da tela (ver `useLayoutMode`). No compacto, o painel visivel e o
+  // `mobilePane` escolhido na barra de navegacao inferior.
+  const compact = useLayoutMode() === "compact";
+  const mobilePane = useShellState(selectMobilePane);
 
   useHotkeys({
     onRefresh: () => void doRefresh(),
@@ -222,65 +267,118 @@ export function App() {
 
   return (
     <GitDndProvider onIntent={setPendingIntent}>
-      {/* Tres linhas: toolbar, corpo e rodape de diagnostico. */}
+      {/* Tres linhas: toolbar, corpo e rodape de diagnostico. No compacto o
+          grid reserva embaixo o espaco da barra de navegacao fixa — e assim
+          que o rodape fica POR CIMA dela e o conteudo nunca rola por baixo. */}
       <div
-        className="grid h-full bg-background text-foreground"
+        className={cn(
+          "grid h-full bg-background text-foreground",
+          compact && "pb-[calc(56px+env(safe-area-inset-bottom,0px))]",
+        )}
         style={{ gridTemplateRows: "auto minmax(0,1fr) auto" }}
       >
         <Toolbar className="border-b border-border bg-surface-rail" />
 
-        {/* --- tres colunas com divisorias arrastaveis --- */}
-        <div
-          className="grid min-h-0"
-          style={{ gridTemplateColumns: `${railWidth}px auto minmax(0,1fr) auto ${detailWidth}px` }}
-        >
-          <RailPanels className="min-h-0 overflow-y-auto border-r border-border bg-surface-rail" />
-          <Splitter
-            axis="x"
-            value={railWidth}
-            min={RAIL_RANGE.min}
-            max={RAIL_RANGE.max}
-            label={t("app.splitter.rail")}
-            onChange={setRailWidth}
-          />
-
-          <main className="min-h-0 bg-surface-graph">
-            {emptyLog && commits.length === 0 && !loadingLog ? (
-              <EmptyRepo />
+        {compact ? (
+          /* --- coluna unica: um painel por vez, escolhido na barra inferior.
+                 Nao ha Splitters — nao ha nada para arrastar. --- */
+          <div className="flex h-full min-h-0 flex-col">
+            {mobilePane === "rail" ? (
+              <>
+                <CompactPaneHeader title={t("mobile.nav.repo")} onBack={() => setMobilePane("graph")} />
+                <RailPanels className="min-h-0 flex-1 overflow-y-auto bg-surface-rail" />
+              </>
+            ) : mobilePane === "detail" ? (
+              <>
+                <CompactPaneHeader title={t("mobile.nav.detail")} onBack={() => setMobilePane("graph")} />
+                <SidePanel className="min-h-0 flex-1 bg-card" />
+              </>
             ) : (
-              <GraphView
-                commits={commits}
-                refs={refs}
-                selected={selected}
-                primary={primary}
-                reveal={reveal}
-                onRevealed={clearReveal}
-                /* duplo clique num chip de branch da View Tree troca para ela */
-                onRefActivate={doActivateRef}
-                /* botao direito: no chip, o menu da ref; na linha, o do commit */
-                onRefContextMenu={onRefContextMenu}
-                onContextMenu={onCommitContextMenu}
-                loading={loadingLog}
-                onSelect={selectCommit}
-                className="h-full"
-              />
+              <main className="min-h-0 flex-1 bg-surface-graph">
+                {emptyLog && commits.length === 0 && !loadingLog ? (
+                  <EmptyRepo />
+                ) : (
+                  <GraphView
+                    commits={commits}
+                    refs={refs}
+                    selected={selected}
+                    primary={primary}
+                    reveal={reveal}
+                    onRevealed={clearReveal}
+                    /* duplo clique num chip de branch da View Tree troca para ela */
+                    onRefActivate={doActivateRef}
+                    /* botao direito: no chip, o menu da ref; na linha, o do commit */
+                    onRefContextMenu={onRefContextMenu}
+                    onContextMenu={onCommitContextMenu}
+                    loading={loadingLog}
+                    onSelect={selectCommit}
+                    /* A densidade compacta e a entrega do onda 2B do grafo; o
+                       prop ja existe no contrato, entao o pedido sai daqui. */
+                    density="compact"
+                    className="h-full"
+                  />
+                )}
+              </main>
             )}
-          </main>
+          </div>
+        ) : (
+          /* --- tres colunas com divisorias arrastaveis (o layout original) --- */
+          <div
+            className="grid min-h-0"
+            style={{ gridTemplateColumns: `${railWidth}px auto minmax(0,1fr) auto ${detailWidth}px` }}
+          >
+            <RailPanels className="min-h-0 overflow-y-auto border-r border-border bg-surface-rail" />
+            <Splitter
+              axis="x"
+              value={railWidth}
+              min={RAIL_RANGE.min}
+              max={RAIL_RANGE.max}
+              label={t("app.splitter.rail")}
+              onChange={setRailWidth}
+            />
 
-          <Splitter
-            axis="x"
-            sign={-1}
-            value={detailWidth}
-            min={DETAIL_RANGE.min}
-            max={DETAIL_RANGE.max}
-            label={t("app.splitter.detail")}
-            onChange={setDetailWidth}
-          />
-          <SidePanel className="min-h-0 border-l border-border bg-card" />
-        </div>
+            <main className="min-h-0 bg-surface-graph">
+              {emptyLog && commits.length === 0 && !loadingLog ? (
+                <EmptyRepo />
+              ) : (
+                <GraphView
+                  commits={commits}
+                  refs={refs}
+                  selected={selected}
+                  primary={primary}
+                  reveal={reveal}
+                  onRevealed={clearReveal}
+                  /* duplo clique num chip de branch da View Tree troca para ela */
+                  onRefActivate={doActivateRef}
+                  /* botao direito: no chip, o menu da ref; na linha, o do commit */
+                  onRefContextMenu={onRefContextMenu}
+                  onContextMenu={onCommitContextMenu}
+                  loading={loadingLog}
+                  onSelect={selectCommit}
+                  className="h-full"
+                />
+              )}
+            </main>
+
+            <Splitter
+              axis="x"
+              sign={-1}
+              value={detailWidth}
+              min={DETAIL_RANGE.min}
+              max={DETAIL_RANGE.max}
+              label={t("app.splitter.detail")}
+              onChange={setDetailWidth}
+            />
+            <SidePanel className="min-h-0 border-l border-border bg-card" />
+          </div>
+        )}
 
         <StatusFooter className="border-t border-border bg-surface-rail" />
       </div>
+
+      {/* Navegacao inferior: so existe quando ha um painel por vez. A gaveta
+          de alteracoes (z-50) e os dialogos (z-60+) cobrem esta barra. */}
+      {compact && <MobileNav />}
 
       {/* Staging e commit: gaveta unica, chamada pelo botao da toolbar. Fica
           aqui, e nao dentro do sidebar, porque ela cobre a tela inteira. */}

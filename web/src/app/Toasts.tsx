@@ -10,6 +10,7 @@ import { CheckCircle2, CircleAlert, Info, TriangleAlert, X } from "lucide-react"
 import { Confetti, type ConfettiHandle } from "@/components/motion-ui/confetti";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Toast, ToastStack, useToast } from "@/components/motion-ui/toast-stack";
+import { useLayoutMode } from "@/hooks";
 import { dismissToast, useAppState, type AppToast, type ToastTone } from "@/state/store";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -74,6 +75,7 @@ function ToastCard({ toast }: { toast: AppToast }) {
 
 export function Toasts() {
   const toasts = useAppState((s) => s.toasts);
+  const compact = useLayoutMode() === "compact";
 
   // Push bem-sucedido ganha confete — o unico momento do app em que o trabalho
   // sai da maquina. Dispara uma vez por toast, pelo id.
@@ -91,7 +93,16 @@ export function Toasts() {
       <div aria-hidden="true" className="pointer-events-none fixed inset-0 z-[55]">
         <Confetti ref={confetti} particleCount={36} />
       </div>
-      <ToastStack maxVisible={4} className="right-6 bottom-6 left-auto mx-0 w-[min(24rem,calc(100vw-3rem))]">
+      <ToastStack
+        maxVisible={4}
+        className={cn(
+          "right-6 left-auto mx-0 w-[min(24rem,calc(100vw-3rem))]",
+          /* Acima da barra de navegacao: um toast colado no rodape de um
+             celular apareceria atras dela. A conta e a mesma da AiBar:
+             56px + folga de 1.5rem + recorte de seguranca. */
+          compact ? "bottom-[calc(56px+1.5rem+env(safe-area-inset-bottom,0px))]" : "bottom-6",
+        )}
+      >
         {toasts.map((toast) => (
           <Toast key={toast.id}>
             <ToastCard toast={toast} />
