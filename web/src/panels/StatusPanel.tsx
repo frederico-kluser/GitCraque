@@ -17,11 +17,14 @@ import { SwipeAction, SwipeActions, SwipeActionsList } from "@/components/motion
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import { openFile, useAppState } from "@/state/store";
 import {
-  contextMenuFor,
+  chain,
+  longPressMenu,
   registerCommitHandler,
   selectCommitDraft,
   setCommitDraft,
   useShellState,
+  useViewportValue,
+  selectIsTouch,
   useWorkingDiffStats,
   type DiffStats,
 } from "@/hooks";
@@ -90,6 +93,10 @@ function FileRow({
     pressedAt.current = { x: event.clientX, y: event.clientY };
   };
   const openInViewer = () => openFile(entry.path, null, true);
+  // O mesmo menu do botao direito, com a porta do dedo aberta. `chain` junta o
+  // registro do ponto de partida com o armamento do toque longo — espalhar os
+  // dois objetos apagaria um dos handlers em silencio.
+  const press = longPressMenu(entry.path, () => changeFileMenu(entry));
   const onRowClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if ((event.target as HTMLElement).closest("button")) return;
     const moved =
@@ -105,7 +112,10 @@ function FileRow({
       index={index}
       isLast={isLast}
       rowHeight={ROW_HEIGHT}
-      className="border-b border-border last:border-b-0"
+      /* `touch:min-h-tap` cresce a linha para 44px; o fill das acoes de swipe
+         e `h-full` e segue junto. `min-height` vence o `height` inline do
+         componente, entao o desktop nao muda. */
+      className="border-b border-border last:border-b-0 touch:min-h-tap"
       left={
         staged ? (
           <SwipeAction
@@ -148,11 +158,12 @@ function FileRow({
         tabIndex={0}
         aria-current={open ? "true" : undefined}
         title={t("changes.viewFile", { path: entry.path })}
-        onPointerDown={rememberPress}
+        onPointerDown={chain(rememberPress, press.onPointerDown)}
         onClick={onRowClick}
-        /* O swipe e um atalho de gesto; o botao direito e o atalho de quem usa
-           mouse. Os dois oferecem as mesmas acoes da linha. */
-        onContextMenu={contextMenuFor(entry.path, () => changeFileMenu(entry))}
+        onContextMenu={press.onContextMenu}
+        onPointerUp={press.onPointerUp}
+        onPointerCancel={press.onPointerCancel}
+        onPointerMove={press.onPointerMove}
         onKeyDown={(event) => {
           if (event.key !== "Enter" && event.key !== " ") return;
           if ((event.target as HTMLElement).closest("button")) return;
@@ -160,7 +171,7 @@ function FileRow({
           openInViewer();
         }}
         className={cn(
-          "group flex h-full cursor-pointer items-center gap-2 px-2 select-none",
+          "longpress-menu group flex h-full cursor-pointer items-center gap-2 px-2 select-none",
           open ? "bg-primary/12 ring-1 ring-primary ring-inset" : "bg-card hover:bg-accent/60",
           FOCUS_RING,
         )}
@@ -187,7 +198,7 @@ function FileRow({
             onCancel={() => setArming(false)}
             // O componente vem com `h-[3.25rem] w-60`; numa linha de arquivo ele
             // precisa caber em 24px. `!` sobrepoe as classes do proprio botao.
-            className="h-6! w-20! shrink-0 gap-1 rounded-sm! px-0! text-[10px]!"
+            className="h-6! w-20! shrink-0 gap-1 rounded-sm! px-0! text-[10px]! touch:h-tap!"
           >
             <Trash2 className="size-3" />
             {t("changes.hold")}
@@ -397,7 +408,7 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
                 ? "bg-destructive text-destructive-foreground"
                 : "bg-primary text-primary-foreground"
           }
-          pillClassName="rounded-md px-3 py-1.5 text-xs font-medium"
+          pillClassName="rounded-md px-3 py-1.5 text-xs font-medium touch:min-h-tap touch:px-4"
           announce={`${t("commit.button")}: ${state}`}
           aria-label={t("commit.button.label")}
         >

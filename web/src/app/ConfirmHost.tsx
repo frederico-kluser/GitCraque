@@ -35,7 +35,7 @@ import { FOCUS_RING, SectionLabel, ToolButton } from "@/panels/parts";
 
 const INPUT_CLASS = cn(
   "w-full rounded-md border border-input bg-background px-2.5 py-1.5 text-xs text-foreground",
-  "placeholder:text-muted-foreground",
+  "placeholder:text-muted-foreground touch:min-h-tap",
   FOCUS_RING,
 );
 
@@ -53,7 +53,7 @@ function Field({
   if (field.kind === "toggle") {
     const on = value === "true";
     return (
-      <label htmlFor={id} className="flex cursor-pointer items-start gap-2.5 py-0.5">
+      <label htmlFor={id} className="flex cursor-pointer items-start gap-2.5 py-0.5 touch:min-h-tap">
         <button
           id={id}
           type="button"
@@ -63,6 +63,7 @@ function Field({
           className={cn(
             "mt-px inline-flex size-4 shrink-0 items-center justify-center rounded-sm border transition-colors",
             "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+            "touch:size-tap touch:mt-0",
             on ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background",
             FOCUS_RING,
           )}
@@ -182,7 +183,16 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[60] grid place-items-center p-4">
+    <div
+      className={cn(
+        "fixed inset-0 z-[60] grid place-items-center p-4",
+        /* Abaixo de 768px o dialogo vira bottom sheet, como o DialogShell de
+           `@/dialogs`: ancorado embaixo, colado nas bordas, com folga de
+           safe-area — os recortes do aparelho nao podem cobrir os campos. */
+        "max-md:items-end max-md:justify-items-stretch max-md:p-0",
+        "max-md:pl-safe-left max-md:pr-safe-right",
+      )}
+    >
       <Backdrop
         className="bg-[color-mix(in_srgb,var(--background)_70%,transparent)]"
         onClick={runState === "running" ? undefined : closeConfirm}
@@ -201,7 +211,11 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
         animate={{ opacity: 1, transform: "translateY(0px) scale(1)" }}
         exit={{ opacity: 0, transform: "translateY(8px) scale(0.99)" }}
         transition={{ ...enter }}
-        className="relative z-10 flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-2xl"
+        className={cn(
+          "relative z-10 flex w-full max-w-md flex-col gap-4 rounded-xl border border-border bg-card p-5 shadow-2xl",
+          "max-md:max-w-none max-md:gap-3 max-md:rounded-b-none max-md:rounded-t-2xl",
+          "max-md:max-h-[85dvh] max-md:overflow-y-auto max-md:pb-safe-bottom",
+        )}
       >
         <header className="flex items-start gap-3">
           {action.destructive && (
@@ -253,6 +267,7 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
               onConfirm={execute}
               className={cn(
                 "rounded-md bg-secondary px-4 py-2 text-xs font-medium text-secondary-foreground",
+                "touch:min-h-tap",
                 missing && "pointer-events-none opacity-50",
               )}
             >
@@ -267,7 +282,7 @@ function ConfirmDialog({ action }: { action: ConfirmAction }) {
               disabled={runState === "running" || missing}
               feedback={runState === "error" ? "shake" : runState === "ok" ? "pop" : "none"}
               surfaceClassName={buttonState[runState].surface}
-              pillClassName="rounded-md px-4 py-2 text-xs font-medium"
+              pillClassName="rounded-md px-4 py-2 text-xs font-medium touch:min-h-tap"
               announce={buttonState[runState].label}
               aria-label={action.confirmLabel}
             >

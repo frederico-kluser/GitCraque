@@ -13,6 +13,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { selectCommit, useAppState } from "@/state/store";
+import { selectIsTouch, useViewportValue } from "@/hooks";
 import { api, ApiRequestError } from "@/lib/api";
 import { Rich, formatDateTime, t } from "@/i18n";
 import { cn, short } from "@/lib/utils";
@@ -40,6 +41,10 @@ const blameCache = new Map<string, BlamePayload>();
 interface BlameRowData {
   lines: BlameLine[];
   onSelectCommit: (hash: string) => void;
+  /** largura do gutter em px — menor no toque, para sobrar conteudo */
+  gutterWidth: number;
+  /** true esconde a data do gutter (fica no tooltip do hash) */
+  touch: boolean;
 }
 
 function BlameRow({ index, style, data }: { index: number; style: React.CSSProperties; data: BlameRowData }) {
@@ -53,10 +58,11 @@ function BlameRow({ index, style, data }: { index: number; style: React.CSSPrope
       style={style}
       className="flex items-center border-b border-border/50 text-[11px]"
     >
-      {/* Gutter: autor + data */}
+      {/* Gutter: autor + data. No toque a data sai (fica no tooltip do hash) e
+          o gutter encolhe — o espaco vai para o numero e o conteudo. */}
       <div
         className="flex shrink-0 items-center gap-1 px-2 text-muted-foreground"
-        style={{ width: GUTTER_WIDTH }}
+        style={{ width: data.gutterWidth }}
         title={t("blame.tooltip", {
           hash: line.hash,
           summary: line.summary,
@@ -74,7 +80,7 @@ function BlameRow({ index, style, data }: { index: number; style: React.CSSPrope
           className={cn(
             "font-mono text-[10px] text-primary hover:underline",
             FOCUS_RING,
-            "rounded-sm px-0.5",
+            "rounded-sm px-0.5 touch:h-full touch:min-w-tap",
           )}
           title={t("detail.goTo", { hash: line.hash })}
         >
@@ -82,7 +88,7 @@ function BlameRow({ index, style, data }: { index: number; style: React.CSSPrope
         </button>
         <span className="truncate">
           <span className="font-medium">{line.author.split(" ")[0]}</span>
-          {shortDate && <span className="ml-1 text-[10px] opacity-60">{shortDate}</span>}
+          {!data.touch && shortDate && <span className="ml-1 text-[10px] opacity-60">{shortDate}</span>}
         </span>
       </div>
 
@@ -106,6 +112,12 @@ function BlameRow({ index, style, data }: { index: number; style: React.CSSPrope
 export type BlamePanelProps = PanelProps & { path: string; hash: string | null };
 
 export function BlamePanel({ path, hash, className }: BlamePanelProps) {
+  const touch = useViewportValue(selectIsTouch);
+  // Linhas de codigo nao sao alvos de 44px: a interacao aqui e rolar, nao
+  // tocar linha a linha. No toque a linha fica mais alta e o gutter mais
+  // estreito — leitura confortavel sem virar um muro de 44px.
+  const rowHeight = touch ? 32 : ROW_HEIGHT;
+  const gutterWidth = touch ? 150 : GUTTER_WIDTH;
   const [payload, setPayload] = useState<BlamePayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -160,8 +172,10 @@ export function BlamePanel({ path, hash, className }: BlamePanelProps) {
     () => ({
       lines: payload?.lines ?? [],
       onSelectCommit,
+      gutterWidth,
+      touch,
     }),
-    [payload, onSelectCommit],
+    [payload, onSelectCommit, gutterWidth, touch],
   );
 
   return (
@@ -187,7 +201,7 @@ export function BlamePanel({ path, hash, className }: BlamePanelProps) {
       <div
         className="flex shrink-0 items-center border-b border-border bg-surface-inset px-2 py-1 text-[10px] font-medium text-muted-foreground"
       >
-        <div style={{ width: GUTTER_WIDTH }} className="px-2">
+        <div style={{ width: gutterWidth }} className="px-2">
           {t("blame.header.author")}
         </div>
         <span className="w-10 text-right pr-1.5">{t("blame.header.line")}</span>
@@ -225,7 +239,7 @@ export function BlamePanel({ path, hash, className }: BlamePanelProps) {
               height={0}
               width="100%"
               itemCount={payload.lines.length}
-              itemSize={ROW_HEIGHT}
+              itemSize={rowHeight}
               itemData={rowData}
               className="scrollbar-thin"
               // fill parent: react-window AutoSizer pattern

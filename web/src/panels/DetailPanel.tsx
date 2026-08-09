@@ -28,7 +28,16 @@ import { CopyButton } from "@/components/motion-ui/copy-button";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import { clearStashView, openBlame, openFile, selectCommit, selectCommits, selectStashView, showStashDiff, useAppState } from "@/state/store";
-import { contextMenuFor, openChanges, useCommitDetail, useWorkingDiffStats, type DiffStats } from "@/hooks";
+import {
+  contextMenuFor,
+  longPressMenu,
+  openChanges,
+  selectIsTouch,
+  useCommitDetail,
+  useViewportValue,
+  useWorkingDiffStats,
+  type DiffStats,
+} from "@/hooks";
 import { openSquash } from "@/app/actions";
 import { changeFileMenu, commitFileMenu, commitMenu } from "@/app/menus";
 import { Rich, formatDateTime, formatGitRelativeDate, t } from "@/i18n";
@@ -144,8 +153,8 @@ function SelectionSummary({ selected }: { selected: string[] }) {
               key={commit.hash}
               type="button"
               onClick={() => selectCommit(commit.hash)}
-              onContextMenu={contextMenuFor(`Commit ${short(commit.hash)}`, () => commitMenu(commit.hash))}
-              className="flex items-center gap-2 rounded-sm px-1.5 py-1 text-left hover:bg-accent"
+              {...longPressMenu(`Commit ${short(commit.hash)}`, () => commitMenu(commit.hash))}
+              className="longpress-menu flex items-center gap-2 rounded-sm px-1.5 py-1 text-left touch:min-h-tap hover:bg-accent"
             >
               <span className="shrink-0 font-mono text-[10px] text-primary">{short(commit.hash)}</span>
               <span className="min-w-0 flex-1 truncate text-[11px] text-foreground">{commit.subject}</span>
@@ -180,9 +189,9 @@ function WorkingFileRow({ entry, stats }: { entry: StatusEntry; stats: DiffStats
       /* `hash: null` + `fromWorkingTree` e o que manda o visualizador ler do
          disco em vez de um commit — o mesmo caminho que a gaveta de staging usa. */
       onClick={() => openFile(entry.path, null, true)}
-      onContextMenu={contextMenuFor(entry.path, () => changeFileMenu(entry))}
+      {...longPressMenu(entry.path, () => changeFileMenu(entry))}
       className={cn(
-        "flex items-center gap-2 rounded-sm px-1.5 py-1 text-left transition-colors",
+        "longpress-menu flex items-center gap-2 rounded-sm px-1.5 py-1 text-left transition-colors touch:min-h-tap",
         "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
         isOpen ? "bg-primary/12 ring-1 ring-primary ring-inset" : "hover:bg-accent",
         FOCUS_RING,
@@ -216,6 +225,7 @@ function WorkingTreeDetail() {
   const status = useAppState((s) => s.status);
   const stats = useWorkingDiffStats(status);
   const entries = status?.entries ?? EMPTY_ENTRIES;
+  const touch = useViewportValue(selectIsTouch);
 
   const groups = useMemo(() => groupEntries(entries), [entries]);
   const total = useMemo(() => {
@@ -260,7 +270,7 @@ function WorkingTreeDetail() {
           <span className="flex-1" />
           {/* Uma vez so, no cabecalho: repetido em cada grupo, o mesmo aviso
               aparecia tres vezes na mesma tela. */}
-          <span className="text-[10px]">{t("detail.working.hint")}</span>
+          <span className="text-[10px]">{t(touch ? "detail.working.hint.touch" : "detail.working.hint")}</span>
         </div>
 
         <div>
@@ -394,6 +404,7 @@ function CommitHeader({ detail }: { detail: CommitDetail }) {
 /** A lista de arquivos do commit: cada linha troca a coluna pela View dele. */
 function CommitFiles({ detail }: { detail: CommitDetail }) {
   const opened = useAppState((s) => s.openFile);
+  const touch = useViewportValue(selectIsTouch);
 
   return (
     <div className="flex flex-col">
@@ -402,7 +413,7 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
         <SectionLabel className="text-foreground">{t("detail.files")}</SectionLabel>
         <span className="font-mono text-[10px] text-muted-foreground tabular-nums">{detail.files.length}</span>
         <span className="flex-1" />
-        <span className="text-[10px] text-muted-foreground">{t("detail.files.hint")}</span>
+        <span className="text-[10px] text-muted-foreground">{t(touch ? "detail.files.hint.touch" : "detail.files.hint")}</span>
       </header>
 
       <div className="flex flex-col gap-0.5 px-2 pb-3">
@@ -419,9 +430,9 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                 aria-current={isOpen ? "true" : undefined}
                 title={t("detail.viewFile", { path: file.path })}
                 onClick={() => openFile(file.path, detail.hash)}
-                onContextMenu={contextMenuFor(file.path, () => commitFileMenu(file, detail.hash))}
+                {...longPressMenu(file.path, () => commitFileMenu(file, detail.hash))}
                 className={cn(
-                  "flex items-center gap-2 rounded-sm px-1.5 py-1 text-left transition-colors",
+                  "longpress-menu flex items-center gap-2 rounded-sm px-1.5 py-1 text-left transition-colors touch:min-h-tap",
                   "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
                   isOpen ? "bg-primary/12 ring-1 ring-primary ring-inset" : "hover:bg-accent",
                   FOCUS_RING,
@@ -451,7 +462,7 @@ function CommitFiles({ detail }: { detail: CommitDetail }) {
                     }}
                     className={cn(
                       "shrink-0 rounded-sm p-0.5 text-muted-foreground hover:bg-accent hover:text-foreground",
-                      "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",
+                      "transition-colors duration-[var(--motion-ui-transition-snap-duration)] touch:size-tap",
                       FOCUS_RING,
                     )}
                   >
@@ -505,7 +516,7 @@ function StashDiffView({ ref, diffs, loading, error }: { ref: string; diffs: Dif
               <button
                 key={file.path}
                 type="button"
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] hover:bg-accent"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] hover:bg-accent touch:min-h-tap"
               >
                 <FilePath path={file.path} className="flex-1" />
                 {file.oldPath && (
@@ -535,6 +546,7 @@ function StashDiffView({ ref, diffs, loading, error }: { ref: string; diffs: Dif
 export type DetailPanelProps = PanelProps;
 
 export function DetailPanel({ className }: DetailPanelProps) {
+  const touch = useViewportValue(selectIsTouch);
   const primary = useAppState((s) => s.selection.primary);
   const selected = useAppState((s) => s.selection.commits);
   const detail = useCommitDetail(primary);
@@ -592,7 +604,7 @@ export function DetailPanel({ className }: DetailPanelProps) {
               {t("detail.empty.title")}
             </StaggerRevealHeadline>
             <StaggerRevealItem as="p" className="max-w-xs text-xs leading-relaxed text-muted-foreground">
-              {t("detail.empty.body")}
+              {t(touch ? "detail.empty.body.touch" : "detail.empty.body")}
             </StaggerRevealItem>
           </div>
           {/* Selo da marca — so existe nesta tela, o unico momento em que a

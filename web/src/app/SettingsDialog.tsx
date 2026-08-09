@@ -24,7 +24,7 @@
 import { useCallback, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronDown, KeyRound, Loader2, RefreshCw, X } from "lucide-react";
+import { Check, ChevronDown, KeyRound, Loader2, RefreshCw, X } from "lucide-react";
 
 import { Backdrop, useFocusTrap, useScrollLock } from "@/components/motion-ui/overlay";
 import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
@@ -32,12 +32,16 @@ import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import {
   AUTO_FETCH_OPTIONS,
   closeSettings,
+  selectForceTouchTargets,
+  selectLayoutMode,
   selectSettingsOpen,
   setAutoFetchMs,
+  setForceTouchTargets,
+  setLayoutMode,
   setTheme,
   useShellState,
 } from "@/hooks";
-import type { ThemeMode } from "@/hooks";
+import type { LayoutMode, ThemeMode } from "@/hooks";
 import { LOCALE_OPTIONS, chooseLocale, t, useLocale } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { clearAiKey, saveAiKey, selectAi, useAppState } from "@/state/store";
@@ -69,6 +73,48 @@ function Row({
       {children}
       {hint && <p className="text-[11px] leading-relaxed text-muted-foreground">{hint}</p>}
     </div>
+  );
+}
+
+/**
+ * Alternador liga/desliga — o Motion UI nao instala controles de formulario
+ * (ver o cabecalho deste arquivo), entao e o mesmo checkbox do `ConfirmHost`,
+ * com o quadrado crescendo para 44px sob toque.
+ */
+function Toggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={() => onChange(!checked)}
+      className={cn(
+        "inline-flex items-center justify-center rounded-md border px-2.5 py-1.5",
+        "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",
+        "ease-[var(--motion-ui-transition-snap)] touch:min-h-tap touch:min-w-tap",
+        checked ? "border-primary bg-primary/10 text-primary" : "border-input bg-background",
+        FOCUS_RING,
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "inline-flex size-4 items-center justify-center rounded-sm border",
+          checked ? "border-primary bg-primary text-primary-foreground" : "border-input bg-background",
+        )}
+      >
+        {checked && <Check className="size-3" />}
+      </span>
+    </button>
   );
 }
 
@@ -270,6 +316,8 @@ function SettingsPanel() {
   const locale = useLocale();
   const theme = useShellState((s) => s.theme);
   const autoFetchMs = useShellState((s) => s.autoFetchMs);
+  const layoutMode = useShellState(selectLayoutMode);
+  const forceTouchTargets = useShellState(selectForceTouchTargets);
 
   useScrollLock(true);
   useFocusTrap({ active: true, container: panelRef, onEscape: closeSettings });
@@ -339,6 +387,31 @@ function SettingsPanel() {
             ]}
           />
         </Row>
+
+        <section aria-label={t("settings.layout.title")} className="flex flex-col gap-3 border-t border-border pt-4">
+          <h3 className="font-heading text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            {t("settings.layout.title")}
+          </h3>
+          <Row label={t("settings.layout.mode")} hint={t("settings.layout.mode.hint")}>
+            <Select
+              label={t("settings.layout.mode")}
+              value={layoutMode}
+              onChange={(next) => setLayoutMode(next as LayoutMode)}
+              options={[
+                { value: "auto", label: t("settings.layout.mode.auto") },
+                { value: "compact", label: t("settings.layout.mode.compact") },
+                { value: "full", label: t("settings.layout.mode.full") },
+              ]}
+            />
+          </Row>
+          <Row label={t("settings.layout.touchTargets")} hint={t("settings.layout.touchTargets.hint")}>
+            <Toggle
+              checked={forceTouchTargets}
+              onChange={setForceTouchTargets}
+              label={t("settings.layout.touchTargets")}
+            />
+          </Row>
+        </section>
 
         <Row label={t("settings.autoFetch")} hint={t("settings.autoFetch.hint")}>
           <div className="flex items-center gap-2">

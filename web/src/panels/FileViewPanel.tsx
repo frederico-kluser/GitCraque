@@ -67,6 +67,7 @@ export function FileViewPanel({ className, file }: FileViewPanelProps) {
             "flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-0.5 text-[11px] font-medium",
             "text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
             "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+            "touch:min-h-tap touch:min-w-tap",
             FOCUS_RING,
           )}
         >
