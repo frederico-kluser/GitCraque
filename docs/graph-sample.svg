@@ -1,182 +1,182 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="753" height="974" viewBox="0 0 753 974" font-family="Geist, Inter, system-ui, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="795" height="1910" viewBox="0 0 795 1910" font-family="Geist, Inter, system-ui, sans-serif">
 <style>svg{--lane-0:#3d84ea;--lane-1:#24ae56;--lane-2:#e57700;--lane-3:#e83964;--lane-4:#a161e0;--lane-5:#00aab4;--lane-6:#b69f00;--lane-7:#bc549e;--bg:#f9fafb;--surface:#fdfdfe;--fg:#15181e;--muted:#676c74;--border:#dbdee2;--primary:#2466c3;--chip-bg:#e9ebed;--chip-head:#d0e0f3;--chip-tag:#e2e0ff}@media (prefers-color-scheme: dark){svg{--lane-0:#61a4ff;--lane-1:#55c975;--lane-2:#f9a726;--lane-3:#fd6178;--lane-4:#be85f9;--lane-5:#00c9d1;--lane-6:#ccc23b;--lane-7:#da76bb;--bg:#101318;--surface:#13161c;--fg:#e5e8ec;--muted:#8e939a;--border:#2a2e35;--primary:#6ba5fb;--chip-bg:#1e2128;--chip-head:#1f293b;--chip-tag:#362d46}}.bg{fill:var(--bg)}.surface{fill:var(--surface)}.hd{fill:var(--muted);font-size:10px;letter-spacing:.08em}.sub{fill:var(--fg);font-size:13.5px}.meta{fill:var(--muted);font-size:11px}.hash{fill:var(--muted);font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.rule{stroke:var(--border);stroke-width:1}.chip{fill:var(--chip-bg)}.chip-text{fill:var(--fg);font-size:9.5px}.primary-soft{fill:var(--chip-head)}.primary{fill:var(--primary);font-size:9.5px}.tag-soft{fill:var(--chip-tag)}.tag{fill:var(--lane-2);font-size:9.5px}.muted{fill:var(--muted);font-size:9.5px}.fg{fill:var(--fg);font-size:9.5px}</style>
-<rect class="bg" x="0" y="0" width="753" height="974"/>
-<rect class="surface" x="0" y="30" width="100" height="944"/>
-<text class="hd" x="14" y="19">Grafo</text>
-<text class="hd" x="110" y="19">Descricao</text>
-<text class="hd" x="440" y="19">Autor</text>
-<text class="hd" x="560" y="19">Data</text>
-<text class="hd" x="665" y="19">Hash</text>
-<line class="rule" x1="0" y1="29.5" x2="753" y2="29.5"/>
+<rect class="bg" x="0" y="0" width="795" height="1910"/>
+<rect class="surface" x="0" y="30" width="142" height="1880"/>
+<text class="hd" x="20" y="19">Grafo</text>
+<text class="hd" x="152" y="19">Descricao</text>
+<text class="hd" x="482" y="19">Autor</text>
+<text class="hd" x="602" y="19">Data</text>
+<text class="hd" x="707" y="19">Hash</text>
+<line class="rule" x1="0" y1="29.5" x2="795" y2="29.5"/>
 <g transform="translate(0 30)">
-<path d="M 18 18 L 18 90" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 90 L 18 126" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 126 C 18 148.32 58 139.68 58 162" fill="none" stroke="var(--lane-2)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 126 L 18 198" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 198 C 18 220.32 78 211.68 78 234" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 38 54 L 38 270" fill="none" stroke="var(--lane-1)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 78 234 L 78 306" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 198 L 18 342" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 78 306 C 78 328.32 18 319.68 18 342" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 58 162 L 58 378" fill="none" stroke="var(--lane-2)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 342 L 18 414" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 414 L 18 450" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 58 378 L 58 486" fill="none" stroke="var(--lane-2)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 38 270 L 38 522" fill="none" stroke="var(--lane-1)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 450 L 18 558" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 58 486 L 58 594" fill="none" stroke="var(--lane-2)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 414 C 18 436.32 78 427.68 78 450 M 78 450 L 78 630" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 58 594 L 58 666" fill="none" stroke="var(--lane-2)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 558 L 18 702" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 58 666 C 58 688.32 18 679.68 18 702" fill="none" stroke="var(--lane-2)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 78 630 L 78 738" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 38 522 L 38 774" fill="none" stroke="var(--lane-1)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 702 L 18 810" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 38 774 C 38 796.32 18 787.68 18 810" fill="none" stroke="var(--lane-1)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 78 738 L 78 846" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 810 L 18 882" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 78 846 C 78 868.32 18 859.68 18 882" fill="none" stroke="var(--lane-3)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<path d="M 18 882 L 18 918" fill="none" stroke="var(--lane-0)" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
-<circle cx="18" cy="18" r="15" fill="none" stroke="var(--primary)" stroke-width="1.5" opacity="1"/>
-<circle cx="18" cy="18" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<rect class="primary-soft" x="110" y="10" width="35.4" height="16" rx="8"/><text class="primary" x="116.5" y="21.5">HEAD</text>
-<rect class="chip" x="150.4" y="10" width="35.4" height="16" rx="8"/><text class="fg" x="156.9" y="21.5">main</text>
-<rect class="chip" x="190.8" y="10" width="74.6" height="16" rx="8"/><text class="muted" x="197.3" y="21.5">origin/main</text>
-<text class="sub" x="270.4" y="22">docs: manual da View …</text>
-<text class="meta" x="440" y="22">Grace Hopper</text>
-<text class="meta" x="560" y="22">3 weeks ago</text>
-<text class="hash" x="665" y="22">1a1a1a1</text>
-<circle cx="38" cy="54" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
-<rect class="chip" x="110" y="46" width="35.4" height="16" rx="8"/><text class="fg" x="116.5" y="57.5">next</text>
-<text class="sub" x="150.4" y="58">spike: dnd semantico</text>
-<text class="meta" x="440" y="58">Ada Lovelace</text>
-<text class="meta" x="560" y="58">3 weeks ago</text>
-<text class="hash" x="665" y="58">1919191</text>
-<circle cx="18" cy="90" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<rect class="tag-soft" x="110" y="82" width="46.6" height="16" rx="8"/><text class="tag" x="116.5" y="93.5">v1.2.0</text>
-<text class="sub" x="161.6" y="94">chore: release 1.2.0</text>
-<text class="meta" x="440" y="94">Alan Turing</text>
-<text class="meta" x="560" y="94">3 weeks ago</text>
-<text class="hash" x="665" y="94">1818181</text>
-<circle cx="18" cy="126" r="14" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
-<circle cx="18" cy="126" r="10.5" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="130">merge: feature/ui</text>
-<text class="meta" x="440" y="130">Grace Hopper</text>
-<text class="meta" x="560" y="130">3 weeks ago</text>
-<text class="hash" x="665" y="130">1717171</text>
-<circle cx="58" cy="162" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
-<rect class="chip" x="110" y="154" width="108.2" height="16" rx="8"/><text class="muted" x="116.5" y="165.5">origin/feature/ui</text>
-<text class="sub" x="223.2" y="166">feat(ui): grafo virtualizado</text>
-<text class="meta" x="440" y="166">Ada Lovelace</text>
-<text class="meta" x="560" y="166">3 weeks ago</text>
-<text class="hash" x="665" y="166">1616161</text>
-<circle cx="18" cy="198" r="14" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
-<circle cx="18" cy="198" r="10.5" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="202">merge: hotfix/timeout</text>
-<text class="meta" x="440" y="202">Alan Turing</text>
-<text class="meta" x="560" y="202">2 days ago</text>
-<text class="hash" x="665" y="202">1515151</text>
-<circle cx="78" cy="234" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="238">fix: sinal de kill</text>
-<text class="meta" x="440" y="238">Grace Hopper</text>
-<text class="meta" x="560" y="238">2 days ago</text>
-<text class="hash" x="665" y="238">1414141</text>
-<circle cx="38" cy="270" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="274">spike: proxy-editor do squash</text>
-<text class="meta" x="440" y="274">Ada Lovelace</text>
-<text class="meta" x="560" y="274">2 days ago</text>
-<text class="hash" x="665" y="274">1313131</text>
-<circle cx="78" cy="306" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="310">fix: timeout de 120 s</text>
-<text class="meta" x="440" y="310">Alan Turing</text>
-<text class="meta" x="560" y="310">2 days ago</text>
-<text class="hash" x="665" y="310">1212121</text>
-<circle cx="18" cy="342" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="346">perf: buffer de 64 MB</text>
-<text class="meta" x="440" y="346">Grace Hopper</text>
-<text class="meta" x="560" y="346">2 days ago</text>
-<text class="hash" x="665" y="346">1111111</text>
-<circle cx="58" cy="378" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="382">feat(ui): chips de referencia</text>
-<text class="meta" x="440" y="382">Ada Lovelace</text>
-<text class="meta" x="560" y="382">5 hours ago</text>
-<text class="hash" x="665" y="382">1010101</text>
-<circle cx="18" cy="414" r="14" fill="none" stroke="var(--lane-0)" stroke-width="1.5" opacity="0.5"/>
-<circle cx="18" cy="414" r="10.5" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="418">merge: feature/api</text>
-<text class="meta" x="440" y="418">Alan Turing</text>
-<text class="meta" x="560" y="418">5 hours ago</text>
-<text class="hash" x="665" y="418">0f0f0f0</text>
-<circle cx="18" cy="450" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="454">refactor: exec com argv</text>
-<text class="meta" x="440" y="454">Grace Hopper</text>
-<text class="meta" x="560" y="454">5 hours ago</text>
-<text class="hash" x="665" y="454">0e0e0e0</text>
-<circle cx="58" cy="486" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="490">feat(ui): painel de detalhe</text>
-<text class="meta" x="440" y="490">Ada Lovelace</text>
-<text class="meta" x="560" y="490">5 hours ago</text>
-<text class="hash" x="665" y="490">0d0d0d0</text>
-<circle cx="38" cy="522" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="526">spike: trampolim de askpass</text>
-<text class="meta" x="440" y="526">Alan Turing</text>
-<text class="meta" x="560" y="526">5 hours ago</text>
-<text class="hash" x="665" y="526">0c0c0c0</text>
-<circle cx="18" cy="558" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="562">fix: encoding do stdout</text>
-<text class="meta" x="440" y="562">Grace Hopper</text>
-<text class="meta" x="560" y="562">1 hour ago</text>
-<text class="hash" x="665" y="562">0b0b0b0</text>
-<circle cx="58" cy="594" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="598">feat(ui): rail de branches</text>
-<text class="meta" x="440" y="598">Ada Lovelace</text>
-<text class="meta" x="560" y="598">1 hour ago</text>
-<text class="hash" x="665" y="598">0a0a0a0</text>
-<circle cx="78" cy="630" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="634">test(api): separador no assunto</text>
-<text class="meta" x="440" y="634">Alan Turing</text>
-<text class="meta" x="560" y="634">1 hour ago</text>
-<text class="hash" x="665" y="634">0909090</text>
-<circle cx="58" cy="666" r="9" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="670">feat(ui): shell de tres colunas</text>
-<text class="meta" x="440" y="670">Grace Hopper</text>
-<text class="meta" x="560" y="670">1 hour ago</text>
-<text class="hash" x="665" y="670">0808080</text>
-<circle cx="18" cy="702" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="706">feat: watcher do .git</text>
-<text class="meta" x="440" y="706">Ada Lovelace</text>
-<text class="meta" x="560" y="706">1 hour ago</text>
-<text class="hash" x="665" y="706">0707070</text>
-<circle cx="78" cy="738" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="742">feat(api): parser do topo-order</text>
-<text class="meta" x="440" y="742">Alan Turing</text>
-<text class="meta" x="560" y="742">2 minutes ago</text>
-<text class="hash" x="665" y="742">0606060</text>
-<circle cx="38" cy="774" r="9" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="778">spike: worktrees por chdir</text>
-<text class="meta" x="440" y="778">Grace Hopper</text>
-<text class="meta" x="560" y="778">2 minutes ago</text>
-<text class="hash" x="665" y="778">0505050</text>
-<circle cx="18" cy="810" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="814">docs: arquitetura inicial</text>
-<text class="meta" x="440" y="814">Ada Lovelace</text>
-<text class="meta" x="560" y="814">2 minutes ago</text>
-<text class="hash" x="665" y="814">0404040</text>
-<circle cx="78" cy="846" r="9" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="850">feat(api): rota de log</text>
-<text class="meta" x="440" y="850">Alan Turing</text>
-<text class="meta" x="560" y="850">2 minutes ago</text>
-<text class="hash" x="665" y="850">0303030</text>
-<circle cx="18" cy="882" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<text class="sub" x="110.0" y="886">feat: servidor http nativo</text>
-<text class="meta" x="440" y="886">Grace Hopper</text>
-<text class="meta" x="560" y="886">2 minutes ago</text>
-<text class="hash" x="665" y="886">0202020</text>
-<circle cx="18" cy="918" r="9" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="2.25" opacity="1"/>
-<circle cx="18" cy="918" r="4.05" fill="var(--lane-0)" stroke="none" stroke-width="0" opacity="1"/>
-<text class="sub" x="110.0" y="922">chore: esqueleto do projeto</text>
-<text class="meta" x="440" y="922">Ada Lovelace</text>
-<text class="meta" x="560" y="922">2 minutes ago</text>
-<text class="hash" x="665" y="922">0101010</text>
+<path d="M 24 36 L 24 180" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 180 L 24 252" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 252 C 24 296.64 84 279.36 84 324" fill="none" stroke="var(--lane-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 252 L 24 396" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 396 C 24 440.64 114 423.36 114 468" fill="none" stroke="var(--lane-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 54 108 L 54 540" fill="none" stroke="var(--lane-1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 114 468 L 114 612" fill="none" stroke="var(--lane-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 396 L 24 684" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 114 612 C 114 656.64 24 639.36 24 684" fill="none" stroke="var(--lane-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 84 324 L 84 756" fill="none" stroke="var(--lane-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 684 L 24 828" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 828 L 24 900" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 84 756 L 84 972" fill="none" stroke="var(--lane-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 54 540 L 54 1044" fill="none" stroke="var(--lane-1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 900 L 24 1116" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 84 972 L 84 1188" fill="none" stroke="var(--lane-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 828 C 24 872.64 114 855.36 114 900 M 114 900 L 114 1260" fill="none" stroke="var(--lane-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 84 1188 L 84 1332" fill="none" stroke="var(--lane-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 1116 L 24 1404" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 84 1332 C 84 1376.64 24 1359.36 24 1404" fill="none" stroke="var(--lane-2)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 114 1260 L 114 1476" fill="none" stroke="var(--lane-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 54 1044 L 54 1548" fill="none" stroke="var(--lane-1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 1404 L 24 1620" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 54 1548 C 54 1592.64 24 1575.36 24 1620" fill="none" stroke="var(--lane-1)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 114 1476 L 114 1692" fill="none" stroke="var(--lane-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 1620 L 24 1764" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 114 1692 C 114 1736.64 24 1719.36 24 1764" fill="none" stroke="var(--lane-3)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<path d="M 24 1764 L 24 1836" fill="none" stroke="var(--lane-0)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+<circle cx="24" cy="36" r="30" fill="none" stroke="var(--primary)" stroke-width="2" opacity="1"/>
+<circle cx="24" cy="36" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<rect class="primary-soft" x="152" y="28" width="35.4" height="16" rx="8"/><text class="primary" x="158.5" y="39.5">HEAD</text>
+<rect class="chip" x="192.4" y="28" width="35.4" height="16" rx="8"/><text class="fg" x="198.9" y="39.5">main</text>
+<rect class="chip" x="232.8" y="28" width="74.6" height="16" rx="8"/><text class="muted" x="239.3" y="39.5">origin/main</text>
+<text class="sub" x="312.4" y="40">docs: manual da View …</text>
+<text class="meta" x="482" y="40">Grace Hopper</text>
+<text class="meta" x="602" y="40">3 weeks ago</text>
+<text class="hash" x="707" y="40">1a1a1a1</text>
+<circle cx="54" cy="108" r="18" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="3" opacity="1"/>
+<rect class="chip" x="152" y="100" width="35.4" height="16" rx="8"/><text class="fg" x="158.5" y="111.5">next</text>
+<text class="sub" x="192.4" y="112">spike: dnd semantico</text>
+<text class="meta" x="482" y="112">Ada Lovelace</text>
+<text class="meta" x="602" y="112">3 weeks ago</text>
+<text class="hash" x="707" y="112">1919191</text>
+<circle cx="24" cy="180" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<rect class="tag-soft" x="152" y="172" width="46.6" height="16" rx="8"/><text class="tag" x="158.5" y="183.5">v1.2.0</text>
+<text class="sub" x="203.6" y="184">chore: release 1.2.0</text>
+<text class="meta" x="482" y="184">Alan Turing</text>
+<text class="meta" x="602" y="184">3 weeks ago</text>
+<text class="hash" x="707" y="184">1818181</text>
+<circle cx="24" cy="252" r="28" fill="none" stroke="var(--lane-0)" stroke-width="2" opacity="0.5"/>
+<circle cx="24" cy="252" r="21" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="256">merge: feature/ui</text>
+<text class="meta" x="482" y="256">Grace Hopper</text>
+<text class="meta" x="602" y="256">3 weeks ago</text>
+<text class="hash" x="707" y="256">1717171</text>
+<circle cx="84" cy="324" r="18" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="3" opacity="1"/>
+<rect class="chip" x="152" y="316" width="108.2" height="16" rx="8"/><text class="muted" x="158.5" y="327.5">origin/feature/ui</text>
+<text class="sub" x="265.2" y="328">feat(ui): grafo virtualizado</text>
+<text class="meta" x="482" y="328">Ada Lovelace</text>
+<text class="meta" x="602" y="328">3 weeks ago</text>
+<text class="hash" x="707" y="328">1616161</text>
+<circle cx="24" cy="396" r="28" fill="none" stroke="var(--lane-0)" stroke-width="2" opacity="0.5"/>
+<circle cx="24" cy="396" r="21" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="400">merge: hotfix/timeout</text>
+<text class="meta" x="482" y="400">Alan Turing</text>
+<text class="meta" x="602" y="400">2 days ago</text>
+<text class="hash" x="707" y="400">1515151</text>
+<circle cx="114" cy="468" r="18" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="472">fix: sinal de kill</text>
+<text class="meta" x="482" y="472">Grace Hopper</text>
+<text class="meta" x="602" y="472">2 days ago</text>
+<text class="hash" x="707" y="472">1414141</text>
+<circle cx="54" cy="540" r="18" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="544">spike: proxy-editor do squash</text>
+<text class="meta" x="482" y="544">Ada Lovelace</text>
+<text class="meta" x="602" y="544">2 days ago</text>
+<text class="hash" x="707" y="544">1313131</text>
+<circle cx="114" cy="612" r="18" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="616">fix: timeout de 120 s</text>
+<text class="meta" x="482" y="616">Alan Turing</text>
+<text class="meta" x="602" y="616">2 days ago</text>
+<text class="hash" x="707" y="616">1212121</text>
+<circle cx="24" cy="684" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="688">perf: buffer de 64 MB</text>
+<text class="meta" x="482" y="688">Grace Hopper</text>
+<text class="meta" x="602" y="688">2 days ago</text>
+<text class="hash" x="707" y="688">1111111</text>
+<circle cx="84" cy="756" r="18" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="760">feat(ui): chips de referencia</text>
+<text class="meta" x="482" y="760">Ada Lovelace</text>
+<text class="meta" x="602" y="760">5 hours ago</text>
+<text class="hash" x="707" y="760">1010101</text>
+<circle cx="24" cy="828" r="28" fill="none" stroke="var(--lane-0)" stroke-width="2" opacity="0.5"/>
+<circle cx="24" cy="828" r="21" fill="var(--lane-0)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="832">merge: feature/api</text>
+<text class="meta" x="482" y="832">Alan Turing</text>
+<text class="meta" x="602" y="832">5 hours ago</text>
+<text class="hash" x="707" y="832">0f0f0f0</text>
+<circle cx="24" cy="900" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="904">refactor: exec com argv</text>
+<text class="meta" x="482" y="904">Grace Hopper</text>
+<text class="meta" x="602" y="904">5 hours ago</text>
+<text class="hash" x="707" y="904">0e0e0e0</text>
+<circle cx="84" cy="972" r="18" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="976">feat(ui): painel de detalhe</text>
+<text class="meta" x="482" y="976">Ada Lovelace</text>
+<text class="meta" x="602" y="976">5 hours ago</text>
+<text class="hash" x="707" y="976">0d0d0d0</text>
+<circle cx="54" cy="1044" r="18" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1048">spike: trampolim de askpass</text>
+<text class="meta" x="482" y="1048">Alan Turing</text>
+<text class="meta" x="602" y="1048">5 hours ago</text>
+<text class="hash" x="707" y="1048">0c0c0c0</text>
+<circle cx="24" cy="1116" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1120">fix: encoding do stdout</text>
+<text class="meta" x="482" y="1120">Grace Hopper</text>
+<text class="meta" x="602" y="1120">1 hour ago</text>
+<text class="hash" x="707" y="1120">0b0b0b0</text>
+<circle cx="84" cy="1188" r="18" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1192">feat(ui): rail de branches</text>
+<text class="meta" x="482" y="1192">Ada Lovelace</text>
+<text class="meta" x="602" y="1192">1 hour ago</text>
+<text class="hash" x="707" y="1192">0a0a0a0</text>
+<circle cx="114" cy="1260" r="18" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1264">test(api): separador no assunto</text>
+<text class="meta" x="482" y="1264">Alan Turing</text>
+<text class="meta" x="602" y="1264">1 hour ago</text>
+<text class="hash" x="707" y="1264">0909090</text>
+<circle cx="84" cy="1332" r="18" fill="var(--surface)" stroke="var(--lane-2)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1336">feat(ui): shell de tres colunas</text>
+<text class="meta" x="482" y="1336">Grace Hopper</text>
+<text class="meta" x="602" y="1336">1 hour ago</text>
+<text class="hash" x="707" y="1336">0808080</text>
+<circle cx="24" cy="1404" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1408">feat: watcher do .git</text>
+<text class="meta" x="482" y="1408">Ada Lovelace</text>
+<text class="meta" x="602" y="1408">1 hour ago</text>
+<text class="hash" x="707" y="1408">0707070</text>
+<circle cx="114" cy="1476" r="18" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1480">feat(api): parser do topo-order</text>
+<text class="meta" x="482" y="1480">Alan Turing</text>
+<text class="meta" x="602" y="1480">2 minutes ago</text>
+<text class="hash" x="707" y="1480">0606060</text>
+<circle cx="54" cy="1548" r="18" fill="var(--surface)" stroke="var(--lane-1)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1552">spike: worktrees por chdir</text>
+<text class="meta" x="482" y="1552">Grace Hopper</text>
+<text class="meta" x="602" y="1552">2 minutes ago</text>
+<text class="hash" x="707" y="1552">0505050</text>
+<circle cx="24" cy="1620" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1624">docs: arquitetura inicial</text>
+<text class="meta" x="482" y="1624">Ada Lovelace</text>
+<text class="meta" x="602" y="1624">2 minutes ago</text>
+<text class="hash" x="707" y="1624">0404040</text>
+<circle cx="114" cy="1692" r="18" fill="var(--surface)" stroke="var(--lane-3)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1696">feat(api): rota de log</text>
+<text class="meta" x="482" y="1696">Alan Turing</text>
+<text class="meta" x="602" y="1696">2 minutes ago</text>
+<text class="hash" x="707" y="1696">0303030</text>
+<circle cx="24" cy="1764" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<text class="sub" x="152.0" y="1768">feat: servidor http nativo</text>
+<text class="meta" x="482" y="1768">Grace Hopper</text>
+<text class="meta" x="602" y="1768">2 minutes ago</text>
+<text class="hash" x="707" y="1768">0202020</text>
+<circle cx="24" cy="1836" r="18" fill="var(--surface)" stroke="var(--lane-0)" stroke-width="3" opacity="1"/>
+<circle cx="24" cy="1836" r="8.1" fill="var(--lane-0)" stroke="none" stroke-width="0" opacity="1"/>
+<text class="sub" x="152.0" y="1840">chore: esqueleto do projeto</text>
+<text class="meta" x="482" y="1840">Ada Lovelace</text>
+<text class="meta" x="602" y="1840">2 minutes ago</text>
+<text class="hash" x="707" y="1840">0101010</text>
 </g>
 </svg>
