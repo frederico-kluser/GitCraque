@@ -13,8 +13,13 @@
  * aqui: raio, curvatura, escala do hover, arredondamento e corpo do texto saem
  * todos de `paint.ts`. Este arquivo so decide QUANDO cada forma existe; a forma
  * em si vem de la. Para mudar o visual, va em `paint.ts`.
+ *
+ * UMA EXCECAO: o corpo de um commit comum NAO vem de `paint.ts` — e o retrato
+ * do autor, desenhado aqui a partir de `gravatar.ts` (o desenho continua sem
+ * decidir tamanho; o raio vem de `metrics`). O anel da lane que borda o
+ * retrato e o traco que `paint.ts` ja punha no corpo.
  */
-import { memo } from "react";
+import { memo, useEffect, useId, useState } from "react";
 import type { MouseEvent } from "react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
@@ -27,6 +32,7 @@ import { cn, laneVar, short } from "@/lib/utils";
 import { toast } from "@/state/store";
 import { clipEdgePath, laneX } from "./bezier.ts";
 import { commitTooltip, TOOLTIP_DELAY } from "./CommitTooltip.tsx";
+import { avatarLane, gravatarUrl, initialsOf } from "./gravatar.ts";
 import { commitNodeShapes, EDGE, NODE, SURFACE, TEXT } from "./paint.ts";
 import type { PaintTone } from "./paint.ts";
 import { RefChips } from "./RefChip.tsx";
@@ -66,6 +72,108 @@ const NODE_GROUP_CLASS = cn(
   "transition-[scale] duration-[var(--motion-ui-transition-snap-duration)]",
   "ease-[var(--motion-ui-transition-snap)] motion-reduce:transition-none",
 );
+
+/**
+ * O RETRATO DO AUTOR no lugar do corpo da bolinha — foto do Gravatar quando
+ * existe, iniciais quando nao. E irmao do `CommitAvatar` do tooltip
+ * (`CommitTooltip.tsx`): a MESMA logica de `gravatarUrl` + `initialsOf` +
+ * `avatarLane`, so que desenhada em SVG, dentro do grupo que cresce no hover.
+ *
+ * A URL da foto e assincrona (o `gravatarUrl` faz um digest SHA-256), entao o
+ * estado de carregamento vive AQUI, no proprio retrato: `CommitRow` e memoizado
+ * por `areEqual` do react-window, e uma re-renderizacao de cada avatar a medida
+ * que as fotos chegam nao pode vazar para a linha inteira. Ate a URL resolver
+ * (ou o 404 derrubar) aparece o retrato de iniciais; a foto e que se sobrepoe
+ * quando carrega — mesma arquitetura do tooltip.
+ *
+ * Nenhum numero de aparencia mora aqui: o raio e a espessura do traco vem de
+ * `metrics` (via props) e o anel usa a cor da lane da linha. O pedido ao
+ * Gravatar sai no DOBRO do tamanho exibido para nao borrar em tela retina,
+ * como o tooltip faz com o `avatarPx`.
+ */
+function CommitAvatarNode({
+  name,
+  email,
+  radius,
+  strokeWidth,
+  laneColor,
+}: {
+  name: string;
+  email: string;
+  radius: number;
+  strokeWidth: number;
+  laneColor: string;
+}) {
+  const [url, setUrl] = useState<string | null>(null);
+  const [failed, setFailed] = useState(false);
+  /* id unico para o `clipPath` da foto. O `useId` do React traz ":" no id e
+     elas nao saem bem numa referencia `url(#...)`: fora elas. */
+  const clipId = useId().replace(/:/g, "");
+
+  useEffect(() => {
+    let alive = true;
+    setFailed(false);
+    setUrl(null);
+    /* o digest e assincrono: a URL so existe um tick depois do e-mail */
+    void gravatarUrl(email, radius * 4).then((next) => {
+      if (alive) setUrl(next);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [email, radius]);
+
+  const initials = initialsOf(name, email);
+
+  if (!url || failed) {
+    return (
+      <>
+        {/* Um circulo so resolve o anel E o fundo: o fill sai da lane do autor
+            (`avatarLane`, deterministica pelo e-mail) e o traco e a cor da
+            lane do commit — o anel de borda que o corpo tinha. */}
+        <circle
+          r={radius}
+          fill={laneVar(avatarLane(email || name))}
+          stroke={laneColor}
+          strokeWidth={strokeWidth}
+        />
+        <text
+          textAnchor="middle"
+          dominantBaseline="central"
+          fontSize={radius * 0.7}
+          fontWeight="500"
+          className="fill-white"
+        >
+          {initials}
+        </text>
+      </>
+    );
+  }
+
+  return (
+    <>
+      {/* O anel da lane por cima da foto, como borda: a foto e recortada um
+          pouco menor (strokeWidth/2) para o traco nao comer a borda dela. */}
+      <circle r={radius} fill="none" stroke={laneColor} strokeWidth={strokeWidth} />
+      <clipPath id={clipId}>
+        <circle r={radius - strokeWidth / 2} />
+      </clipPath>
+      <image
+        href={url}
+        x={-(radius - strokeWidth / 2)}
+        y={-(radius - strokeWidth / 2)}
+        width={2 * (radius - strokeWidth / 2)}
+        height={2 * (radius - strokeWidth / 2)}
+        clipPath={`url(#${clipId})`}
+        preserveAspectRatio="xMidYMid slice"
+        aria-hidden
+        /* o `d=404` do Gravatar entrega o fallback: sem conta, o 404 vira
+           `onError` e as iniciais voltam a aparecer */
+        onError={() => setFailed(true)}
+      />
+    </>
+  );
+}
 
 export const CommitRow = memo(function CommitRow({
   index: row,
@@ -281,16 +389,44 @@ export const CommitRow = memo(function CommitRow({
               isMerge: node.isMerge,
               isRoot: node.isRoot,
               isHead,
-            }).map((shape) => (
-              <circle
-                key={shape.key}
-                r={shape.r}
-                fill={tone(shape.fill, laneColor)}
-                stroke={tone(shape.stroke, laneColor)}
-                strokeWidth={shape.strokeWidth}
-                opacity={shape.opacity}
+            }).map((shape) => {
+              /* o corpo de um commit comum NAO e desenhado por `paint.ts`:
+                 no lugar dele entra o retrato do autor, logo abaixo — e o
+                 miolo da raiz tambem, para nao pintar por cima da foto. O
+                 anel de HEAD e o anel do merge continuam vindo de la. */
+              if (!node.isMerge && (shape.key === "body" || shape.key === "root-core")) {
+                return null;
+              }
+              return (
+                <circle
+                  key={shape.key}
+                  r={shape.r}
+                  fill={tone(shape.fill, laneColor)}
+                  stroke={tone(shape.stroke, laneColor)}
+                  strokeWidth={shape.strokeWidth}
+                  opacity={shape.opacity}
+                />
+              );
+            })}
+            {/* O retrato do autor: corpo da bolinha de todo commit nao-merge,
+                com o anel colorido da lane como borda. Vive dentro do grupo que
+                cresce no hover — a escala continua valendo para ele. */}
+            {!node.isMerge && (
+              <CommitAvatarNode
+                name={commit.authorName}
+                email={commit.authorEmail}
+                radius={metrics.nodeRadius}
+                strokeWidth={metrics.strokeWidth}
+                laneColor={laneColor}
               />
-            ))}
+            )}
+            {/* A raiz nao muda de corpo por causa do retrato: o miolo cheio
+                continua por cima da foto — e o que distingue o commit sem pai.
+                Espelha o root-core de `paint.ts` (mesmo raio e mesma cor,
+                resolvida aqui na cor da lane). */}
+            {node.isRoot && !node.isMerge && (
+              <circle r={metrics.nodeRadius * NODE.rootCoreRatio} fill={laneColor} />
+            )}
           </g>
         </g>
       </svg>
