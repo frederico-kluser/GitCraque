@@ -225,10 +225,24 @@ export function RefChip({ refEntry, onActivate, onContextMenu: onRefMenu, buildR
         press && "longpress-menu",
         podeArrastar && "cursor-grab",
         drag.isDragging && "cursor-grabbing opacity-40",
-        // Aceita / recusa durante o arraste. So `filter`, `opacity` e cor de
-        // borda: nada que mude a caixa e faca a linha inteira reflowar.
+        // Aceita / recusa durante o arraste. So `filter`, `opacity`, cor de
+        // borda e TRANSFORM: nada que mude a caixa e faca a linha inteira
+        // reflowar.
         feedback.accepts && "ring-2 ring-success/70 brightness-125",
         feedback.rejects && "opacity-50 ring-2 ring-destructive/60",
+        /*
+         * O ALVO DE SOLTURA NO TOQUE. O chip nao pode ter `touch:min-h-tap`
+         * estatico: na linha compacta (56px) a descricao empilha chips+assunto
+         * sobre a linha de metadados, e 44px no chip estouraria a linha
+         * (~70px > 56px). Em vez disso ele CRESCE durante o arraste, e so no
+         * toque (`touch:`) — escala e a unica forma de crescer sem reflow. O
+         * `getBoundingClientRect` inclui transform, entao o retangulo que o
+         * @dnd-kit mede no INICIO do arrasto ja e o escalado — a classe
+         * `dragging` e aplicada antes da primeira medicao — e permanece
+         * estavel durante todo o arraste: a area de hit do drop cresce junto
+         * com o visual.
+         */
+        feedback.dragging && "touch:scale-150",
       )}
     >
       <Icon aria-hidden className="size-3 shrink-0 opacity-70" />

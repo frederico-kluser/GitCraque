@@ -76,6 +76,22 @@ sensor configuration is covered indirectly: `sensors.test.mjs` proves
 `activationConstraintFor` returns exactly one union member per pointer, which is
 what the provider passes to `useSensor`.
 
+**Touch targets in the graph are a scope where the audit lies.** The DOM
+audit (`web/src/__audit__/touch-targets.domtest.ts`) scans only the shell
+(app/panels/dialogs) and only `button`/`role=button`/`menuitem` — a `RefChip`
+passes without any `touch:` utility and can still be a 21px drop target in the
+middle of a 56px compact row. It also cannot take a static `touch:min-h-tap`
+(44px): the compact row stacks chips+subject over the meta line
+(`web/src/graph/CommitRow.tsx:495-498`), and 44px chips would overflow the
+56px row (`paint.ts:89`). The mobile pattern that fits is a transform scale
+**while a drag is active**: `feedback.dragging && "touch:scale-150"` in
+`RefChip.tsx` — no reflow, and the drop hit area grows with the visual. The
+mechanism is NOT re-measuring: with the default `frequency: "optimized"`,
+dnd-kit measures each droppable once, at the start of the drag (plus
+ResizeObserver events). The `dragging` class is applied before that first
+measurement, `getBoundingClientRect` includes transforms, so the measured
+rectangle is already the scaled one — and it stays stable for the whole drag.
+
 **`preview` is argv without the leading `git`.** The UI prepends it
 (`web/src/panels/parts.tsx:173`). Endpoints must come from `INTENT_ENDPOINTS`
 (`web/src/dnd/intents.ts:49`).

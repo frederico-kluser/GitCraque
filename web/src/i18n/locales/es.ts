@@ -1093,6 +1093,8 @@ export const es: Messages = {
   "dnd.a11y.cancelled": "Arrastre de {what} cancelado.",
   "dnd.a11y.cancelledPlain": "Arrastre cancelado.",
   "dnd.chip.no": "no",
+  "dnd.drop.missed.title": "Arrástralo sobre una rama",
+  "dnd.drop.missed.body": "Suéltalo sobre una chip de rama para hacer merge, rebase o aplicar un commit.",
 
   /* ---------------------------------------------------------------- */
   /* Motor de intenciones                                              */

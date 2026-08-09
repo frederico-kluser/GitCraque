@@ -1049,6 +1049,8 @@ export const zh: Messages = {
   "dnd.a11y.cancelled": "{what}的拖动已取消。",
   "dnd.a11y.cancelledPlain": "拖动已取消。",
   "dnd.chip.no": "否",
+  "dnd.drop.missed.title": "拖到分支上",
+  "dnd.drop.missed.body": "请放到分支标签上，以合并、变基或应用提交。",
 
   /* ---------------------------------------------------------------- */
   /* 意图引擎                                                          */

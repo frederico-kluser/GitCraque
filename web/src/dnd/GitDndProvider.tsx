@@ -265,6 +265,11 @@ export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
       setFeedback(EMPTY);
       const source = asDragPayload(event.active.data.current);
       const target = event.over ? asDropPayload(event.over.data.current) : null;
+      // Silencio no cancelamento — soltar fora de um alvo nunca foi tentativa
+      // de drop. No toque isso importa DUAS vezes: um dedo parado 250ms ja
+      // acorda o arraste (PointerSensor com delay), e no layout compacto os
+      // alvos podem nem estar na tela. Quem ensina o gesto e a dica proativa
+      // no DragOverlay, DURANTE o arrasto — nunca um toast depois dele.
       if (!source || !target) return;
 
       const intent = resolve(source, target);
@@ -326,6 +331,15 @@ export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
       : "rejects"
     : "dragging";
 
+  // Dica proativa de toque: ponteiro grosseiro e nenhum alvo sob o dedo. Ajuda
+  // DURANTE o arrasto — no layout compacto os alvos (chips de ramo) podem nem
+  // estar na tela, e um dedo parado 250ms ja acorda o arraste sem nenhuma
+  // intencao de drop. Nada de toast no cancelamento: e dica, nao bronca.
+  const dropHint =
+    getViewport().coarsePointer && feedback.overId === null
+      ? t("dnd.drop.missed.title")
+      : null;
+
   return (
     <DndContext
       sensors={sensors}
@@ -342,7 +356,9 @@ export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
       <FeedbackContext.Provider value={feedback}>
         {children}
         <DragOverlay dropAnimation={null}>
-          {feedback.source ? <DragChip payload={feedback.source} tone={overlayTone} /> : null}
+          {feedback.source ? (
+            <DragChip payload={feedback.source} tone={overlayTone} hint={dropHint} />
+          ) : null}
         </DragOverlay>
       </FeedbackContext.Provider>
     </DndContext>
@@ -360,7 +376,17 @@ const TONE_CLASS: Record<DropFeedbackState, string> = {
   rejects: "border-destructive bg-card text-destructive ring-1 ring-destructive",
 };
 
-function DragChip({ payload, tone }: { payload: DragPayload; tone: DropFeedbackState }) {
+function DragChip({
+  payload,
+  tone,
+  hint,
+}: {
+  payload: DragPayload;
+  tone: DropFeedbackState;
+  /** Dica proativa de toque: texto pequeno abaixo do chip quando nao ha alvo
+   *  sob o ponteiro. `null`/undefined omite a linha. */
+  hint?: string | null;
+}) {
   const snap = useMotionUITransition("snap");
   const { motionMode } = useMotionUITheme();
   const full = motionMode === "full";
@@ -375,22 +401,29 @@ function DragChip({ payload, tone }: { payload: DragPayload; tone: DropFeedbackS
       animate={full ? { opacity: 1, scale: 1 } : { opacity: 1 }}
       transition={{ ...snap }}
       className={cn(
-        "pointer-events-none flex max-w-sm items-center gap-2 rounded-md border px-2.5 py-1.5 text-xs shadow-lg",
+        "pointer-events-none flex max-w-sm flex-col rounded-md border shadow-lg",
         TONE_CLASS[tone],
       )}
     >
-      <span className="text-muted-foreground">{ENTITY_ICON[payload.type]}</span>
-      {isCommit ? (
-        <>
-          <code className="font-mono text-[0.7rem] text-foreground">{short(payload.key)}</code>
-          {payload.detail ? (
-            <span className="truncate text-muted-foreground">{truncate(payload.detail, 48)}</span>
-          ) : null}
-        </>
-      ) : (
-        <span className="truncate font-medium">{payload.label}</span>
-      )}
-      {tone === "rejects" ? <span aria-hidden="true">{t("dnd.chip.no")}</span> : null}
+      <div className="flex items-center gap-2 px-2.5 py-1.5 text-xs">
+        <span className="text-muted-foreground">{ENTITY_ICON[payload.type]}</span>
+        {isCommit ? (
+          <>
+            <code className="font-mono text-[0.7rem] text-foreground">{short(payload.key)}</code>
+            {payload.detail ? (
+              <span className="truncate text-muted-foreground">{truncate(payload.detail, 48)}</span>
+            ) : null}
+          </>
+        ) : (
+          <span className="truncate font-medium">{payload.label}</span>
+        )}
+        {tone === "rejects" ? <span aria-hidden="true">{t("dnd.chip.no")}</span> : null}
+      </div>
+      {hint ? (
+        <div className="px-2.5 pb-1.5 text-[0.65rem] leading-tight text-muted-foreground">
+          {hint}
+        </div>
+      ) : null}
     </motion.div>
   );
 }

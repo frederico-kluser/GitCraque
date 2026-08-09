@@ -36,6 +36,22 @@ export type PointerActivationConstraint =
  * `LONG_PRESS_MS` (500), senao o menu de toque longo abre antes do arraste —
  * esta provada na suite `sensors.test.mjs`. A outra metade da regra e o
  * `cancelLongPress()` no `onDragStart` do `GitDndProvider`.
+ *
+ * O QUE O DELAY FAZ COM O DEDO PARADO — e os tres edge cases que a onda 2a
+ * decidiu aceitar, nao contornar:
+ *
+ *  1. Segurar o dedo SEM mover acorda o arraste aos 250ms, mesmo sem nenhum
+ *     movimento: o `delay` ativa por tempo de repouso, nao por deslocamento.
+ *     O menu de toque longo (500ms) morre no `cancelLongPress()` do
+ *     `onDragStart` — o arraste vence sempre, e o menu daquele no tem outra
+ *     porta (o "..." do `ActionMenu` nas linhas compactas).
+ *  2. Mover o dedo DENTRO da folga (`DND_TOLERANCE_PX`, 5px) antes dos 250ms
+ *     nao cancela o atraso: o gesto ainda acorda como arraste quando o timer
+ *     dispara. Uma micro-deriva da ponta do dedo nao mata o arraste.
+ *  3. Mover o dedo ALEM da folga antes dos 250ms cancela o atraso e o gesto
+ *     vira rolagem — e o que faz a lista virtualizada do historico continuar
+ *     rolando. A conta e do @dnd-kit: a cada `pointermove` ele compara a
+ *     distancia acumulada com a folga; passou, o timer morre.
  */
 export const DND_DELAY_MS = 250;
 

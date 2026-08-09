@@ -1079,6 +1079,8 @@ export const en: Messages = {
   "dnd.a11y.cancelled": "Drag of {what} cancelled.",
   "dnd.a11y.cancelledPlain": "Drag cancelled.",
   "dnd.chip.no": "no",
+  "dnd.drop.missed.title": "Drag it onto a branch",
+  "dnd.drop.missed.body": "Drop it on a branch chip to merge, rebase or apply a commit.",
 
   /* ---------------------------------------------------------------- */
   /* Intent engine                                                     */

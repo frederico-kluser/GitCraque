@@ -1099,6 +1099,10 @@ export const pt = {
   "dnd.a11y.cancelled": "Arrasto de {what} cancelado.",
   "dnd.a11y.cancelledPlain": "Arrasto cancelado.",
   "dnd.chip.no": "não",
+  // Dica proativa do DragOverlay no toque: mostra enquanto o dedo arrasta sem
+  // nenhum alvo sob ele. Nao e bronca apos o gesto — e ajuda DURANTE.
+  "dnd.drop.missed.title": "Arraste sobre um ramo",
+  "dnd.drop.missed.body": "Solte sobre um chip de ramo para mesclar, rebasear ou aplicar um commit.",
 
   /* ---------------------------------------------------------------- */
   /* Motor de DND — intencoes (intents.ts)                             */
