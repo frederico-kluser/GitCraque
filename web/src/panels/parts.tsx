@@ -79,7 +79,21 @@ export function ToolButton({
       className={cn(
         "inline-flex shrink-0 items-center gap-1.5 rounded-md font-medium transition-colors",
         "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
-        size === "sm" ? "h-6 px-2 text-[11px]" : "h-8 px-2.5 text-xs",
+        /*
+         * O alvo cresce de verdade no toque, e a CAIXA junto — de proposito.
+         * `min-h`/`min-w` vencem `h-6`/`h-8` (a altura usada e o maior dos
+         * dois), entao no ponteiro fino ficam os 24px e 32px de sempre.
+         *
+         * Aqui NAO cabe o truque do `::after` esticado: `ToolButton` aparece em
+         * GRUPO (as ilhas da toolbar, os pares de acao das linhas), e duas areas
+         * invisiveis de 44px em botoes vizinhos se sobrepoem — a de cima engole
+         * o clique da de baixo e um dos dois botoes fica inalcancavel. Caixa
+         * real de 44px nao tem esse problema: os centros ja saem 44px + gap
+         * separados, que e justamente o que a regra de espacamento pede.
+         */
+        size === "sm"
+          ? "h-6 px-2 text-[11px] touch:min-h-tap touch:min-w-tap touch:px-3"
+          : "h-8 px-2.5 text-xs touch:min-h-tap touch:min-w-tap touch:px-3.5",
         TONE_CLASS[tone],
         active && "bg-accent text-accent-foreground",
         disabled && "pointer-events-none opacity-50",
@@ -147,9 +161,19 @@ export function Chip({
  */
 export type ActionMenuItem = MenuItemSpec;
 
-/** Classe unica das linhas de menu — usada pelo "⋯" e pelo menu de contexto. */
+/**
+ * Classe unica das linhas de menu — usada pelo "⋯" e pelo menu de contexto.
+ *
+ * No toque a linha vira um alvo de 44px pela ALTURA MINIMA, nao por `py`: o
+ * `items-center` ja centraliza o conteudo dentro dela, entao o icone e o rotulo
+ * nao se mexem de lugar. Popup nao tem aperto de espaco — pode crescer a
+ * vontade —, e por isso aqui a caixa cresce em vez de ganhar area invisivel.
+ * Linhas de menu ficam encostadas de proposito (e o que fazem iOS e Android):
+ * com 44px de altura real os centros ja saem 44px separados.
+ */
 export const MENU_ITEM_CLASS = cn(
   "flex cursor-default items-center gap-2 rounded-sm px-2 py-1.5 text-xs outline-none select-none",
+  "touch:min-h-tap touch:px-3",
   "data-[highlighted]:bg-accent data-[highlighted]:text-accent-foreground",
   "data-[disabled]:pointer-events-none data-[disabled]:opacity-40",
 );
@@ -238,6 +262,32 @@ export function ActionMenu({
             "inline-flex size-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors",
             "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
             "hover:bg-accent hover:text-accent-foreground data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground",
+            /*
+             * O UNICO dos tres alvos que cresce SEM inflar a caixa. O "⋯" mora
+             * na ponta de uma linha apertada do rail; leva-lo a 44px de caixa
+             * arrastaria a linha inteira para 44px de altura. Entao a caixa
+             * continua com 24px e quem cresce e um `::after` esticado — a
+             * tecnica padrao para area clicavel: o pseudo-elemento e hit-testado
+             * como parte do proprio elemento, e sem `bg` ele e invisivel.
+             *
+             * Seguro aqui porque o gatilho e SEMPRE o ultimo item da linha e
+             * nunca tem outro alvo do lado: os 10px que a area invade a esquerda
+             * caem no `px-2` da linha. Nao replique isto em botao que tenha
+             * vizinho clicavel — duas areas de 44px se cobrem.
+             *
+             * `touch:relative` e nao `relative`: no ponteiro fino nao existe
+             * `::after` nenhum, entao nada muda, nem stacking context.
+             */
+            "touch:relative touch:after:absolute touch:after:top-1/2 touch:after:left-1/2",
+            "touch:after:size-tap touch:after:-translate-x-1/2 touch:after:-translate-y-1/2 touch:after:content-['']",
+            /*
+             * Com o menu ABERTO a area some. Ela so serve para ABRIR, e os 10px
+             * que ela desce invadiriam os 6px de `sideOffset` do popup — quem
+             * mirasse a primeira linha do menu acertaria o gatilho e fecharia
+             * tudo. O popup vai portalado com `z-50` e provavelmente venceria,
+             * mas "provavelmente" nao e garantia: `display:none` e.
+             */
+            "touch:data-[popup-open]:after:hidden",
             FOCUS_RING,
             className,
           )}

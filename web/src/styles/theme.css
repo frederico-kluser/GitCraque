@@ -6,6 +6,38 @@
 @custom-variant dark (&:is(.dark *));
 
 /*
+ * A variante `touch:` — o primitivo compartilhado do toque.
+ *
+ * Vale quando QUALQUER uma das duas origens for verdadeira:
+ *   (a) `@media (pointer: coarse)` — o ponteiro primario e um dedo;
+ *   (b) o elemento esta dentro de `.touch-ui` — a pessoa ligou "alvos de toque
+ *       maiores" nas configuracoes, mesmo tendo mouse.
+ *
+ * Por que a forma de BLOCO e nao a de uma linha: a forma curta
+ * (`@custom-variant nome (regra);`) so aceita UMA origem. Aqui a regra e um OU,
+ * e o Tailwind implementa isso substituindo CADA `@slot` do corpo pelas
+ * declaracoes da utilitaria — dois `@slot` irmaos rendem DOIS blocos
+ * independentes, nunca um `and`. E a mesma mecanica do `addVariant` com dois
+ * `"@slot"` no plugin API.
+ *
+ * A segunda origem repete o padrao do `dark` acima (`&:is(.dark *)`), de
+ * proposito: a classe literal e `touch-ui` e mora no `document.documentElement`,
+ * escrita pelo estado do app. Este arquivo so LE a classe, nunca a escreve.
+ *
+ * Uso: `touch:min-h-tap`, `touch:px-3`, `touch:after:size-tap`. Compoe com as
+ * outras variantes (`touch:after:`, `touch:hover:`) como qualquer variante.
+ */
+@custom-variant touch {
+  @media (pointer: coarse) {
+    @slot;
+  }
+
+  &:is(.touch-ui *) {
+    @slot;
+  }
+}
+
+/*
  * Tokens semanticos shadcn — TODO componente do app usa estes nomes
  * (bg-background, text-muted-foreground, border-border...). Nunca hex cru,
  * nunca text-zinc-*. A paleta e a de um cliente Git profissional: superficies
@@ -235,6 +267,48 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Alvo de menu por toque longo — OPT-IN, nunca global.
+ *
+ * O Safari do iPhone NAO tem evento `contextmenu`: o toque longo dispara o
+ * callout nativo (Copiar / Consultar / Compartilhar) por cima do nosso menu, e
+ * nao ha JavaScript que o intercepte — nao existe evento em que o
+ * `preventDefault` pegue. A unica porta e CSS, e sao estas duas propriedades.
+ *
+ * TRES decisoes, e as tres importam mais que a regra:
+ *
+ * 1. E UTILITARIA, nao seletor largo. Quem veste sao os nos que de fato abrem
+ *    menu (linha de commit, chip de ref, linha do rail, linha de arquivo), um a
+ *    um, de proposito. Adivinhar seletores daqui sairia errado.
+ * 2. O recorte de toque esta DENTRO da utilitaria, e nao na mao de quem a usa.
+ *    `-webkit-touch-callout` e inerte no mouse, mas `user-select: none` nao e —
+ *    esquecer o prefixo `touch:` mataria a selecao de texto no desktop inteiro.
+ *    Assim nao ha como usar errado: no ponteiro fino a classe nao declara nada.
+ * 3. `user-select` HERDA. Vestir uma linha torna tudo dentro dela inselecionavel
+ *    — e este e um cliente Git: hash, mensagem de commit, caminho e diff
+ *    precisam ser copiaveis. Por isso existe a valvula `selectable` abaixo:
+ *    declaracao propria sempre vence valor herdado, entao um filho volta a ser
+ *    selecionavel sem briga de especificidade.
+ */
+@utility longpress-menu {
+  @variant touch {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+}
+
+/*
+ * A valvula de escape de `longpress-menu`: devolve selecao e callout a um
+ * DESCENDENTE de um alvo de menu. Sem recorte de toque de proposito — no
+ * ponteiro fino ela ja e o comportamento padrao, entao vestir nao muda nada.
+ */
+@utility selectable {
+  -webkit-touch-callout: default;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
 @layer base {
   * {
     border-color: var(--border);
@@ -301,10 +375,23 @@
    * para ver se vem um segundo toque — e NAO desliga rolagem nem pinca. Nunca
    * desligue o gesto por completo, e nunca trave a escala no meta viewport:
    * impedir o zoom da pagina e falha de acessibilidade.
+   *
+   * O `:not([aria-roledescription="draggable"])` tira os nos do @dnd-kit da
+   * regra. E defesa, nao conserto: `manipulation` e ALIAS de
+   * `pan-x pan-y pinch-zoom` e o valor inicial da propriedade e `auto`, que
+   * habilita "all panning and zooming gestures" (MDN). Ou seja, `manipulation`
+   * e SUBCONJUNTO estrito de `auto` — os dois permitem pan, os dois deixam o
+   * navegador roubar o toque e disparar `pointercancel` antes dos 6px do
+   * `PointerSensor`. Esta linha nunca quebrou arrasto nenhum; o que falta e o
+   * ativador por atraso, e ele e da onda seguinte. Ficar de fora da regra so
+   * garante que o dnd escolha o proprio `touch-action` sem competir com a base.
+   *
+   * NAO acrescente `touch-action: none` aqui: num `<div role="row">` de lista
+   * virtualizada isso mataria a rolagem vertical inteira do historico.
    */
   button,
   a,
-  [role="button"],
+  [role="button"]:not([aria-roledescription="draggable"]),
   input,
   select,
   summary {

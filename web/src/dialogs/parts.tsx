@@ -34,10 +34,15 @@ import { cn } from "@/lib/utils";
 /* Base                                                                */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Os tres tamanhos SO existem a partir de 768px (`md:`). Abaixo disso o dialogo
+ * vira bottom sheet e ocupa a largura inteira, entao um `max-w` ali seria
+ * exatamente o padrao errado que estamos corrigindo.
+ */
 const SIZE_CLASS = {
-  sm: "max-w-md",
-  md: "max-w-xl",
-  lg: "max-w-3xl",
+  sm: "md:max-w-md",
+  md: "md:max-w-xl",
+  lg: "md:max-w-3xl",
 } as const;
 
 export interface DialogShellProps {
@@ -95,7 +100,22 @@ export function DialogShell({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ ...ui }}
-          className="fixed inset-0 z-50 grid place-items-center p-4"
+          /*
+           * Abaixo de 768px o dialogo e ancorado EMBAIXO e cola nas bordas;
+           * de 768px para cima e o centralizado de sempre. As duas media
+           * queries sao mutuamente exclusivas, entao nenhuma das duas geometrias
+           * depende de ordem na cascata para vencer a outra.
+           *
+           * `pl-safe-left`/`pr-safe-right` valem 0px em qualquer tela sem
+           * recorte; existem para o celular deitado, onde o notch invadiria a
+           * lateral do sheet.
+           */
+          className={cn(
+            "fixed inset-0 z-50 grid",
+            "md:place-items-center md:p-4",
+            "max-md:items-end max-md:justify-items-stretch max-md:p-0",
+            "max-md:pl-safe-left max-md:pr-safe-right",
+          )}
         >
           <Backdrop opacity={0.55} onClick={onClose} />
           <motion.div
@@ -110,10 +130,35 @@ export function DialogShell({
             exit={full ? { scale: 0.98, opacity: 0 } : { opacity: 0 }}
             transition={{ ...ui }}
             className={cn(
-              "relative z-10 flex max-h-[85vh] w-full flex-col overflow-hidden rounded-lg border border-border bg-card text-card-foreground shadow-xl",
+              "relative z-10 flex w-full flex-col overflow-hidden border border-border bg-card text-card-foreground shadow-xl",
+              /*
+               * `dvh` e nao `vh`: no navegador movel `vh` mede a viewport COM a
+               * barra de endereco, entao com ela retraida o dialogo passava da
+               * area visivel. `dvh` mede o que esta visivel AGORA.
+               */
+              "max-h-[85dvh]",
+              /*
+               * Bottom sheet abaixo de 768px: so os cantos de cima arredondados,
+               * e `pb-safe-bottom` para o rodape nao ficar embaixo da barra de
+               * gestos. Acima de 768px, o cartao arredondado de sempre.
+               */
+              "md:rounded-lg",
+              "max-md:rounded-t-2xl max-md:rounded-b-none max-md:pb-safe-bottom",
               SIZE_CLASS[size],
             )}
           >
+            {/*
+             * Puxador do bottom sheet — a assinatura visual que diz "isto sai
+             * por baixo". `aria-hidden` de proposito: o gesto de arrastar para
+             * fechar e da onda seguinte, dona dos dialogos concretos, e anunciar
+             * "arraste para baixo para fechar" (`touch.grabber.label`) antes de
+             * o gesto existir seria promessa falsa. Quem implementar o gesto
+             * troca o `aria-hidden` pelo rotulo.
+             */}
+            <div aria-hidden className="flex shrink-0 justify-center pt-2 pb-1 md:hidden">
+              <span className="h-1 w-9 rounded-full bg-border" />
+            </div>
+
             <header className="border-b border-border px-5 py-4">
               <h2
                 id={titleId}
@@ -196,8 +241,17 @@ export function CommandPreview({
 /* Formulario                                                          */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Base de `TextField`, `TextAreaField` e `SelectField`.
+ *
+ * No toque a caixa cresce ate 44px pela altura minima — campo e alvo largo, o
+ * aperto e so vertical, e um `::after` esticado sobre um `<input>` roubaria o
+ * clique que posiciona o cursor no texto. No ponteiro fino continua o mesmo
+ * `py-2` de sempre (~38px). No `textarea` o minimo e inofensivo: com `rows=3`
+ * ele ja passa de 44px.
+ */
 const CONTROL_CLASS =
-  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50";
+  "w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 touch:min-h-tap touch:py-2.5";
 
 export function Field({
   label,
@@ -361,7 +415,14 @@ export function CheckboxField({
         checked={checked}
         disabled={disabled}
         onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.checked)}
-        className="mt-0.5 size-4 shrink-0 rounded border-input accent-[var(--primary)] outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50"
+        /*
+         * A caixa so cresce de 16 para 20px no toque: o alvo de verdade e o
+         * `<label htmlFor>` ao lado, que ja alterna o campo e ocupa a linha
+         * inteira. `::after` esticado nao serve — elemento substituido nao gera
+         * pseudo-elemento — e 44px de caixa deixariam o quadradinho maior que o
+         * texto que ele rotula.
+         */
+        className="mt-0.5 size-4 shrink-0 rounded border-input accent-[var(--primary)] outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 touch:size-5"
       />
       <label htmlFor={id} className="text-sm text-foreground">
         {label}
@@ -403,6 +464,13 @@ export function Button({
       disabled={disabled}
       className={cn(
         "inline-flex h-9 items-center justify-center gap-2 rounded-md px-4 text-sm font-medium outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50",
+        /*
+         * Caixa real de 44px no toque (o `min-h` vence o `h-9`), nunca area
+         * invisivel: os botoes do rodape de um dialogo vivem lado a lado com
+         * `gap-2`, e dois `::after` de 44px em vizinhos se cobririam. O `px-5`
+         * so aumenta a folga horizontal entre os rotulos.
+         */
+        "touch:min-h-tap touch:min-w-tap touch:px-5",
         BUTTON_VARIANT[variant],
         className,
       )}
