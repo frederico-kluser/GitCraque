@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GitCraque v0.2.1 — EXTKER</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+</head>
+<body class="bg-dark text-light">
+<div class="container py-4">
+<h1 class="mb-2">GitCraque v0.2.1</h1>
+<p class="text-muted mb-4">8 de agosto de 2026 · branch <code>main</code></p>
+
+<div class="row g-3 mb-4">
+  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">2</h3><small class="text-muted">Ondas</small></div></div></div>
+  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">4</h3><small class="text-muted">Agentes</small></div></div></div>
+  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">4</h3><small class="text-muted">Squash commits</small></div></div></div>
+  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">472</h3><small class="text-muted">Testes passam</small></div></div></div>
+</div>
+
+<h2 class="h4 mb-3">Resumo</h2>
+<p>Esta release adiciona três melhorias visuais ao grafo de commits do GitCraque:</p>
+<ol>
+  <li><strong>Marca d'água da logo</strong> — sempre visível ao fundo da área central do grafo, com opacidade 10%, desaparecendo apenas na tela de repositório vazio</li>
+  <li><strong>Bolinhas 50% maiores</strong> — raio do commit aumentado de 6px para 9px, com ajustes proporcionais nos anéis de merge, HEAD e halo de seleção</li>
+  <li><strong>Foto do autor em cada bolinha</strong> — avatar Gravatar (SHA-256 do e-mail) renderizado dentro da bolinha de cada commit, com fallback de iniciais coloridas quando não há foto. Cobre commits comuns e merges</li>
+</ol>
+
+<h2 class="h4 mb-3 mt-4">Ondas e agentes</h2>
+<table class="table table-dark table-striped table-sm">
+<thead><tr><th>Onda</th><th>Worktree</th><th>Tarefa</th><th>Arquivos</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>onda1-bigger-dots</td><td>Aumentar nodeRadius 6→9</td><td>paint.ts</td><td>✅</td></tr>
+<tr><td>1</td><td>onda1-logo-watermark</td><td>Marca d'água da logo no grafo</td><td>App.tsx, GraphView.tsx</td><td>✅</td></tr>
+<tr><td>1</td><td>onda1-avatar-dots</td><td>Avatar do autor nas bolinhas</td><td>CommitRow.tsx</td><td>✅</td></tr>
+<tr><td>2</td><td>onda2-avatar-merges</td><td>Estender avatar para merges</td><td>CommitRow.tsx</td><td>✅</td></tr>
+</tbody>
+</table>
+
+<h2 class="h4 mb-3 mt-4">De-Para</h2>
+<table class="table table-dark table-sm">
+<thead><tr><th>Arquivo</th><th>Antes</th><th>Depois</th></tr></thead>
+<tbody>
+<tr><td><code>web/src/graph/paint.ts</code></td><td>nodeRadius=6, hoverScale=1.3, mergeDelta=1, mergeRingDelta=3.5, headRingDelta=4.5, haloDelta=6</td><td>nodeRadius=9, hoverScale=1.2, mergeDelta=1.5, mergeRingDelta=5, headRingDelta=6, haloDelta=8</td></tr>
+<tr><td><code>web/src/app/App.tsx</code></td><td>&lt;main&gt; direto com GraphView/EmptyRepo</td><td>&lt;main relative&gt; com &lt;img&gt; da logo (z-0, opacity-10) + wrapper (z-[1]) com GraphView/EmptyRepo</td></tr>
+<tr><td><code>web/src/graph/GraphView.tsx</code></td><td>Raiz com bg-surface-graph opaco</td><td>Raiz sem bg-surface-graph (fundo do &lt;main&gt; transparente, logo visível)</td></tr>
+<tr><td><code>web/src/graph/CommitRow.tsx</code></td><td>commitNodeShapes() desenha &lt;circle&gt; colorido para cada commit</td><td>CommitAvatarNode com Gravatar/foto + iniciais fallback; filtro de body substituído; merge também tem avatar; root-core overlay preservado</td></tr>
+</tbody>
+</table>
+
+<h2 class="h4 mb-3 mt-4">Decisões autônomas</h2>
+<ul>
+  <li>nodeRadius máximo = 9px (10px quebra teste de colisão com 30 colisões em curvas de merge diagonais)</li>
+  <li>Marca d'água com opacidade 10% e transição snap do tema</li>
+  <li>Avatar usa Gravatar com SHA-256 do e-mail (já implementado); fallback deterministico por FNV-1a</li>
+  <li>Merge mantém merge-ring como moldura externa do avatar</li>
+  <li>Head-ring pinta por fora de tudo, inclusive do avatar</li>
+</ul>
+
+<h2 class="h4 mb-3 mt-4">Commits</h2>
+<ol>
+  <li><code>feb619ee</code> onda1-bigger-dots: aumenta raio da bolinha de commit de 6px para 9px</li>
+  <li><code>641a48bf</code> onda1-logo-watermark: adiciona marca d'agua da logo na area do grafo</li>
+  <li><code>0e5875c9</code> onda1-avatar-dots: exibe foto do autor (Gravatar) na bolinha de cada commit</li>
+  <li><code>0efdbf4d</code> onda2-avatar-merges: estende avatar do autor para commits de merge</li>
+</ol>
+
+<p class="text-muted mt-4"><small>🤖 Gerado com deep-orchestrator — 8 de agosto de 2026</small></p>
+</div>
+</body>
+</html>
