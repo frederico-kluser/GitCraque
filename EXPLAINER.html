@@ -1,71 +1,701 @@
 <!doctype html>
+<!--
+  TEMPLATE — EXPLAINER do deep-orchestrator.
+
+  Uso: o orquestrador, na fase COMMIT-FINAL, preenche este template e entrega o
+  EXPLAINER.html da execução. Duas formas de preencher:
+
+  1. TOKENS INLINE  — substituição simples de string. Cada token {{NOME}} é
+     trocado pelo valor real:
+       v2  2026-08-09  main  Adaptação completa do GitCraque para touch e mobile — 3 ondas, 15 sub-agentes, 718 testes, gate 100% verde
+       3  15  15
+     Os tokens inline aparecem na navbar, no hero, nos cards de estatística,
+     no rodapé e na tabela de placeholders da aba "Visão geral".
+
+  2. SLOTS — bloco substituído INTEIRO, delimitado por um par de comentários
+     HTML: um com o texto {{SLOT}} begin e outro com {{SLOT}} end (sem os
+     delimitadores — veja os exemplos reais no corpo do arquivo). O gerador
+     substitui TUDO entre o par pelo conteúdo real. O que está entre os
+     marcadores é EXEMPLO demonstrativo (fallback) e morre na geração.
+       {{WAVES_TABLE}}   (aba Ondas — <table> com colunas Onda|Worktree|Tarefas|Commits|Status)
+       {{FILES_TABLE}}   (aba Arquivos — <table> com colunas Arquivo|Tipo|Diff)
+       {{COMMITS_LIST}}  (aba Arquivos — lista de commits squash)
+       {{BEFORE_AFTER}}  (aba De-Para — seções de de-para adicionais)
+       {{DECISIONS}}     (aba Decisões — lista de premissas inferidas)
+       {{TIMELINE}}      (aba Timeline — linha do tempo da execução)
+
+  Exemplo de geração manual:
+       ./scripts/generate-explainer.sh > EXPLAINER.html
+  Ou: preencha os tokens/slots com sed/awk e salve como EXPLAINER.html.
+
+  Arquivo único, sem build: Bootstrap 5 + Bootstrap Icons + highlight.js por CDN
+  (versões travadas com SRI). Abre com duplo clique (file://) e imprime em PDF
+  com todas as abas.
+-->
 <html lang="pt-BR" data-bs-theme="dark">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>GitCraque v0.2.1 — EXTKER</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<!-- Diz ao navegador que a página é escura ANTES do CSS carregar: sem flash
+     branco, e os controles nativos (scrollbar, select, input) já nascem escuros. -->
+<meta name="color-scheme" content="dark">
+<title>EXPLAINER — deep-orchestrator · de-para da execução</title>
+
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+      integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+      integrity="sha384-CK2SzKma4jA5H/MXDUU7i1TqZlCFaD4T01vtyDFvPlD97JQyS+IsSh1nI2EFbpyk"
+      crossorigin="anonymous">
+<link rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/styles/github-dark.min.css"
+      integrity="sha384-wH75j6z1lH97ZOpMOInqhgKzFkAInZPPSPlZpYKYTOqsaizPvhQZmAtLcPKXpLyH"
+      crossorigin="anonymous">
+
+<style>
+  /* ── Paleta do deep-orchestrator ──────────────────────────────────────────
+     Fundo #1a1a2e, accent #00d4ff (ciano), sucesso #00ff88, warning #ffaa00.
+     Tudo deriva destas variáveis — não cravamos hex no conteúdo. */
+  :root {
+    --do-bg: #1a1a2e;
+    --do-bg-soft: #16213e;
+    --do-card: #1e1e38;
+    --do-accent: #00d4ff;
+    --do-success: #00ff88;
+    --do-warning: #ffaa00;
+    --do-danger: #ff6b6b;
+  }
+
+  [data-bs-theme="dark"] {
+    --bs-body-bg: var(--do-bg);
+    --bs-body-color: #dcdce8;
+    --bs-secondary-color: #8b8ba7;
+    --bs-border-color: #2e2e4a;
+    --bs-body-font-family: system-ui, -apple-system, 'Segoe UI', Roboto,
+                           'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body { background-image: radial-gradient(ellipse 80% 40% at 50% -10%, rgba(0,212,255,.07), transparent 60%); }
+
+  /* Âncora não fica escondida atrás da navbar fixa. */
+  [id] { scroll-margin-top: 4rem; }
+
+  a { color: var(--do-accent); }
+  a:hover { color: #4de0ff; }
+
+  .brand-accent, .stat-value { color: var(--do-accent); }
+
+  /* Navbar com borda inferior em tom de accent. */
+  .navbar { border-bottom: 1px solid rgba(0,212,255,.25); }
+
+  /* Hero com gradiente sutil: azul-noite para um leve toque ciano. */
+  .explainer-hero {
+    background: linear-gradient(135deg, #16213e 0%, #1a1a2e 55%, #0f3460 100%);
+    border: 1px solid var(--bs-border-color);
+    box-shadow: inset 0 0 2.5rem rgba(0,212,255,.05);
+  }
+
+  /* Título de seção com filete de gradiente sutil sob o texto. */
+  .pane-title { position: relative; padding-bottom: .5rem; }
+  .pane-title::after {
+    content: ''; position: absolute; left: 0; bottom: 0;
+    height: 2px; width: 4.5rem; border-radius: 2px;
+    background: linear-gradient(90deg, var(--do-accent), transparent);
+  }
+
+  /* Cards e grupos de lista: tom levemente mais claro que o fundo. */
+  .card { --bs-card-bg: var(--do-card); --bs-card-border-color: var(--bs-border-color); }
+  .card-header {
+    background: linear-gradient(90deg, rgba(0,212,255,.10), rgba(0,212,255,0));
+    border-bottom: 1px solid var(--bs-border-color);
+  }
+  .list-group-item { background-color: var(--do-card); }
+
+  /* Abas: integradas à navbar — sem barra separada e sem borda inferior
+     (a navbar já tem). Ativa em accent com sublinhado no mesmo tom. */
+  .navbar .nav-tabs {
+    --bs-nav-tabs-border-width: 0;
+    border-bottom: none;
+  }
+  .navbar .nav-tabs .nav-link {
+    color: var(--bs-secondary-color);
+    padding: .4rem .75rem;
+    font-size: .875rem;
+    border: none;
+    border-radius: var(--bs-border-radius);
+    margin: 0 .1rem;
+  }
+  .navbar .nav-tabs .nav-link:hover {
+    color: var(--bs-body-color);
+    background: rgba(0,212,255,.08);
+    border: none;
+  }
+  .navbar .nav-tabs .nav-link.active {
+    color: var(--do-accent); font-weight: 600;
+    background: rgba(0,212,255,.12);
+    border: none;
+    box-shadow: inset 0 -2px 0 var(--do-accent);
+  }
+  /* Telas pequenas: tabs mais compactas para caber na navbar. */
+  @media (max-width: 991.98px) {
+    .navbar .nav-tabs .nav-link { padding: .4rem .5rem; font-size: .8rem; }
+  }
+
+  /* Badges da paleta. */
+  .badge-accent  { background: rgba(0,212,255,.14);  color: var(--do-accent);  border: 1px solid rgba(0,212,255,.35); }
+  .badge-ok      { background: rgba(0,255,136,.12);  color: var(--do-success); border: 1px solid rgba(0,255,136,.35); }
+  .badge-warn    { background: rgba(255,170,0,.12);  color: var(--do-warning); border: 1px solid rgba(255,170,0,.35); }
+  .badge-danger  { background: rgba(255,107,107,.12); color: var(--do-danger); border: 1px solid rgba(255,107,107,.35); }
+  .badge-soft    { background: rgba(139,139,167,.12); color: var(--bs-secondary-color); border: 1px solid var(--bs-border-color); }
+
+  /* Diff stats: + verde, − vermelho, dígitos tabulares. */
+  .diff-plus  { color: var(--do-success); font-variant-numeric: tabular-nums; }
+  .diff-minus { color: var(--do-danger); font-variant-numeric: tabular-nums; }
+
+  /* De-Para: cartões com borda indicando o lado da comparação. */
+  .depara-antes  { border-color: rgba(139,139,167,.45); }
+  .depara-depois { border-color: rgba(0,255,136,.35); }
+
+  /* Timeline vertical: linha + marcador ciano com brilho sutil. */
+  .timeline { position: relative; }
+  .timeline-item { position: relative; padding-left: 1.4rem; border-left: 2px solid var(--bs-border-color); }
+  .timeline-item::before {
+    content: ''; position: absolute; left: -.42rem; top: .3rem;
+    width: .7rem; height: .7rem; border-radius: 50%;
+    background: var(--do-accent); box-shadow: 0 0 .6rem rgba(0,212,255,.6);
+  }
+  .timeline-item:last-child { border-left-color: transparent; }
+
+  /* Bloco de código: espaço à direita para o botão de copiar não cobrir o texto. */
+  pre { position: relative; margin-bottom: 1rem; }
+  pre code.hljs { padding-right: 4rem; border-radius: var(--bs-border-radius); font-size: .875rem; }
+
+  .copy-btn { position: absolute; top: .5rem; right: .5rem; opacity: .4; transition: opacity .15s; }
+  pre:hover .copy-btn, .copy-btn:focus-visible { opacity: 1; }
+
+  /* Abrir o arquivo em #pane-x foca o painel (bom: o leitor de tela cai no
+     conteúdo), e o outline branco do navegador fica gritante. Anel discreto,
+     do tema, no lugar — tirar o indicador por completo quebraria quem navega
+     por teclado. */
+  .tab-pane:focus-visible { outline: 0; box-shadow: 0 0 0 .2rem rgba(var(--bs-emphasis-color-rgb), .15); }
+
+  /* Impressão/PDF: abre TODAS as abas, senão o papel sai com uma só. */
+  @media print {
+    .nav-tabs, .copy-btn, details, .explainer-hero { display: none !important; }
+    .tab-content > .tab-pane { display: block !important; opacity: 1 !important; page-break-inside: avoid; }
+    .tab-pane::before { content: attr(data-print-title); display: block;
+                        font-size: 1.25rem; font-weight: 600; margin: 1.5rem 0 .5rem; }
+  }
+</style>
 </head>
-<body class="bg-dark text-light">
-<div class="container py-4">
-<h1 class="mb-2">GitCraque v0.2.1</h1>
-<p class="text-muted mb-4">8 de agosto de 2026 · branch <code>main</code></p>
 
-<div class="row g-3 mb-4">
-  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">2</h3><small class="text-muted">Ondas</small></div></div></div>
-  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">4</h3><small class="text-muted">Agentes</small></div></div></div>
-  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">4</h3><small class="text-muted">Squash commits</small></div></div></div>
-  <div class="col-sm-3"><div class="card bg-body-tertiary"><div class="card-body text-center"><h3 class="mb-0">472</h3><small class="text-muted">Testes passam</small></div></div></div>
-</div>
+<body class="bg-body">
 
-<h2 class="h4 mb-3">Resumo</h2>
-<p>Esta release adiciona três melhorias visuais ao grafo de commits do GitCraque:</p>
-<ol>
-  <li><strong>Marca d'água da logo</strong> — sempre visível ao fundo da área central do grafo, com opacidade 10%, desaparecendo apenas na tela de repositório vazio</li>
-  <li><strong>Bolinhas 50% maiores</strong> — raio do commit aumentado de 6px para 9px, com ajustes proporcionais nos anéis de merge, HEAD e halo de seleção</li>
-  <li><strong>Foto do autor em cada bolinha</strong> — avatar Gravatar (SHA-256 do e-mail) renderizado dentro da bolinha de cada commit, com fallback de iniciais coloridas quando não há foto. Cobre commits comuns e merges</li>
-</ol>
+<nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
+  <div class="container">
+    <span class="navbar-brand fw-semibold"><i class="bi bi-diagram-3 brand-accent me-2"></i>deep-orchestrator <span class="text-body-secondary fw-normal">· EXPLAINER</span></span>
+    <!-- ABAS
+         Regras que não podem ser quebradas:
+         · <ul role="tablist"> e cada <button role="tab">
+         · button.id  ←→  tabpanel.aria-labelledby
+         · button.data-bs-target ←→ #id do tabpanel (e aria-controls com o mesmo id, sem #)
+         · exatamente UM botão .active + UM painel .show.active
+         O Bootstrap já faz navegação por seta/Home/End no tablist; não reimplemente. -->
+    <ul class="nav nav-tabs navbar-nav border-0 flex-row ms-auto me-3" id="doc-tabs" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="tab-visao" data-bs-toggle="tab" data-bs-target="#pane-visao"
+                type="button" role="tab" aria-controls="pane-visao" aria-selected="true">
+          <i class="bi bi-eye me-1"></i>Visão geral
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-ondas" data-bs-toggle="tab" data-bs-target="#pane-ondas"
+                type="button" role="tab" aria-controls="pane-ondas" aria-selected="false">
+          <i class="bi bi-layers me-1"></i>Ondas
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-arquivos" data-bs-toggle="tab" data-bs-target="#pane-arquivos"
+                type="button" role="tab" aria-controls="pane-arquivos" aria-selected="false">
+          <i class="bi bi-files me-1"></i>Arquivos
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-depara" data-bs-toggle="tab" data-bs-target="#pane-depara"
+                type="button" role="tab" aria-controls="pane-depara" aria-selected="false">
+          <i class="bi bi-arrow-left-right me-1"></i>De-Para
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-decisoes" data-bs-toggle="tab" data-bs-target="#pane-decisoes"
+                type="button" role="tab" aria-controls="pane-decisoes" aria-selected="false">
+          <i class="bi bi-lightbulb me-1"></i>Decisões
+        </button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tab-timeline" data-bs-toggle="tab" data-bs-target="#pane-timeline"
+                type="button" role="tab" aria-controls="pane-timeline" aria-selected="false">
+          <i class="bi bi-clock-history me-1"></i>Timeline
+        </button>
+      </li>
+    </ul>
+    <span class="navbar-text small text-body-secondary d-none d-md-inline">vv2 · 2026-08-09</span>
+  </div>
+</nav>
 
-<h2 class="h4 mb-3 mt-4">Ondas e agentes</h2>
-<table class="table table-dark table-striped table-sm">
-<thead><tr><th>Onda</th><th>Worktree</th><th>Tarefa</th><th>Arquivos</th><th>Status</th></tr></thead>
-<tbody>
-<tr><td>1</td><td>onda1-bigger-dots</td><td>Aumentar nodeRadius 6→9</td><td>paint.ts</td><td>✅</td></tr>
-<tr><td>1</td><td>onda1-logo-watermark</td><td>Marca d'água da logo no grafo</td><td>App.tsx, GraphView.tsx</td><td>✅</td></tr>
-<tr><td>1</td><td>onda1-avatar-dots</td><td>Avatar do autor nas bolinhas</td><td>CommitRow.tsx</td><td>✅</td></tr>
-<tr><td>2</td><td>onda2-avatar-merges</td><td>Estender avatar para merges</td><td>CommitRow.tsx</td><td>✅</td></tr>
-</tbody>
-</table>
+<main class="container py-4" style="max-width: 62rem">
 
-<h2 class="h4 mb-3 mt-4">De-Para</h2>
-<table class="table table-dark table-sm">
-<thead><tr><th>Arquivo</th><th>Antes</th><th>Depois</th></tr></thead>
-<tbody>
-<tr><td><code>web/src/graph/paint.ts</code></td><td>nodeRadius=6, hoverScale=1.3, mergeDelta=1, mergeRingDelta=3.5, headRingDelta=4.5, haloDelta=6</td><td>nodeRadius=9, hoverScale=1.2, mergeDelta=1.5, mergeRingDelta=5, headRingDelta=6, haloDelta=8</td></tr>
-<tr><td><code>web/src/app/App.tsx</code></td><td>&lt;main&gt; direto com GraphView/EmptyRepo</td><td>&lt;main relative&gt; com &lt;img&gt; da logo (z-0, opacity-10) + wrapper (z-[1]) com GraphView/EmptyRepo</td></tr>
-<tr><td><code>web/src/graph/GraphView.tsx</code></td><td>Raiz com bg-surface-graph opaco</td><td>Raiz sem bg-surface-graph (fundo do &lt;main&gt; transparente, logo visível)</td></tr>
-<tr><td><code>web/src/graph/CommitRow.tsx</code></td><td>commitNodeShapes() desenha &lt;circle&gt; colorido para cada commit</td><td>CommitAvatarNode com Gravatar/foto + iniciais fallback; filtro de body substituído; merge também tem avatar; root-core overlay preservado</td></tr>
-</tbody>
-</table>
+  <header class="explainer-hero rounded-4 p-4 p-md-5 mb-4">
+    <span class="badge badge-accent mb-3"><i class="bi bi-clipboard-data me-1"></i>Relatório de execução</span>
+    <h1 class="display-6 fw-semibold text-white mb-2">O que aconteceu nesta execução</h1>
+    <p class="lead text-white-50 mb-3">Adaptação completa do GitCraque para touch e mobile — 3 ondas, 15 sub-agentes, 718 testes, gate 100% verde</p>
+    <div class="d-flex flex-wrap gap-2">
+      <span class="badge badge-accent">vv2</span>
+      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-09</span>
+      <span class="badge badge-soft"><i class="bi bi-git-branch me-1"></i>main</span>
+    </div>
+  </header>
 
-<h2 class="h4 mb-3 mt-4">Decisões autônomas</h2>
-<ul>
-  <li>nodeRadius máximo = 9px (10px quebra teste de colisão com 30 colisões em curvas de merge diagonais)</li>
-  <li>Marca d'água com opacidade 10% e transição snap do tema</li>
-  <li>Avatar usa Gravatar com SHA-256 do e-mail (já implementado); fallback deterministico por FNV-1a</li>
-  <li>Merge mantém merge-ring como moldura externa do avatar</li>
-  <li>Head-ring pinta por fora de tudo, inclusive do avatar</li>
-</ul>
+  <div class="tab-content border border-top-0 rounded-bottom p-4" id="doc-tabs-content">
 
-<h2 class="h4 mb-3 mt-4">Commits</h2>
-<ol>
-  <li><code>feb619ee</code> onda1-bigger-dots: aumenta raio da bolinha de commit de 6px para 9px</li>
-  <li><code>641a48bf</code> onda1-logo-watermark: adiciona marca d'agua da logo na area do grafo</li>
-  <li><code>0e5875c9</code> onda1-avatar-dots: exibe foto do autor (Gravatar) na bolinha de cada commit</li>
-  <li><code>0efdbf4d</code> onda2-avatar-merges: estende avatar do autor para commits de merge</li>
-</ol>
+    <!-- ══════════════ ABA 1 · VISÃO GERAL ══════════════ -->
+    <div class="tab-pane fade show active" id="pane-visao" role="tabpanel"
+         aria-labelledby="tab-visao" tabindex="0" data-print-title="Visão geral">
+      <h2 class="h4 pane-title">Resumo da execução</h2>
+      <p class="text-body-secondary">Adaptação completa do GitCraque para touch e mobile — 3 ondas, 15 sub-agentes, 718 testes, gate 100% verde</p>
 
-<p class="text-muted mt-4"><small>🤖 Gerado com deep-orchestrator — 8 de agosto de 2026</small></p>
-</div>
+      <div class="alert alert-primary d-flex gap-2" role="alert">
+        <i class="bi bi-info-circle-fill flex-shrink-0"></i>
+        <div><strong>O que é este documento:</strong> o EXPLAINER gerado pelo deep-orchestrator na fase COMMIT-FINAL, ao fim de cada execução. Mostra o de-para (antes/depois) de tudo que foi feito: ondas, worktrees, arquivos modificados, decisões autônomas e timeline.</div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-6 col-lg-4">
+          <div class="card h-100 text-center">
+            <div class="card-body py-4">
+              <i class="bi bi-layers fs-3 stat-value"></i>
+              <div class="display-6 fw-bold stat-value">3</div>
+              <div class="text-body-secondary small">Ondas executadas</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card h-100 text-center">
+            <div class="card-body py-4">
+              <i class="bi bi-robot fs-3 stat-value"></i>
+              <div class="display-6 fw-bold stat-value">15</div>
+              <div class="text-body-secondary small">Sub-agentes</div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-lg-4">
+          <div class="card h-100 text-center">
+            <div class="card-body py-4">
+              <i class="bi bi-git-commit fs-3 stat-value"></i>
+              <div class="display-6 fw-bold stat-value">15</div>
+              <div class="text-body-secondary small">Commits (squash)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <h2 class="h4 pane-title mt-5">Como este documento é gerado</h2>
+      <p>O orquestrador, na fase COMMIT-FINAL, gera o explainer a partir deste template:</p>
+<pre><code class="language-bash"># Gera o explainer a partir do template
+./scripts/generate-explainer.sh &gt; EXPLAINER.html
+# Ou preenche manualmente os placeholders v2, 2026-08-09, main, ...</code></pre>
+      <p class="text-body-secondary small">O template é <code>templates/html-explainer.html</code> — arquivo único, sem build: abre por file:// e imprime em PDF com todas as abas.</p>
+
+      <details class="mt-4">
+        <summary class="text-body-secondary">Placeholders usados na geração</summary>
+        <div class="table-responsive mt-2">
+          <table class="table table-sm align-middle">
+            <thead>
+              <tr><th scope="col">Placeholder</th><th scope="col">Onde aparece</th><th scope="col">Preenchido com</th></tr>
+            </thead>
+            <tbody>
+              <tr><td><code>&#123;&#123;VERSION&#125;&#125;</code></td><td>Navbar, hero, rodapé</td><td>Versão do orquestrador</td></tr>
+              <tr><td><code>&#123;&#123;DATE&#125;&#125;</code></td><td>Navbar, hero, rodapé</td><td>Data da execução</td></tr>
+              <tr><td><code>&#123;&#123;BRANCH&#125;&#125;</code></td><td>Hero, rodapé</td><td>Branch principal</td></tr>
+              <tr><td><code>&#123;&#123;TASK_SUMMARY&#125;&#125;</code></td><td>Visão geral</td><td>Resumo da tarefa</td></tr>
+              <tr><td><code>&#123;&#123;TOTAL_WAVES&#125;&#125;</code></td><td>Cards de estatística</td><td>Número de ondas</td></tr>
+              <tr><td><code>&#123;&#123;TOTAL_AGENTS&#125;&#125;</code></td><td>Cards de estatística</td><td>Número de sub-agentes</td></tr>
+              <tr><td><code>&#123;&#123;TOTAL_COMMITS&#125;&#125;</code></td><td>Cards de estatística</td><td>Número de commits</td></tr>
+              <tr><td><code>&#123;&#123;WAVES_TABLE&#125;&#125;</code></td><td>Aba Ondas</td><td>Tabela HTML de ondas (Onda | Worktree | Tarefas | Commits | Status)</td></tr>
+              <tr><td><code>&#123;&#123;FILES_TABLE&#125;&#125;</code></td><td>Aba Arquivos</td><td>Tabela HTML de arquivos modificados (Arquivo | Tipo | Diff)</td></tr>
+              <tr><td><code>&#123;&#123;BEFORE_AFTER&#125;&#125;</code></td><td>Aba De-Para</td><td>Seções de de-para adicionais</td></tr>
+              <tr><td><code>&#123;&#123;DECISIONS&#125;&#125;</code></td><td>Aba Decisões</td><td>Lista de decisões autônomas</td></tr>
+              <tr><td><code>&#123;&#123;TIMELINE&#125;&#125;</code></td><td>Aba Timeline</td><td>Linha do tempo da execução</td></tr>
+              <tr><td><code>&#123;&#123;COMMITS_LIST&#125;&#125;</code></td><td>Aba Arquivos</td><td>Lista de commits squash</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+
+    <!-- ══════════════ ABA 2 · ONDAS EXECUTADAS ══════════════ -->
+    <div class="tab-pane fade" id="pane-ondas" role="tabpanel"
+         aria-labelledby="tab-ondas" tabindex="0" data-print-title="Ondas executadas">
+      <h2 class="h4 pane-title">Ondas executadas</h2>
+      <p>Uma linha por sub-agente. Cada sub-agente trabalha numa worktree Git nomeada; a integração é squash-merge um a um, com gate (build + testes) entre merges. Worktrees e branches <code>wt/*</code> são removidos ao fim de cada onda.</p>
+
+      <!-- {{WAVES_TABLE}} begin -->
+<div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Onda</th><th>Worktree</th><th>Tarefas</th><th class="text-end">Commits</th><th>Status</th></tr></thead><tbody>
+<tr><td><span class="badge badge-accent">1</span></td><td><code>onda1-viewport-foundation</code></td><td>useViewport, safe-area, dvh, tap targets</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">1</span></td><td><code>onda1-i18n-touch-catalog</code></td><td>52 chaves × 4 idiomas, catálogo de toque</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">1</span></td><td><code>test-onda1-viewport-hook</code></td><td>91 testes para useViewport</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">1</span></td><td><code>test-onda1-i18n-parity</code></td><td>11 invariantes estruturais de i18n</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2A</span></td><td><code>onda2a-touch-primitives</code></td><td>useLongPress, useLayoutMode, useShellStore</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2A</span></td><td><code>onda2a-shared-parts</code></td><td>variante touch, alvos 44px, bottom sheet</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2A</span></td><td><code>test-onda2a-hooks-parts</code></td><td>106 testes + fix imports</td><td class="text-end">2</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-graph-touch</code></td><td>Grafo: colunas colapsadas, densidade, tooltip→linha</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-dnd-touch</code></td><td>Sensor por atraso, cancelLongPress</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-dialogs-touch</code></td><td>14 diálogos bottom sheet, drag-to-dismiss</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-viewer-touch</code></td><td>Diff/markdown em tela estreita</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-shell-controls</code></td><td>Toolbar compacta, busca sheet, rail long press</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-shell-panels</code></td><td>Painéis com long press, seção Layout, ConfirmHost</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">2B</span></td><td><code>onda2b-shell-layout</code></td><td>MobileNav, coluna única, safe-area</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">3</span></td><td><code>onda3-swipe-panes</code></td><td>Swipe horizontal entre painéis</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">3</span></td><td><code>onda3-touch-audit</code></td><td>Auditoria de alvos de toque + test:touch</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+<tr><td><span class="badge badge-accent">3</span></td><td><code>onda3-keyboard-parity</code></td><td>Portas tocáveis para Esc e paleta ⌘K</td><td class="text-end">1</td><td><span class="badge badge-ok">✓</span></td></tr>
+</tbody></table></div>
+<!-- {{WAVES_TABLE}} end -->
+
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos dados reais da execução.</p>
+
+      <h3 class="h6 mt-4 text-body-secondary">Legenda de status</h3>
+      <div class="d-flex flex-wrap gap-2">
+        <span class="badge badge-ok">Concluída</span>
+        <span class="badge badge-warn">Parcial</span>
+        <span class="badge badge-danger">Bloqueada</span>
+      </div>
+    </div>
+
+    <!-- ══════════════ ABA 3 · ARQUIVOS MODIFICADOS ══════════════ -->
+    <div class="tab-pane fade" id="pane-arquivos" role="tabpanel"
+         aria-labelledby="tab-arquivos" tabindex="0" data-print-title="Arquivos modificados">
+      <h2 class="h4 pane-title">Arquivos modificados</h2>
+      <p>Diff stats da execução: <span class="diff-plus">+</span> linhas adicionadas, <span class="diff-minus">−</span> removidas.</p>
+
+      <!-- {{FILES_TABLE}} begin --><div class="table-responsive"><table class="table table-hover align-middle"><thead><tr><th>Arquivo</th><th>Tipo</th><th class="text-end">Diff</th></tr></thead><tbody>
+<tr><td><code>web/src/app/MobileNav.tsx</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+168</td></tr>
+<tr><td><code>web/src/app/PaneSwipe.tsx</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+106</td></tr>
+<tr><td><code>web/src/app/CommandPaletteHost.tsx</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+57</td></tr>
+<tr><td><code>web/src/app/commands.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+226</td></tr>
+<tr><td><code>web/src/hooks/useLongPress.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+423</td></tr>
+<tr><td><code>web/src/hooks/useLayoutMode.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+80</td></tr>
+<tr><td><code>web/src/dnd/sensors.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+35</td></tr>
+<tr><td><code>web/src/__audit__/touch-targets.domtest.ts</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+195</td></tr>
+<tr><td><code>scripts/verify-touch.mjs</code></td><td><span class="badge badge-ok">novo</span></td><td class="text-end diff-plus">+120</td></tr>
+<tr><td><code>web/src/app/App.tsx</code></td><td><span class="badge badge-accent">mod</span></td><td class="text-end"><span class="diff-plus">+196</span> <span class="diff-minus">−58</span></td></tr>
+<tr><td><code>web/src/styles/theme.css</code></td><td><span class="badge badge-accent">mod</span></td><td class="text-end"><span class="diff-plus">+130</span> <span class="diff-minus">−5</span></td></tr>
+<tr><td><code>~50 outros arquivos</code></td><td><span class="badge badge-accent">mod</span></td><td class="text-end"><span class="diff-plus">+3000</span> <span class="diff-minus">−600</span></td></tr>
+</tbody></table></div><!-- {{FILES_TABLE}} end -->
+
+      <p class="text-body-secondary small">Exemplo demonstrativo — valores aproximados, substituídos na geração.</p>
+
+      <h2 class="h4 pane-title mt-4">Commits (squash)</h2>
+      <p>Histórico final do branch principal: um commit squash por sub-agente. Nenhuma worktree ou branch <code>wt/*</code> sobra ao final.</p>
+
+      <!-- {{COMMITS_LIST}} begin --><ul class="list-group list-group-flush">
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">74d78285</span><strong>onda3-keyboard-parity</strong>: portas tocaveis para Esc e ⌘K, paleta reativada</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">1510534a</span><strong>onda3-touch-audit</strong>: auditoria de alvos de toque e teste DOM</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">3e039633</span><strong>onda3-swipe-panes</strong>: swipe horizontal entre paineis</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">93784223</span><strong>onda2b-shell-layout</strong>: coluna unica com MobileNav</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">b59b453c</span><strong>onda2b-shell-panels</strong>: paineis, seção Layout, ConfirmHost</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">28542d8e</span><strong>onda2b-shell-controls</strong>: toolbar compacta, busca sheet, rail</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">b7b11418</span><strong>onda2b-viewer-touch</strong>: diff e markdown estreitos</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">f716f80e</span><strong>onda2b-dialogs-touch</strong>: drag-to-dismiss, RepoPicker</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">32e522ee</span><strong>onda2b-dnd-touch</strong>: sensor por atraso, cancelLongPress</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">a2ed9c26</span><strong>onda2b-graph-touch</strong>: colunas colapsadas, densidade</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">235878d2</span><strong>test-onda2a-hooks-parts</strong>: 106 testes</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">44e25dcb</span><strong>fix</strong>: extensao .ts nos imports</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">ab13b0f9</span><strong>onda2a-shared-parts</strong>: variante touch, alvos 44px</li>
+<li class="list-group-item d-flex gap-3"><span class="badge badge-soft font-monospace">cf796238</span><strong>onda2a-touch-primitives</strong>: toque longo e layout</li>
+</ul><!-- {{COMMITS_LIST}} end -->
+
+      <p class="text-body-secondary small mt-2">Exemplo demonstrativo — hashes fictícios, substituídos na geração.</p>
+    </div>
+
+    <!-- ══════════════ ABA 4 · DE-PARA (BEFORE/AFTER) ══════════════ -->
+    <div class="tab-pane fade" id="pane-depara" role="tabpanel"
+         aria-labelledby="tab-depara" tabindex="0" data-print-title="De-Para">
+      <h2 class="h4 pane-title">De-Para: o que mudou</h2>
+      <p>Comparação lado a lado entre o estado inicial do repositório e o estado final após a execução.</p>
+
+      <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+          <div class="card h-100 depara-antes">
+            <div class="card-header"><i class="bi bi-arrow-left-circle me-1"></i><strong>Antes</strong></div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">Estado inicial do repositório — apenas o skill de orquestração, sem recursos auxiliares.</p>
+              <ul class="list-unstyled mb-0 d-grid gap-2">
+                <li><i class="bi bi-file-earmark-text me-2 text-body-secondary"></i><code>SKILL.md</code> — definição do orquestrador (XML, fases, regras)</li>
+                <li><i class="bi bi-file-earmark-text me-2 text-body-secondary"></i><code>README.md</code> — documentação pública</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card h-100 depara-depois">
+            <div class="card-header"><i class="bi bi-arrow-right-circle me-1"></i><strong>Depois</strong></div>
+            <div class="card-body">
+              <p class="card-text text-body-secondary">Estado final — três novos diretórios e o skill atualizado.</p>
+              <ul class="list-unstyled mb-0 d-grid gap-2">
+                <li><i class="bi bi-terminal me-2 text-body-secondary"></i><code>scripts/</code> — brave-search.sh · check-brave-credits.sh</li>
+                <li><i class="bi bi-file-earmark-text me-2 text-body-secondary"></i><code>prompts/</code> — ecc-prompts.md · ecc-skills.md · search-prompts.md</li>
+                <li><i class="bi bi-file-earmark-code me-2 text-body-secondary"></i><code>templates/</code> — html-explainer.html</li>
+                <li><i class="bi bi-gear me-2 text-body-secondary"></i><code>SKILL.md</code> — atualizado (ondas ilimitadas, novos recursos)</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- {{BEFORE_AFTER}} begin -->
+<div class="row g-3 mb-4"><div class="col-lg-6"><div class="card depara-antes"><div class="card-header"><strong>Antes</strong></div><div class="card-body"><ul class="list-unstyled small"><li>Layout 3 colunas fixas — inutilizável &lt;900px</li><li>Zero breakpoints, zero safe-area, sem dvh</li><li>Alvos 28px (size-7), Splitter 4px</li><li>Menu só por botão direito (onContextMenu)</li><li>DnD sequestra scroll (distance:6)</li><li>Campos com zoom no iOS (font &lt;16px)</li><li>Grafo 5 colunas fixas — não cabe em 390px</li><li>Diálogos centralizados, sem bottom sheet</li><li>AiBar/Toasts colidem com home indicator</li><li>Sem swipe entre painéis</li><li>503 testes</li></ul></div></div></div><div class="col-lg-6"><div class="card depara-depois"><div class="card-header"><strong>Depois</strong></div><div class="card-body"><ul class="list-unstyled small"><li>Coluna única &lt;768px com MobileNav de 4 abas</li><li>safe-area tokens, dvh, viewport-fit=cover</li><li>Alvos 44px (touch:min-h-tap), WCAG 2.2</li><li>Toque longo (longPressMenu) + "⋯" nos arrastáveis</li><li>DnD sensor por atraso (250ms), cancelLongPress</li><li>font-size: max(16px, 1rem) nos campos</li><li>Grafo 3 colunas compacto, densidade por prop</li><li>14 diálogos bottom sheet com drag-to-dismiss</li><li>AiBar/Toasts acima da nav bar + safe-area</li><li>Swipe horizontal entre rail↔graph↔detail</li><li>718 testes (+ auditoria touch)</li></ul></div></div></div></div>
+<!-- {{BEFORE_AFTER}} end -->
+
+      <h2 class="h4 pane-title">Impacto</h2>
+      <p>O que cada mudança significa para quem usa o deep-orchestrator:</p>
+      <div class="list-group list-group-flush mb-4">
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-search fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Busca Brave integrada</strong> — sub-agentes pesquisam na web direto do terminal (curl + API Brave), sem depender de outras ferramentas.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-credit-card-2-front fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Créditos sob controle</strong> — o orquestrador consulta os créditos restantes da API antes de disparar ondas longas.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-shield-check fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Execução confiável</strong> — contratos ECC (execução de código confiável) que os sub-agentes seguem ao executar código.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-chat-square-text fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Busca padronizada</strong> — prompts de pesquisa consistentes entre sub-agentes (search-prompts.md).</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-file-earmark-code fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>De-para visível</strong> — toda execução termina com um EXPLAINER.html legível (este documento).</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-gear fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Processo documentado</strong> — ondas ilimitadas e o novo fluxo registrados no SKILL.md.</div>
+        </div>
+      </div>
+
+      <h2 class="h4 pane-title">Novas capacidades</h2>
+      <div class="row g-3">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-search fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Busca Brave interna</h3>
+              <p class="small text-body-secondary mb-0">Sub-agentes pesquisam na web via API Brave, direto do terminal — sem sair do fluxo.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-shield-check fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">ECC prompts</h3>
+              <p class="small text-body-secondary mb-0">Contratos de execução de código confiável que os sub-agentes seguem (ecc-prompts.md, ecc-skills.md).</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-infinity fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Ondas ilimitadas</h3>
+              <p class="small text-body-secondary mb-0">O plano não fica limitado a N ondas — a topologia das dependências manda.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-credit-card-2-front fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Verificação de créditos</h3>
+              <p class="small text-body-secondary mb-0">Créditos da API Brave consultados antes de ondas longas — o orquestrador sabe quando parar.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-file-earmark-code fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">HTML explainer</h3>
+              <p class="small text-body-secondary mb-0">Este documento: o de-para (antes/depois) de tudo que foi feito na execução.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════ ABA 5 · DECISÕES AUTÔNOMAS ══════════════ -->
+    <div class="tab-pane fade" id="pane-decisoes" role="tabpanel"
+         aria-labelledby="tab-decisoes" tabindex="0" data-print-title="Decisões autônomas">
+      <h2 class="h4 pane-title">Premissas inferidas sem perguntar</h2>
+      <p>O orquestrador opera em autonomia total: nenhuma pergunta foi feita ao usuário. Toda premissa assumida fica registrada aqui — para revisão e reprodutibilidade.</p>
+
+      <!-- {{DECISIONS}} begin --><ul class="list-group list-group-flush">
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P1.</strong> Mobile = navegador móvel apontando para servidor local. Bind 127.0.0.1 NÃO alterado (regra de segurança).</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P2.</strong> Escopo: web/**, sem mudanças em server/**, sem novas rotas.</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P3.</strong> Breakpoints 768/1280. Tablet decide por orientação. Ponteiro grosseiro detectado separado da largura.</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P4.</strong> Contratos congelados: mudanças só aditivas. state/store.ts não tocado.</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P5.</strong> Nenhuma dependência npm nova. Medições em navegador usam ws já instalado.</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P6.</strong> Densidade do grafo entra por prop (nunca useViewport) — o render de servidor devolve desktop.</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P7.</strong> Componente sheet do catálogo NÃO usado (touchAction:none quebra scroll). Backdrop + FocusTrap + ScrollLock mantidos.</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P8.</strong> Arraste vence toque longo (250ms &lt; 500ms). Menu de nó arrastável usa botão "⋯".</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P9.</strong> iOS Safari: sem evento contextmenu. Callout nativo morre por CSS (longpress-menu utility).</div></li>
+<li class="list-group-item d-flex gap-3"><i class="bi bi-lightbulb fs-5 stat-value mt-1"></i><div><strong>P10.</strong> Paleta de comandos re-ativada (removida em julho). Wrapper sobre motion-ui — sem editar catálogo.</div></li>
+</ul><!-- {{DECISIONS}} end -->
+
+      <p class="text-body-secondary small mt-2">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelas decisões reais da execução.</p>
+    </div>
+
+    <!-- ══════════════ ABA 6 · TIMELINE ══════════════ -->
+    <div class="tab-pane fade" id="pane-timeline" role="tabpanel"
+         aria-labelledby="tab-timeline" tabindex="0" data-print-title="Timeline">
+      <h2 class="h4 pane-title">Linha do tempo da execução</h2>
+      <p>As quatro fases do orquestrador e o que aconteceu em cada uma.</p>
+
+      <!-- {{TIMELINE}} begin --><ol class="timeline list-unstyled mb-0">
+<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 0</span><strong>DELIMITAR</strong></div><p class="mb-0 text-body-secondary small">MODE=normal, BASE_DIR=/home/ondokai/Projects/GitCraque, BASE_BRANCH=main. 0 worktrees de terceiros.</p></li>
+<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 1</span><strong>ANALYZE</strong></div><p class="mb-0 text-body-secondary small">12 problemas mapeados: layout 3-colunas, sem breakpoints, alvos pequenos, dependência de hover, sem toque longo, DnD sequestra scroll, campos com zoom, grafo 5 colunas, diálogos centralizados, safe-area ignorada, atalhos sem equivalente tocável.</p></li>
+<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 2</span><strong>PLAN</strong></div><p class="mb-0 text-body-secondary small">3 ondas, 15 sub-agentes. Onda 1: fundação (viewport, i18n). Onda 2A: primitivos de toque. Onda 2B: 7 agentes paralelos. Onda 3: swipe, auditoria, keyboard parity. REPLAN após cada onda.</p></li>
+<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 1</strong></div><p class="mb-0 text-body-secondary small">4 agentes. useViewport (useSyncExternalStore + rAF), tokens safe-area, dvh, catálogo i18n 52×4, 102 testes.</p></li>
+<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 2A</strong></div><p class="mb-0 text-body-secondary small">3 agentes. useLongPress (máquina de estados de módulo), useLayoutMode, variante touch CSS, alvos 44px, bottom sheet. Revisão adversarial: 7 perguntas, 0 bloqueadores. 106 testes.</p></li>
+<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 2B</strong></div><p class="mb-0 text-body-secondary small">7 agentes paralelos. Grafo 5→3 colunas, sensor por atraso, 14 diálogos bottom sheet, diff/markdown estreitos, toolbar compacta, painéis long press, MobileNav + coluna única. Gate: 718 testes.</p></li>
+<li class="timeline-item mb-4"><div class="d-flex gap-2 mb-1"><span class="badge badge-accent">Fase 3</span><strong>ONDA 3</strong></div><p class="mb-0 text-body-secondary small">3 agentes. Swipe horizontal entre painéis, auditoria de alvos de toque (npm run test:touch), portas tocáveis para Esc e ⌘K.</p></li>
+<li class="timeline-item"><div class="d-flex gap-2 mb-1"><span class="badge badge-ok">Fase 4</span><strong>COMMIT-FINAL</strong></div><p class="mb-0 text-body-secondary small">AGENTS.md atualizado (718 testes), EXPLAINER.html gerado, 15 squash commits, zero worktrees remanescentes, contenção provada.</p></li>
+</ol><!-- {{TIMELINE}} end -->
+
+      <p class="text-body-secondary small mt-3">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pela timeline real da execução.</p>
+    </div>
+
+  </div>
+
+  <footer class="text-body-secondary small border-top mt-5 pt-3">
+    Gerado por <strong>deep-orchestrator</strong> vv2 · 2026-08-09 · branch main.
+    Documento de arquivo único — salve, abra com duplo clique ou imprima em PDF (todas as abas entram no papel).
+  </footer>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI"
+        crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.11.1/highlight.min.js"
+        integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU"
+        crossorigin="anonymous"></script>
+
+<script>
+/* ── runtime do documento ────────────────────────────────────────────────────
+   Copie este bloco inteiro, sem editar. Ele faz três coisas:
+   1. guarda o código-fonte cru ANTES de qualquer transformação (para o copiar);
+   2. destaca a sintaxe e injeta o botão de copiar;
+   3. liga as abas ao #hash da URL, nos dois sentidos.
+   ────────────────────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  // 1. Fonte cru primeiro. Depois do highlight o DOM ganha <span>; textContent ainda
+  //    devolve o texto certo, mas plugins de numeração de linha o contaminam. Guardar
+  //    antes é a única versão que nunca mente.
+  var sources = new WeakMap();
+  document.querySelectorAll('pre > code').forEach(function (code) {
+    sources.set(code, code.textContent.replace(/\n$/, ''));
+  });
+
+  // 2. Highlight. Declare sempre a linguagem na classe: a auto-detecção erra em
+  //    trechos curtos (o mesmo snippet vira "ruby" numa aba e "perl" na outra).
+  if (window.hljs) hljs.highlightAll();
+
+  // Copiar. navigator.clipboard exige contexto seguro; em file:// o comportamento
+  // varia por navegador, então o fallback com execCommand não é opcional.
+  function copyText(text) {
+    if (navigator.clipboard && window.isSecureContext) {
+      return navigator.clipboard.writeText(text).then(function () { return true; },
+                                                      function () { return legacyCopy(text); });
+    }
+    return Promise.resolve(legacyCopy(text));
+  }
+
+  function legacyCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    // position:fixed + opacity:0 evita que a página role até o textarea.
+    ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, ta.value.length); // iOS ignora select() sozinho
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    return ok;
+  }
+
+  document.querySelectorAll('pre > code').forEach(function (code) {
+    var pre = code.parentElement;
+    var btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'btn btn-sm btn-outline-secondary copy-btn';
+    btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+    btn.setAttribute('aria-label', 'Copiar código');
+    btn.addEventListener('click', function () {
+      copyText(sources.get(code) || code.textContent).then(function (ok) {
+        btn.innerHTML = ok ? '<i class="bi bi-check-lg"></i>' : '<i class="bi bi-x-lg"></i>';
+        btn.classList.toggle('btn-outline-success', ok);
+        btn.classList.toggle('btn-outline-danger', !ok);
+        btn.classList.remove('btn-outline-secondary');
+        setTimeout(function () {
+          btn.innerHTML = '<i class="bi bi-clipboard"></i>';
+          btn.className = 'btn btn-sm btn-outline-secondary copy-btn';
+        }, 1500);
+      });
+    });
+    pre.appendChild(btn);
+  });
+
+  // 3. Aba ↔ URL. Sem isto, mandar "olha a aba De-Para" exige explicar o clique.
+  var tabs = document.querySelectorAll('[data-bs-toggle="tab"]');
+  if (!tabs.length) return;
+
+  function activateFromHash() {
+    var hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+    var target = document.querySelector(hash);
+    if (!target) return;
+    // O #hash pode apontar para o painel OU para um título dentro dele.
+    var pane = target.closest('.tab-pane') || (target.classList.contains('tab-pane') ? target : null);
+    if (!pane) return;
+    var trigger = document.querySelector('[data-bs-target="#' + CSS.escape(pane.id) + '"]');
+    if (trigger) bootstrap.Tab.getOrCreateInstance(trigger).show();
+    // O navegador já tentou rolar até o alvo — e falhou, porque naquele instante o
+    // painel ainda era display:none. Agora que apareceu, role de novo: sem isto a
+    // página abre num scroll intermediário, com as abas escondidas atrás da navbar.
+    var scrollTo = target !== pane ? target : (trigger && trigger.closest('[role="tablist"]')) || pane;
+    requestAnimationFrame(function () { scrollTo.scrollIntoView({ block: 'start' }); });
+  }
+
+  tabs.forEach(function (t) {
+    t.addEventListener('shown.bs.tab', function (e) {
+      var id = (e.target.getAttribute('data-bs-target') || '').slice(1);
+      // replaceState, não location.hash: mudar o hash direto faz a página pular.
+      if (id) history.replaceState(null, '', '#' + id);
+    });
+  });
+
+  window.addEventListener('hashchange', activateFromHash);
+  activateFromHash();
+})();
+</script>
 </body>
 </html>

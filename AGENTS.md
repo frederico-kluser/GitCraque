@@ -19,11 +19,14 @@ npm run build            # vite build -> web/dist
 npm start                # serve web/dist
 npm run typecheck        # tsc --noEmit  (web only -- server/** has no tsconfig)
 
-npm test                 # server + graph + dnd + viewer  (472 tests)
-npm run test:server      # 319   node --test "server/test/*.test.mjs"
-npm run test:graph       # 51    custom runner, 3 phases
-npm run test:dnd         # 20
+npm test                 # server + graph + dnd + viewer + i18n + hooks  (718 tests)
+npm run test:server      # 350   node --test "server/test/*.test.mjs"
+npm run test:graph       # 53    custom runner, 3 phases
+npm run test:dnd         # 25
 npm run test:viewer      # 82
+npm run test:i18n        # 11    invariantes estruturais dos 4 idiomas
+npm run test:hooks       # 197   useViewport, useLongPress, useLayoutMode, useShellStore
+npm run test:touch       # auditoria de alvos de toque -- NOT part of `npm test`
 npm run test:e2e         # 39 checks -- NOT part of `npm test`; run it explicitly
 
 # single test file
