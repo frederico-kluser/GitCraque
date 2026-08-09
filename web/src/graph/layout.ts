@@ -21,7 +21,7 @@
  * unico import de valor e relativo e com `.ts` explicito, que e a forma que o
  * Node resolve sozinho.
  */
-import { METRICS } from "./paint.ts";
+import { METRICS, METRICS_COMPACT } from "./paint.ts";
 import type { RawCommit } from "@/types/git";
 import type {
   EdgeKind,
@@ -37,6 +37,13 @@ import type {
  * grafo. Aqui elas so ganham o nome pelo qual o resto do app as conhece.
  */
 export const DEFAULT_METRICS: GraphMetrics = METRICS;
+
+/**
+ * As medidas da densidade compacta — a mesma fonte unica (`paint.ts`), com o
+ * nome pelo qual o resto do app as conhece. A folga de colisao da variante e
+ * provada por `layout.test.ts` (a mesma `findCollisions` da confortavel).
+ */
+export const COMPACT_METRICS: GraphMetrics = METRICS_COMPACT;
 
 /**
  * Quantidade de matizes da rampa de lanes. Espelha `LANE_COUNT` de

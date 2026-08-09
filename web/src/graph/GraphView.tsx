@@ -11,7 +11,8 @@
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { CSSProperties, HTMLAttributes, KeyboardEvent } from "react";
 import { Tooltip } from "@base-ui/react/tooltip";
-import { motion } from "motion/react";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowLeftRight } from "lucide-react";
 import { FixedSizeList } from "react-window";
 import type { ListOnScrollProps } from "react-window";
 import { Skeleton } from "@/components/motion-ui/skeleton";
@@ -26,19 +27,20 @@ import { cn } from "@/lib/utils";
 import type { GraphMetrics, GraphViewProps } from "@/types/modules";
 import { CommitRow } from "./CommitRow.tsx";
 import { CommitTooltip } from "./CommitTooltip.tsx";
-import { computeGraphLayout, DEFAULT_METRICS } from "./layout.ts";
+import { COMPACT_METRICS, computeGraphLayout, DEFAULT_METRICS } from "./layout.ts";
 import { applyRevealPlan, MARK_DURATION_MS, planReveal } from "./reveal.ts";
 import type { RevealSurface, RevealTarget } from "./reveal.ts";
 import {
   FALLBACK_HEIGHT,
   OVERSCAN,
   ROW_GRID,
+  compactContentWidth,
   graphColumnWidth,
   graphVars,
   rowDomId,
 } from "./shell.ts";
-import type { GraphRowData } from "./shell.ts";
-import { useElementHeight } from "./useElementSize.ts";
+import type { GraphDensity, GraphRowData } from "./shell.ts";
+import { useElementHeight, useElementWidth } from "./useElementSize.ts";
 
 /* O `innerElementType` da lista e o rowgroup do role="grid". */
 const ListInner = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
@@ -47,7 +49,7 @@ const ListInner = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
   },
 );
 
-function ColumnHeader() {
+function ColumnHeader({ density }: { density: GraphDensity }) {
   return (
     <div
       role="row"
@@ -64,9 +66,17 @@ function ColumnHeader() {
       <div role="columnheader" className="pl-2">
         {t("graph.column.description")}
       </div>
-      <div role="columnheader">{t("graph.column.author")}</div>
-      <div role="columnheader">{t("graph.column.date")}</div>
-      <div role="columnheader">{t("graph.column.hash")}</div>
+      {density === "compact" ? (
+        /* autor, data e hash colapsaram para a linha de metadado do assunto;
+           so resta a coluna dos detalhes, onde mora o "⋯" da linha. */
+        <div role="columnheader">{t("graph.column.meta")}</div>
+      ) : (
+        <>
+          <div role="columnheader">{t("graph.column.author")}</div>
+          <div role="columnheader">{t("graph.column.date")}</div>
+          <div role="columnheader">{t("graph.column.hash")}</div>
+        </>
+      )}
     </div>
   );
 }
@@ -78,7 +88,15 @@ function ColumnHeader() {
  * `paint.ts` faria o esqueleto pular de tamanho no instante em que a arvore
  * chega.
  */
-function LoadingRows({ metrics, rows = 16 }: { metrics: GraphMetrics; rows?: number }) {
+function LoadingRows({
+  metrics,
+  density,
+  rows = 16,
+}: {
+  metrics: GraphMetrics;
+  density: GraphDensity;
+  rows?: number;
+}) {
   return (
     <div aria-busy className="h-full overflow-hidden">
       {Array.from({ length: rows }, (_, i) => (
@@ -89,13 +107,27 @@ function LoadingRows({ metrics, rows = 16 }: { metrics: GraphMetrics; rows?: num
               style={{ width: metrics.nodeRadius * 2, height: metrics.nodeRadius * 2 }}
             />
           </div>
-          <div className="pl-2">
-            {/* larguras deterministicas: nada de Math.random em render */}
-            <Skeleton className="h-2.5" style={{ width: `${34 + ((i * 23) % 46)}%` }} />
-          </div>
-          <Skeleton className="h-2.5 w-20" />
-          <Skeleton className="h-2.5 w-14" />
-          <Skeleton className="h-2.5 w-12" />
+          {density === "compact" ? (
+            /* o esqueleto espelha a linha compacta: assunto + linha de metadado */
+            <div className="flex min-w-0 flex-col justify-center gap-1.5 py-1 pl-2 pr-2">
+              <Skeleton className="h-2.5" style={{ width: `${34 + ((i * 23) % 46)}%` }} />
+              <Skeleton className="h-2 w-32 opacity-60" />
+            </div>
+          ) : (
+            <div className="pl-2">
+              {/* larguras deterministicas: nada de Math.random em render */}
+              <Skeleton className="h-2.5" style={{ width: `${34 + ((i * 23) % 46)}%` }} />
+            </div>
+          )}
+          {density === "compact" ? (
+            <Skeleton className="h-6 w-6 justify-self-end" />
+          ) : (
+            <>
+              <Skeleton className="h-2.5 w-20" />
+              <Skeleton className="h-2.5 w-14" />
+              <Skeleton className="h-2.5 w-12" />
+            </>
+          )}
         </div>
       ))}
     </div>
@@ -133,11 +165,19 @@ export function GraphView({
   reveal,
   onRevealed,
   metrics: metricsProp,
+  density = "comfortable",
+  buildCommitMenu,
+  buildRefMenu,
   loading,
   className,
 }: GraphViewProps) {
-  /* metricas estaveis: memo pelos campos, nao pelo objeto (que vem novo a cada
-     render do shell). */
+  /* A densidade entra por PROP, nunca por um `useViewport` aqui dentro: o
+     `getServerSnapshot` do hook devolve desktop, e o `renderToStaticMarkup` da
+     suite de testes renderizaria sempre o caminho confortavel — o compacto
+     nunca seria exercitado e a suite diria verde para sempre. Quem decide a
+     densidade e o SHELL, que enxerga o tamanho da tela.
+     `metrics` (quando passado) vence campo a campo, como prometido no contrato. */
+  const compact = density === "compact";
   const {
     rowHeight: rowHeightProp,
     laneWidth: laneWidthProp,
@@ -147,13 +187,13 @@ export function GraphView({
   } = metricsProp ?? {};
   const metrics = useMemo<GraphMetrics>(
     () => ({
-      rowHeight: rowHeightProp ?? DEFAULT_METRICS.rowHeight,
-      laneWidth: laneWidthProp ?? DEFAULT_METRICS.laneWidth,
-      nodeRadius: nodeRadiusProp ?? DEFAULT_METRICS.nodeRadius,
-      paddingLeft: paddingLeftProp ?? DEFAULT_METRICS.paddingLeft,
-      strokeWidth: strokeWidthProp ?? DEFAULT_METRICS.strokeWidth,
+      rowHeight: rowHeightProp ?? (compact ? COMPACT_METRICS.rowHeight : DEFAULT_METRICS.rowHeight),
+      laneWidth: laneWidthProp ?? (compact ? COMPACT_METRICS.laneWidth : DEFAULT_METRICS.laneWidth),
+      nodeRadius: nodeRadiusProp ?? (compact ? COMPACT_METRICS.nodeRadius : DEFAULT_METRICS.nodeRadius),
+      paddingLeft: paddingLeftProp ?? (compact ? COMPACT_METRICS.paddingLeft : DEFAULT_METRICS.paddingLeft),
+      strokeWidth: strokeWidthProp ?? (compact ? COMPACT_METRICS.strokeWidth : DEFAULT_METRICS.strokeWidth),
     }),
-    [rowHeightProp, laneWidthProp, nodeRadiusProp, paddingLeftProp, strokeWidthProp],
+    [rowHeightProp, laneWidthProp, nodeRadiusProp, paddingLeftProp, strokeWidthProp, compact],
   );
 
   const ui = useMotionUITransition("ui");
@@ -166,6 +206,37 @@ export function GraphView({
   const listRef = useRef<FixedSizeList<GraphRowData>>(null);
   const { ref: bodyRef, height } = useElementHeight<HTMLDivElement>();
   const viewportHeight = height || FALLBACK_HEIGHT;
+
+  /* ---- rolagem lateral da densidade compacta ------------------------- */
+
+  /* O grafo largo (muitas lanes paralelas) nao cabe na largura do celular: a
+     linha compacta rola para o lado dentro do proprio container, e o aviso
+     abaixo diz que o conteudo continua. So existe no compacto — no confortavel
+     o DOM fica o de sempre, byte a byte. */
+  /* A janela visivel do rolador compacto — o ref medido e o MESMO ref da
+     rolagem: o no do rolador e o que interessa para as duas coisas. Quem a
+     medida compara e a largura visivel com o minimo do conteudo
+     (`compactContentWidth`) para decidir se o aviso de rolagem aparece. */
+  const { ref: scrollerRef, width: scrollerWidth } = useElementWidth<HTMLDivElement>();
+  const contentWidth = compactContentWidth(graphWidth);
+  const scrollable = compact && scrollerWidth > 0 && contentWidth > scrollerWidth;
+
+  /* O aviso dura um instante e morre no primeiro gesto de rolagem — quem ja
+     viu uma vez nao precisa ver de novo no mesmo repositorio. */
+  const [hintDismissed, setHintDismissed] = useState(false);
+  const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (!compact) return;
+    setHintDismissed(false);
+    if (hintTimerRef.current !== null) clearTimeout(hintTimerRef.current);
+    hintTimerRef.current = setTimeout(() => setHintDismissed(true), 4000);
+    return () => {
+      if (hintTimerRef.current !== null) clearTimeout(hintTimerRef.current);
+    };
+  }, [compact]);
+
+  const handleScrollerScroll = useCallback(() => setHintDismissed(true), []);
+  const showHint = compact && scrollable && !hintDismissed;
 
   /* ancora da selecao por intervalo: o store usa `primary` como ponta, e o
      Shift+seta precisa manter a ponta ORIGINAL para o intervalo crescer. */
@@ -353,6 +424,10 @@ export function GraphView({
       onRefActivate,
       onRefContextMenu,
       onFocusGrid: focusGrid,
+      /* aditivo: o que muda com a densidade desce para as linhas */
+      density,
+      buildCommitMenu,
+      buildRefMenu,
     }),
     [
       layout,
@@ -367,6 +442,9 @@ export function GraphView({
       onRefActivate,
       onRefContextMenu,
       focusGrid,
+      density,
+      buildCommitMenu,
+      buildRefMenu,
     ],
   );
 
@@ -386,59 +464,143 @@ export function GraphView({
         role="grid"
         tabIndex={0}
         aria-label={t("graph.label")}
-        aria-colcount={5}
+        /* `aria-colcount` acompanha a densidade: 5 colunas no confortavel
+           (grafo, assunto, autor, data, hash), 3 no compacto (grafo, assunto,
+           detalhes — autor, data e hash viraram uma linha de metadado). */
+        aria-colcount={compact ? 3 : 5}
         aria-rowcount={commits.length + 1}
         aria-activedescendant={primary !== null ? rowDomId(primary) : undefined}
         data-graph-lanes={layout.laneCount}
         data-graph-edges={layout.edges.length}
         data-graph-elapsed={layout.elapsedMs.toFixed(2)}
         onKeyDown={handleKeyDown}
-        style={graphVars(graphWidth, metrics) as CSSProperties}
+        style={graphVars(graphWidth, metrics, density) as CSSProperties}
         className={cn(
-          "flex h-full min-h-0 flex-col bg-surface-graph outline-none",
+          "relative flex h-full min-h-0 flex-col bg-surface-graph outline-none",
           "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
           className,
         )}
       >
-        <ColumnHeader />
-
-        {/* o container medido fica SEMPRE montado, para o ResizeObserver nao
-            perder o no quando o estado troca de esqueleto para arvore. */}
-        <div ref={bodyRef} className="min-h-0 flex-1">
-          {showSkeleton ? (
-            <LoadingRows metrics={metrics} />
-          ) : isEmpty ? (
-            <EmptyState />
-          ) : (
-            /* a arvore entra com o token "ui" quando o log chega */
-            <motion.div
-              className="h-full"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={ui}
+        {compact ? (
+          /* No compacto o container medido (o da lista) ganha um PAI que rola
+             para o lado quando o grafo e largo demais: o conteudo tem largura
+             propria (`compactContentWidth`) e o CABECALHO rola junto — fora do
+             rolador ele espremeria as colunas ate desalinhar da lista.
+             `overscroll-x-contain` devolve o gesto ao resto da pagina quando o
+             conteudo termina — rolagem aninhada em cadeia, nao disputada. */
+          <div
+            ref={scrollerRef}
+            onScroll={handleScrollerScroll}
+            className="min-h-0 flex-1 overflow-x-auto overscroll-x-contain"
+          >
+            <div
+              className="flex h-full min-h-0 flex-col"
+              style={{ minWidth: compactContentWidth(graphWidth) }}
             >
-              <FixedSizeList<GraphRowData>
-                ref={listRef}
-                height={viewportHeight}
-                width="100%"
-                itemCount={commits.length}
-                itemSize={metrics.rowHeight}
-                overscanCount={OVERSCAN}
-                onScroll={handleListScroll}
-                itemData={itemData}
-                itemKey={(index, data) => data.layout.nodes[index].commit.hash}
-                innerElementType={ListInner}
-              >
-                {CommitRow}
-              </FixedSizeList>
+              <ColumnHeader density={density} />
+              {/* o container medido fica SEMPRE montado, para o ResizeObserver
+                  nao perder o no quando o estado troca de esqueleto para
+                  arvore. */}
+              <div ref={bodyRef} className="min-h-0 flex-1">
+                {showSkeleton ? (
+                  <LoadingRows metrics={metrics} density={density} />
+                ) : isEmpty ? (
+                  <EmptyState />
+                ) : (
+                  <motion.div
+                    className="h-full"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={ui}
+                  >
+                    <FixedSizeList<GraphRowData>
+                      ref={listRef}
+                      height={viewportHeight}
+                      width="100%"
+                      itemCount={commits.length}
+                      itemSize={metrics.rowHeight}
+                      overscanCount={OVERSCAN}
+                      onScroll={handleListScroll}
+                      itemData={itemData}
+                      itemKey={(index, data) => data.layout.nodes[index].commit.hash}
+                      innerElementType={ListInner}
+                    >
+                      {CommitRow}
+                    </FixedSizeList>
+                  </motion.div>
+                )}
+              </div>
+            </div>
+          </div>
+        ) : (
+          /* o cabecalho confortavel fica FORA do container medido, como era
+             antes — o DOM confortavel nao muda byte a byte. */
+          <>
+            <ColumnHeader density={density} />
+            {/* o container medido fica SEMPRE montado, para o ResizeObserver nao
+                perder o no quando o estado troca de esqueleto para arvore. */}
+            <div ref={bodyRef} className="min-h-0 flex-1">
+              {showSkeleton ? (
+                <LoadingRows metrics={metrics} density={density} />
+              ) : isEmpty ? (
+                <EmptyState />
+              ) : (
+                /* a arvore entra com o token "ui" quando o log chega */
+                <motion.div
+                  className="h-full"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={ui}
+                >
+                  <FixedSizeList<GraphRowData>
+                    ref={listRef}
+                    height={viewportHeight}
+                    width="100%"
+                    itemCount={commits.length}
+                    itemSize={metrics.rowHeight}
+                    overscanCount={OVERSCAN}
+                    onScroll={handleListScroll}
+                    itemData={itemData}
+                    itemKey={(index, data) => data.layout.nodes[index].commit.hash}
+                    innerElementType={ListInner}
+                  >
+                    {CommitRow}
+                  </FixedSizeList>
+                </motion.div>
+              )}
+            </div>
+          </>
+        )}
+
+        {/* O aviso de rolagem lateral: aparece so no compacto, quando a linha e
+            mais larga que a janela, e so por um tempo — a primeira rolagem
+            dispensa. Sobe e desce como um balao: sem estado de movimento
+            persistente no container, so a entrada e a saida do pill. */}
+        <AnimatePresence>
+          {showHint && (
+            <motion.div
+              key="scroll-hint"
+              role="status"
+              initial={{ opacity: 0, y: 8, x: "-50%" }}
+              animate={{ opacity: 1, y: 0, x: "-50%" }}
+              exit={{ opacity: 0, y: 8, x: "-50%" }}
+              transition={ui}
+              className="pointer-events-none absolute bottom-3 left-1/2 z-10"
+            >
+              <div className="flex items-center gap-1.5 rounded-full border border-border bg-popover px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg">
+                <ArrowLeftRight aria-hidden className="size-3.5 shrink-0" />
+                {t("graph.hint.horizontalScroll")}
+              </div>
             </motion.div>
           )}
-        </div>
+        </AnimatePresence>
 
         {/* UMA instancia de balao para a lista inteira, fora da virtualizacao: as
             linhas sao so gatilhos ligados a ela pelo handle. Montado aqui, e nao
-            por linha, para nao custar um no de DOM e um fetch por linha visivel. */}
-        <CommitTooltip />
+            por linha, para nao custar um no de DOM e um fetch por linha visivel.
+            No compacto nao ha gatilhos (o dedo cobre o alvo que segura), entao o
+            balao nao e montado — o conteudo dele ja esta na linha. */}
+        {!compact && <CommitTooltip />}
       </div>
     </Tooltip.Provider>
   );

@@ -21,6 +21,7 @@ import type {
   RefsPayload,
 } from "./git";
 import type { Translate } from "@/i18n/types";
+import type { MenuItemSpec } from "@/hooks";
 
 /* ================================================================== *
  * src/graph — motor do grafo
@@ -183,6 +184,24 @@ export interface GraphViewProps {
    * conjunto inteiro.
    */
   density?: "comfortable" | "compact";
+  /**
+   * ACRESCENTADO (aditivo): menu de contexto de um COMMIT, pronto para o dedo.
+   *
+   * O grafo nao sabe o que se pode fazer com um commit — ele nao pode importar
+   * as acoes do shell sem inverter a dependencia entre os modulos. O shell
+   * passa o CONSTRUTOR dos itens, e a linha os consome em tres lugares:
+   * toque longo (o botao direito do dedo), clique direito do mouse e o botao
+   * "⋯" da coluna de metadados na densidade compacta. Lista vazia nao abre
+   * menu (regra do `openContextMenu`); sem este construtor, a linha se
+   * comporta como antes desta prop existir.
+   */
+  buildCommitMenu?: (hash: string) => MenuItemSpec[];
+  /**
+   * ACRESCENTADO (aditivo): menu de contexto de um CHIP de referencia, pronto
+   * para o dedo. Irmao de `buildCommitMenu`; quando ausente, o chip mantem o
+   * comportamento de `onRefContextMenu` (apenas mouse).
+   */
+  buildRefMenu?: (refEntry: CommitRef) => MenuItemSpec[];
   /** exibido quando `commits` esta vazio por carregamento */
   loading?: boolean;
   className?: string;

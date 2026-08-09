@@ -25,6 +25,8 @@ import type { PointerEvent as ReactPointerEvent } from "react";
 import { Archive, CircleDot, Cloud, GitBranch, Tag } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { useDraggableEntity, useDropFeedback, useDroppableTarget } from "@/dnd";
+import { chain, longPressMenu } from "@/hooks";
+import type { MenuItemSpec } from "@/hooks";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
 import { TEXT } from "./paint.ts";
@@ -104,9 +106,14 @@ export interface RefChipProps {
   onActivate?: (refEntry: CommitRef) => void;
   /** botao direito: o shell decide o que oferecer para esta referencia. */
   onContextMenu?: (refEntry: CommitRef, position: { x: number; y: number }) => void;
+  /**
+   * Construtor dos itens do menu do chip, no formato do dedo (`longPressMenu`).
+   * Sem ele o chip fica so com o caminho antigo do mouse (`onContextMenu`).
+   */
+  buildRefMenu?: (refEntry: CommitRef) => MenuItemSpec[];
 }
 
-export function RefChip({ refEntry, onActivate, onContextMenu }: RefChipProps) {
+export function RefChip({ refEntry, onActivate, onContextMenu: onRefMenu, buildRefMenu }: RefChipProps) {
   const Icon = ICON[refEntry.kind];
   const podeArrastar = arrastavel(refEntry.kind);
   const podeSoltar = soltavel(refEntry.kind);
@@ -120,18 +127,34 @@ export function RefChip({ refEntry, onActivate, onContextMenu }: RefChipProps) {
 
   const ativavel = onActivate && (refEntry.kind === "localBranch" || refEntry.kind === "remoteBranch");
 
+  /**
+   * O botao direito do dedo sobre o chip. So existe quando ha menu proprio (a
+   * lista vem do shell, nunca de aqui) — chip de HEAD solto e de stash nao
+   * abrem menu proprio, como no mouse.
+   */
+  const press =
+    temMenu(refEntry.kind) && buildRefMenu !== undefined
+      ? longPressMenu(refEntry.name, () => buildRefMenu(refEntry))
+      : null;
+
   /* O chip vive DENTRO da linha arrastavel: sem barrar o ponteiro aqui, o
-     arraste vira arraste do commit. */
+     arraste vira arraste do commit. O `chain` compoe o STOP com o arranque do
+     @dnd-kit e com o arme do toque longo — espalhar os objetos um por cima do
+     outro apagaria o handler do vizinho em silencio. */
+  const pararPropagacao = (event: ReactPointerEvent<HTMLElement>) => event.stopPropagation();
+  const dragPointerDown = (drag.listeners as { onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void } | undefined)
+    ?.onPointerDown;
   const listeners = podeArrastar
     ? {
         ...(drag.listeners ?? {}),
-        onPointerDown: (event: ReactPointerEvent<HTMLElement>) => {
-          event.stopPropagation();
-          (drag.listeners as { onPointerDown?: (e: ReactPointerEvent<HTMLElement>) => void } | undefined)
-            ?.onPointerDown?.(event);
-        },
+        onPointerDown: chain(pararPropagacao, dragPointerDown, press?.onPointerDown),
+        onPointerUp: chain(drag.listeners?.onPointerUp, press?.onPointerUp),
+        onPointerCancel: chain(drag.listeners?.onPointerCancel, press?.onPointerCancel),
+        onPointerMove: chain(drag.listeners?.onPointerMove, press?.onPointerMove),
       }
-    : {};
+    : press
+      ? press
+      : {};
 
   /**
    * ESTA MEMOIZACAO NAO E ENFEITE — sem ela o drag-and-drop nao funciona.
@@ -171,15 +194,19 @@ export function RefChip({ refEntry, onActivate, onContextMenu }: RefChipProps) {
       /* Sem `stopPropagation` o clique subiria e a LINHA responderia por cima,
          trocando o menu da branch pelo menu do commit. Chip sem menu proprio
          (HEAD solto, stash) nao consome nada de proposito: ali o alvo real e o
-         commit mesmo. */
+         commit mesmo.
+         Com `buildRefMenu` o `onContextMenu` do bundle assume (e o mesmo
+         `contextMenuFor`, com a guarda contra o sintetico do Android). */
       onContextMenu={
-        onContextMenu && temMenu(refEntry.kind)
-          ? (event) => {
-              event.preventDefault();
-              event.stopPropagation();
-              onContextMenu(refEntry, { x: event.clientX, y: event.clientY });
-            }
-          : undefined
+        press
+          ? press.onContextMenu
+          : onRefMenu && temMenu(refEntry.kind)
+            ? (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                onRefMenu(refEntry, { x: event.clientX, y: event.clientY });
+              }
+            : undefined
       }
       data-drop={podeSoltar ? feedback.state : undefined}
       data-dragging={drag.isDragging || undefined}
@@ -193,6 +220,9 @@ export function RefChip({ refEntry, onActivate, onContextMenu }: RefChipProps) {
         CHIP_SHAPE,
         TONE[refEntry.kind],
         refEntry.isHead && refEntry.kind !== "head" && "ring-1 ring-primary/40",
+        // So no caminho do toque longo a callout nativa do iOS precisa morrer
+        // (utilitaria opt-in — no mouse ela nao declara nada).
+        press && "longpress-menu",
         podeArrastar && "cursor-grab",
         drag.isDragging && "cursor-grabbing opacity-40",
         // Aceita / recusa durante o arraste. So `filter`, `opacity` e cor de
@@ -211,10 +241,12 @@ export function RefChips({
   refs,
   onActivate,
   onContextMenu,
+  buildRefMenu,
 }: {
   refs: CommitRef[];
   onActivate?: (refEntry: CommitRef) => void;
   onContextMenu?: (refEntry: CommitRef, position: { x: number; y: number }) => void;
+  buildRefMenu?: (refEntry: CommitRef) => MenuItemSpec[];
 }) {
   if (refs.length === 0) return null;
 
@@ -230,6 +262,7 @@ export function RefChips({
           refEntry={entry}
           onActivate={onActivate}
           onContextMenu={onContextMenu}
+          buildRefMenu={buildRefMenu}
         />
       ))}
       {hidden > 0 && (

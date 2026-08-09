@@ -67,6 +67,36 @@ export const METRICS: GraphMetrics = {
   strokeWidth: 3,
 };
 
+/**
+ * A variante COMPACTA — o desenho da densidade `"compact"` (tela pequena).
+ *
+ * A linha encolhe para caber mais historia na altura de um celular: a bola
+ * menor, as lanes mais juntas e a margem enxuta. As mesmas regras de colisao
+ * valem aqui: folga pedida de `nodeRadius + 1.5 + strokeWidth/2` = 17px contra
+ * `laneWidth` de 28px — a mesma margem relativa da variante confortavel, e
+ * `layout.test.ts` prova as duas com `findCollisions`.
+ *
+ * `rowHeight` nao pode descer abaixo do alvo de toque de 44px: a linha inteira
+ * e um alvo (selecao, arraste, toque longo), e 48px deixa folga.
+ */
+export const METRICS_COMPACT: GraphMetrics = {
+  /* altura de uma linha — acima do alvo de toque de 44px, e 56 e o menor
+     valor que a curva de merge deixa passar a varredura de lanes a um
+     raio + traco de distancia dos circulos vizinhos (o mesmo `findCollisions`
+     da suite confortavel, com folga de tinta de ~1.6px — medido, nao
+     estimado). 48px colidiria por ~1px com o commit da lane intermediaria na
+     linha de baixo do merge. */
+  rowHeight: 56,
+  /** distancia horizontal entre duas lanes. Acima da folga de 17px do item 3 */
+  laneWidth: 28,
+  /** raio da bola do commit */
+  nodeRadius: 14,
+  /** margem a esquerda antes da lane 0 */
+  paddingLeft: 16,
+  /** espessura do traco das arestas e do contorno da bola — igual a confortavel */
+  strokeWidth: 3,
+};
+
 /* ================================================================== *
  * 2. CURVATURA — o quanto o cotovelo da aresta abre
  * ================================================================== */
@@ -277,7 +307,11 @@ export const SURFACE = {
  */
 export const TOOLTIP = {
   /** a caixa do cartao */
-  popup: "rounded-xl border border-border bg-popover px-3 py-2 shadow-lg",
+  /* `touch:hidden` (e nao um `if` no componente): num celular o dedo COBRE o
+     alvo que segura, entao um balao que segue o dedo nao mostra nada — e so
+     tira espaco da tela. O conteudo dele (autor, data, hash, arquivos) ja sai
+     na linha compacta, entao o gatilho vira so o velho hover do mouse. */
+  popup: "rounded-xl border border-border bg-popover px-3 py-2 shadow-lg touch:hidden",
   /** lado do retrato, em px — o pedido ao Gravatar sai no dobro disto */
   avatarPx: 36,
   /** a moldura do retrato, foto ou iniciais */

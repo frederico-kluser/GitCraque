@@ -20,16 +20,19 @@
  * borda o retrato e o traco que `paint.ts` ja punha no corpo.
  */
 import { memo, useEffect, useId, useState } from "react";
-import type { MouseEvent } from "react";
+import type { ComponentProps, MouseEvent } from "react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { areEqual } from "react-window";
 import type { ListChildComponentProps } from "react-window";
 import { useMotionUITransition } from "@/components/motion-ui/ui-theme";
 import { useDraggableEntity } from "@/dnd/bindings";
+import { longPressMenu, useCommitDetail, withLongPress } from "@/hooks";
 import { formatGitRelativeDate, t } from "@/i18n";
 import { cn, laneVar, short } from "@/lib/utils";
+import { ActionMenu } from "@/panels/parts";
 import { toast } from "@/state/store";
+import type { RawCommit } from "@/types/git";
 import { clipEdgePath, laneX } from "./bezier.ts";
 import { commitTooltip, TOOLTIP_DELAY } from "./CommitTooltip.tsx";
 import { avatarLane, gravatarUrl, initialsOf } from "./gravatar.ts";
@@ -184,12 +187,40 @@ function CommitAvatarNode({
   );
 }
 
+/**
+ * A LINHA DE METADADOS da densidade compacta: autor, data, hash e contagem de
+ * arquivos sob o assunto — o conteudo que o balao do hover mostra na
+ * densidade confortavel, e que no celular nao existe (o dedo cobre o que
+ * segura). Vive num COMPONENTE proprio de proposito: so ele monta (e pede) o
+ * detalhe do commit, via `useCommitDetail` com cache de modulo — cada linha
+ * visivel busca a rota uma vez, e a revisita sai do cache. A contagem de
+ * arquivos e OPT-IN: enquanto o detalhe nao chega (ou falha), a linha mostra
+ * so o que ja tinha em memoria.
+ */
+export function CommitMetaLine({ commit }: { commit: RawCommit }) {
+  const detail = useCommitDetail(commit.hash);
+  const files =
+    detail.data !== null ? ` · ${t("graph.tooltip.files", { count: detail.data.stats.filesChanged })}` : "";
+
+  return (
+    <div className={cn("min-w-0 max-w-full truncate text-muted-foreground", TEXT.meta)}>
+      {commit.authorName}
+      {" · "}
+      {formatGitRelativeDate(commit.relativeDate)}
+      {" · "}
+      {short(commit.hash)}
+      {files}
+    </div>
+  );
+}
+
 export const CommitRow = memo(function CommitRow({
   index: row,
   style,
   data,
 }: ListChildComponentProps<GraphRowData>) {
-  const { layout, metrics, graphWidth, selected, primary, headHash, marked } = data;
+  const { layout, metrics, graphWidth, selected, primary, headHash, marked, density, buildCommitMenu } = data;
+  const compact = density === "compact";
   const node = layout.nodes[row];
   const snap = useMotionUITransition("snap");
   const ui = useMotionUITransition("ui");
@@ -244,53 +275,61 @@ export const CommitRow = memo(function CommitRow({
     data.onContextMenu(commit.hash, { x: event.clientX, y: event.clientY });
   };
 
-  return (
-    /* O balao do hover entra como GATILHO da propria linha, pela prop `render`:
-       o Base UI funde os seus handlers no <div> que ja existia em vez de
-       embrulha-lo. Um elemento a mais por linha aqui seria caro — o orcamento de
-       nos de DOM e verificado em `__tests__/virtualization.domtest.ts`.
+  /**
+   * O botao direito do dedo: so existe quando o shell entrega o construtor dos
+   * itens (`buildCommitMenu`). A selecao da linha acontece DENTRO do gesto,
+   * como no clique direito do mouse — o menu abrir por cima de uma linha nao
+   * selecionada com ela ainda nao selecionada e o bug classico que
+   * `handleContextMenu` ja resolvia.
+   */
+  const press = buildCommitMenu
+    ? longPressMenu(`Commit ${short(commit.hash)}`, () => {
+        if (!isSelected) data.onSelect(commit.hash, "replace");
+        return buildCommitMenu(commit.hash);
+      })
+    : null;
 
-       `disabled` enquanto arrasta: o cartao seguindo o ponteiro no meio de um
-       arraste atrapalharia a leitura do alvo do drop.
+  /* Os listeners do arraste e do toque longo sao os MESMOS quatro eventos de
+     ponteiro: espalhar dois objetos por cima um do outro apagaria o handler do
+     vizinho em silencio, e o `tsc` nao acusa. `withLongPress` encadeia os dois,
+     com o arranque do @dnd-kit PRIMEIRO — o arraste por toque acorda em
+     `DND_DELAY_MS` (250) antes do menu em `LONG_PRESS_MS` (500) e o
+     `cancelLongPress()` do motor morre no `onDragStart` do arraste. */
+  const rowListeners = press ? withLongPress(draggable.listeners, press) : (draggable.listeners ?? {});
 
-       O `id` vai NO GATILHO, nunca no <div> de dentro. O Base UI usa o id como
-       a IDENTIDADE do gatilho no seu registro; posto so no elemento do `render`
-       ele sobrescreve o id do DOM sem o registro saber, e o balao nunca abre —
-       falha muda, com o ponteiro em cima e `data-base-ui-tooltip-trigger` no
-       lugar. Bisseccao por CDP: o mesmo id no <div> quebra um gatilho que
-       funcionava; movido para ca, volta a abrir. */
-    <Tooltip.Trigger
-      handle={commitTooltip}
-      payload={commit}
-      delay={TOOLTIP_DELAY}
-      disabled={draggable.isDragging}
-      id={rowDomId(commit.hash)}
-      render={
-        <div
-          {...draggable.attributes}
-          {...(draggable.listeners ?? {})}
-          ref={draggable.setNodeRef}
-          role="row"
-          tabIndex={-1}
-          aria-pressed={undefined}
-          aria-rowindex={row + 2 /* 1 e o cabecalho */}
-          aria-selected={isSelected}
-          data-dragging={draggable.isDragging || undefined}
-          data-revealed={isMarked || undefined}
-          /* `style` vem do react-window e ja traz position/top/height — e o que faz
-             a linha ser um bloco de posicionamento para o realce abaixo. */
-          style={style}
-          className={cn(
-            ROW_GRID,
-            "group cursor-default select-none text-foreground",
-            "data-[dragging]:opacity-40",
-          )}
-          onMouseDown={data.onFocusGrid}
-          onClick={handleClick}
-          onContextMenu={handleContextMenu}
-        />
-      }
-    >
+  /* A linha monta os mesmos atributos nas duas densidades; muda so o envoltorio
+     (o balao do hover no confortavel, o `<div>` pelado no compacto). */
+  const rowProps: ComponentProps<"div"> = {
+    ...draggable.attributes,
+    ...rowListeners,
+    ref: draggable.setNodeRef,
+    role: "row",
+    tabIndex: -1,
+    "aria-pressed": undefined,
+    "aria-rowindex": row + 2 /* 1 e o cabecalho */,
+    "aria-selected": isSelected,
+    /* `data-dragging`/`data-revealed` entram INLINE, nos dois pontos de uso:
+       a tipagem do React so conhece atributos `data-*` na forma de JSX. */
+    /* `style` vem do react-window e ja traz position/top/height — e o que faz
+       a linha ser um bloco de posicionamento para o realce abaixo. */
+    style,
+    className: cn(
+      ROW_GRID,
+      "group cursor-default select-none text-foreground",
+      "data-[dragging]:opacity-40",
+      /* Opt-in: a callout nativa do iOS (Copiar/Consultar) so morre onde ha
+         menu de verdade. No ponteiro fino a classe nao declara nada. */
+      press && "longpress-menu",
+    ),
+    onMouseDown: data.onFocusGrid,
+    onClick: handleClick,
+    /* Com bundle, o `onContextMenu` dele assume (preventDefault + seleciona +
+       abre o menu do store); sem bundle, o caminho antigo do mouse. */
+    onContextMenu: press ? press.onContextMenu : handleContextMenu,
+  };
+
+  const rowContent = (
+    <>
       {/* As tres camadas de realce sao a MESMA pilula (`SURFACE.pill`): mesmo
           recuo, mesmo raio. Fossem caixas diferentes, hover e selecao juntos
           apareceriam desencontrados por um px. */}
@@ -443,47 +482,130 @@ export const CommitRow = memo(function CommitRow({
       </svg>
 
       {/* ---- descricao: refs + assunto --------------------------------- */}
-      <div role="gridcell" className="flex min-w-0 items-center gap-1.5 pr-3 pl-2">
-        <RefChips
-          refs={commit.refs}
-          onActivate={data.onRefActivate}
-          onContextMenu={data.onRefContextMenu}
-        />
-        <span className={cn("truncate", TEXT.subject, isPrimary && TEXT.subjectPrimary)}>
-          {commit.subject}
-        </span>
-      </div>
+      {compact ? (
+        /* No compacto a descricao empilha: os metadados que a coluna da direita
+           nao tem mais espaco (autor, data, hash, arquivos) descem para a linha
+           de baixo do assunto. `items-start` em vez de `center`: a pilha nao
+           ocupa a altura toda e o realce da selecao continua escondendo os dois
+           textos, nao so o de cima. */
+        <div
+          role="gridcell"
+          className="flex min-w-0 flex-col items-start justify-center gap-0.5 py-1 pr-2 pl-2"
+        >
+          <div className="flex min-w-0 items-center gap-1.5">
+            <RefChips
+              refs={commit.refs}
+              onActivate={data.onRefActivate}
+              onContextMenu={data.onRefContextMenu}
+              buildRefMenu={data.buildRefMenu}
+            />
+            <span className={cn("truncate", TEXT.subject, isPrimary && TEXT.subjectPrimary)}>
+              {commit.subject}
+            </span>
+          </div>
+          <CommitMetaLine commit={commit} />
+        </div>
+      ) : (
+        <div role="gridcell" className="flex min-w-0 items-center gap-1.5 pr-3 pl-2">
+          <RefChips
+            refs={commit.refs}
+            onActivate={data.onRefActivate}
+            onContextMenu={data.onRefContextMenu}
+            buildRefMenu={data.buildRefMenu}
+          />
+          <span className={cn("truncate", TEXT.subject, isPrimary && TEXT.subjectPrimary)}>
+            {commit.subject}
+          </span>
+        </div>
+      )}
 
       {/* ---- metadados: colunas de largura fixa ------------------------ */}
-      {/* Sem `title=` nas colunas de autor e data: o balao do hover ja mostra os
-          dois, e o tooltip nativo do navegador subiria por cima dele. */}
-      <div role="gridcell" className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}>
-        {commit.authorName}
-      </div>
-      <div role="gridcell" className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}>
-        {/* O `%ar` do git chega sempre em ingles (LC_ALL=C): a exibicao muda de
-            idioma, o payload nao — `useCommitActivity` depende do original. */}
-        {formatGitRelativeDate(commit.relativeDate)}
-      </div>
-      {/* O `copy-button` do catalogo nao serve aqui: ele traz botao e glifo
-          proprios, e o alvo do clique tem de ser o proprio hash da coluna. */}
-      <div role="gridcell" className="min-w-0 pr-2">
-        <button
-          type="button"
-          onClick={(event) => void handleCopyHash(event)}
-          title={t("graph.copyHash")}
-          aria-label={t("graph.copyHash.aria", { hash: commit.hash })}
-          className={cn(
-            "-mx-1 block max-w-full truncate rounded-md px-1 font-mono text-muted-foreground",
-            TEXT.meta,
-            "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",
-            "ease-[var(--motion-ui-transition-snap)] hover:bg-accent hover:text-foreground",
-            "outline-none focus-visible:ring-1 focus-visible:ring-ring",
+      {compact ? (
+        /* Uma coluna so, e ela guarda o "⋯" — a entrada do MESMO menu por
+           toque direto (o toque longo na linha segue valendo). O menu abre por
+           cima da linha com `z-50`; os items sao os do `buildCommitMenu`, o
+           construtor do shell, como no botao direito. */
+        <div role="gridcell" className="flex min-w-0 items-center justify-end pr-2">
+          {buildCommitMenu && (
+            <ActionMenu items={buildCommitMenu(commit.hash)} label={`Commit ${short(commit.hash)}`} />
           )}
-        >
-          {short(commit.hash)}
-        </button>
+        </div>
+      ) : (
+        <>
+          {/* Sem `title=` nas colunas de autor e data: o balao do hover ja
+              mostra os dois, e o tooltip nativo do navegador subiria por cima
+              dele. */}
+          <div role="gridcell" className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}>
+            {commit.authorName}
+          </div>
+          <div role="gridcell" className={cn("truncate pr-3 text-muted-foreground", TEXT.meta)}>
+            {/* O `%ar` do git chega sempre em ingles (LC_ALL=C): a exibicao muda
+                de idioma, o payload nao — `useCommitActivity` depende do
+                original. */}
+            {formatGitRelativeDate(commit.relativeDate)}
+          </div>
+          {/* O `copy-button` do catalogo nao serve aqui: ele traz botao e glifo
+              proprios, e o alvo do clique tem de ser o proprio hash da coluna. */}
+          <div role="gridcell" className="min-w-0 pr-2">
+            <button
+              type="button"
+              onClick={(event) => void handleCopyHash(event)}
+              title={t("graph.copyHash")}
+              aria-label={t("graph.copyHash.aria", { hash: commit.hash })}
+              className={cn(
+                "-mx-1 block max-w-full truncate rounded-md px-1 font-mono text-muted-foreground",
+                TEXT.meta,
+                "transition-colors duration-[var(--motion-ui-transition-snap-duration)]",
+                "ease-[var(--motion-ui-transition-snap)] hover:bg-accent hover:text-foreground",
+                "outline-none focus-visible:ring-1 focus-visible:ring-ring",
+              )}
+            >
+              {short(commit.hash)}
+            </button>
+          </div>
+        </>
+      )}
+    </>
+  );
+
+  /* O envoltorio muda com a densidade. No confortavel a linha e o GATILHO do
+     balao — e o `id` vai NO GATILHO: o Base UI usa o id como a IDENTIDADE do
+     gatilho no seu registro, e posto so no elemento do `render` ele sobrescreve
+     o id do DOM sem o registro saber, e o balao nunca abre (falha muda, com o
+     ponteiro em cima e `data-base-ui-tooltip-trigger` no lugar). No compacto
+     nao ha balao nenhum, e o `id` cai na propria linha, onde o
+     `aria-activedescendant` e o reveal procuram — e assim o orcamento de nos
+     por linha fica igual ao confortavel: um no de DOM a mais seria caro, e a
+     conta e verificada em `__tests__/virtualization.domtest.ts`. */
+  if (compact) {
+    return (
+      <div
+        id={rowDomId(commit.hash)}
+        {...rowProps}
+        data-dragging={draggable.isDragging || undefined}
+        data-revealed={isMarked || undefined}
+      >
+        {rowContent}
       </div>
+    );
+  }
+
+  return (
+    <Tooltip.Trigger
+      handle={commitTooltip}
+      payload={commit}
+      delay={TOOLTIP_DELAY}
+      disabled={draggable.isDragging}
+      id={rowDomId(commit.hash)}
+      render={
+        <div
+          {...rowProps}
+          data-dragging={draggable.isDragging || undefined}
+          data-revealed={isMarked || undefined}
+        />
+      }
+    >
+      {rowContent}
     </Tooltip.Trigger>
   );
 }, areEqual);

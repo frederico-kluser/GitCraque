@@ -129,3 +129,48 @@ test("estado vazio e de carregamento montam poucos nos", () => {
   assert.match(loading, /aria-busy/);
   assert.ok(countElements(loading) < 220, `carregamento com ${countElements(loading)} nos`);
 });
+
+test("densidade compacta: colunas colapsadas, metadado na linha e menu por dedo", () => {
+  /* O mesmo `GraphView` real, so que com `density: "compact"` — por PROP, e e
+     por isso que a prop existe (ver `GraphViewProps.density`). */
+  const commits = syntheticRepo(200);
+  const html = renderToStaticMarkup(
+    createElement(GraphView, {
+      commits,
+      refs: null,
+      selected: [],
+      primary: null,
+      density: "compact",
+      buildCommitMenu: (hash) => [{ label: `Copiar ${hash}`, onSelect: () => {} }],
+      onSelect: () => {},
+    }),
+  );
+
+  /* o grid anuncia as 3 colunas que realmente existem */
+  assert.match(html, /aria-colcount="3"/);
+
+  /* autor/data/hash sairam do cabecalho... */
+  assert.ok(html.includes(t("graph.column.meta")), "a coluna de detalhes esta no cabecalho");
+  assert.ok(!html.includes(t("graph.column.author")), "a coluna de autor nao existe mais");
+  assert.ok(!html.includes(t("graph.column.hash")), "a coluna de hash nao existe mais");
+
+  /* ...e o conteudo delas desceu para a linha do commit (o conteudo que o
+     balao do hover mostrava, e que no celular nao pode depender de hover). */
+  assert.ok(html.includes("Ada Lovelace"), "autor na linha compacta");
+  assert.ok(html.includes("3 days ago"), "data na linha compacta");
+  assert.ok(html.includes("0000000"), "hash curto na linha compacta");
+
+  /* a linha compacta usa as metricas do celular */
+  assert.match(html, /height:56px/);
+
+  /* o "..." (ActionMenu) e a porta do menu por dedo: o gatilho anuncia o
+     alvo, mesmo sem o popup no markup (menu fechado nao portaliza nada em
+     SSR). */
+  assert.match(html, /Commit 0000000/);
+
+  /* sem o balao do hover: nem o registro do gatilho existe no compacto */
+  assert.ok(!html.includes("data-base-ui-tooltip"), "sem gatilhos de tooltip no compacto");
+
+  /* o orcamento de nos continua valendo no compacto */
+  assert.ok(countTags(html, 'div role="row"') < 60, "janela compacta com menos de 60 linhas");
+});

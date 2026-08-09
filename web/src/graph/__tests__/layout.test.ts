@@ -6,7 +6,7 @@
  */
 import assert from "node:assert/strict";
 import test from "node:test";
-import { computeGraphLayout, DEFAULT_METRICS } from "../layout.ts";
+import { COMPACT_METRICS, computeGraphLayout, DEFAULT_METRICS } from "../layout.ts";
 import {
   branchAndMerge,
   isMainLine,
@@ -259,4 +259,16 @@ test("log truncado: pais fora do conjunto nao seguram lane", () => {
   }
   /* o grafo nao cresceu sem limite so porque os pais sumiram */
   assert.ok(layout.laneCount < 24, `laneCount inesperado: ${layout.laneCount}`);
+});
+
+test("metricas compactas: o traco mais grosso cabe na lane de 28px", () => {
+  /* A densidade compacta encolhe a linha (48px) e a lane (28px) mas mantem o
+     traco de 3px. A tinta mais proxima de um circulo alheio fica a
+     raio + traco inteiro = 17px (metade de cada lado) — dentro dos 28px de
+     lane. A MESMA `findCollisions` da suite confortavel, so que com as
+     metricas do celular: lista vazia = grafo limpo. E um repositorio
+     SINCRETICO porque e o que mais usa lanes no aparelho que menos tem
+     espaco. */
+  const layout = computeGraphLayout(syntheticRepo(2000));
+  assert.deepEqual(findCollisions(layout, COMPACT_METRICS), []);
 });
