@@ -35,7 +35,7 @@
  * 3. **Subir `nodeRadius` aperta um teste.** `findCollisions`
  *    (`__tests__/geometry.ts:81`) exige folga de `nodeRadius + 1.5 +
  *    strokeWidth/2` entre a tinta de uma aresta e a tinta de um commit alheio.
- *    Hoje a folga pedida e 21px contra 30px de `laneWidth` — ha margem, mas
+ *    Hoje a folga pedida e 16.75px contra 26px de `laneWidth` — ha margem, mas
  *    ela nao e infinita: bola muito maior sem afastar as lanes reprova
  *    `layout.test.ts`.
  */
@@ -55,16 +55,16 @@ import type { GraphMetrics } from "@/types/modules";
  * (`GraphView.tsx`, `LoadingRows`) e cabem menos commits na tela.
  */
 export const METRICS: GraphMetrics = {
-  /** altura de uma linha. 72 = a bola de 36px de diametro respira sem virar lista de email */
-  rowHeight: 72,
+  /** altura de uma linha. 64 = a bola de 28px de diametro respira sem virar lista de email */
+  rowHeight: 64,
   /** distancia horizontal entre duas lanes. Precisa ficar acima da folga do item 3 */
-  laneWidth: 30,
+  laneWidth: 26,
   /** raio da bola do commit, antes de qualquer anel */
-  nodeRadius: 18,
+  nodeRadius: 14,
   /** margem a esquerda antes da lane 0 */
-  paddingLeft: 24,
+  paddingLeft: 36,
   /** espessura do traco das arestas e do contorno da bola */
-  strokeWidth: 3,
+  strokeWidth: 2.5,
 };
 
 /**
@@ -93,7 +93,7 @@ export const METRICS_COMPACT: GraphMetrics = {
   nodeRadius: 14,
   /** margem a esquerda antes da lane 0 */
   paddingLeft: 16,
-  /** espessura do traco das arestas e do contorno da bola — igual a confortavel */
+  /** espessura do traco das arestas e do contorno da bola — mais grossa que a confortavel */
   strokeWidth: 3,
 };
 
@@ -168,7 +168,7 @@ export const NODE = {
    * Escala do halo com a linha NAO selecionada. Ele nunca sai do DOM e, mesmo
    * invisivel, continua sendo alvo do ponteiro — e ele que define o tamanho
    * confortavel do alvo do hover. Em repouso: (nodeRadius + haloDelta) *
-   * haloRestScale ≈ 25.6px de raio. Baixar demais aqui deixa a bola dificil de
+   * haloRestScale ≈ 22.4px de raio. Baixar demais aqui deixa a bola dificil de
    * acertar; subir demais faz o hover disparar longe da bola.
    */
   haloRestScale: 0.8,

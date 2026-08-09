@@ -45,7 +45,7 @@ function edge(partial: Partial<GraphEdge>): GraphEdge {
 test("mesma lane nos dois extremos: reta vertical", () => {
   const d = buildEdgePath(edge({ fromRow: 2, toRow: 9 }), M);
   assert.equal(d, `M ${laneX(0, M)} ${rowY(2, M)} L ${laneX(0, M)} ${rowY(9, M)}`);
-  assert.equal(d, "M 24 180 L 24 684");
+  assert.equal(d, "M 36 160 L 36 608");
   assert.ok(!d.includes("C"), "sem curva");
 });
 
@@ -60,7 +60,7 @@ test("lanes diferentes a uma linha: uma cubica com controles verticais", () => {
     `M ${laneX(0, M)} ${rowY(0, M)} C ${laneX(0, M)} ${rowY(0, M) + K}` +
       ` ${laneX(1, M)} ${rowY(1, M) - K} ${laneX(1, M)} ${rowY(1, M)}`,
   );
-  assert.equal(d, "M 24 36 C 24 80.64 54 63.36 54 108");
+  assert.equal(d, "M 36 32 C 36 71.68 62 56.32 62 96");
 });
 
 test("aresta longa: reta no meio, curva de UMA linha junto do extremo que muda", () => {
