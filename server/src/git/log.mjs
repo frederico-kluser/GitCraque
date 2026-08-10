@@ -167,7 +167,10 @@ function isEmptyRepoError(stderr) {
  */
 export async function getLog(opts = {}) {
   const cwd = opts.cwd || process.cwd();
-  const args = [...LOG_ARGS];
+  // Branches arquivados pelo deep-orchestrator ficam em refs/do-archive/* e nao
+  // devem aparecer na interface. A exclusao vem DEPOIS de LOG_ARGS (que e
+  // congelado) e antes dos filtros de busca.
+  const args = [...LOG_ARGS, "--exclude=refs/do-archive/*"];
 
   // Filtros de busca (aditivos: nao alteram LOG_ARGS)
   if (opts.q) args.push(`--grep=${opts.q}`);
@@ -221,7 +224,9 @@ export async function getLog(opts = {}) {
 
 /** `git rev-list --all --count` — o total para a virtualizacao paginar. */
 export async function countCommits(cwd = process.cwd()) {
-  const line = await readGitLine(["rev-list", "--all", "--count"], { cwd });
+  // --exclude deve vir ANTES de --all: refs/do-archive/* sao arquivados do
+  // deep-orchestrator e nao entram no total.
+  const line = await readGitLine(["rev-list", "--exclude=refs/do-archive/*", "--all", "--count"], { cwd });
   const n = Number.parseInt(line ?? "", 10);
   return Number.isFinite(n) ? n : 0;
 }
