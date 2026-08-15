@@ -94,6 +94,14 @@ parser takes **four fields from the left and two from the right**; whatever
 remains in the middle is the subject (`server/src/git/log.mjs:17-51`). A plain
 `split("|")` desynchronises on the first commit with a pipe in its message.
 
+**Selection trap.** `--exclude=<glob>` for refs applies only to the selectors
+that come **after** it in argv — git's own doc says "the next `--all`,
+`--branches`, ..." — and before the subcommand it dies with "unknown option".
+When assembling a `log`/`rev-list` argv, the exclude must sit between the
+subcommand and `--all` (`server/src/git/log.mjs:173-177`). A wrong order ships
+ghost commits silently: `git log --all --exclude=...` still lists them (proven
+on git 2.43.0; `server/test/log-exclude-archive.test.mjs` pins the ordering).
+
 **A watcher without an `error` listener kills the server.** The Linux recursive
 `fs.watch` walks the tree itself and emits `error` when a directory vanishes
 between the event and the scandir — an ENOENT on `refs/remotes/<remote>` right

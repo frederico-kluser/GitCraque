@@ -168,9 +168,13 @@ function isEmptyRepoError(stderr) {
 export async function getLog(opts = {}) {
   const cwd = opts.cwd || process.cwd();
   // Branches arquivados pelo deep-orchestrator ficam em refs/do-archive/* e nao
-  // devem aparecer na interface. A exclusao vem DEPOIS de LOG_ARGS (que e
-  // congelado) e antes dos filtros de busca.
-  const args = [...LOG_ARGS, "--exclude=refs/do-archive/*"];
+  // devem aparecer na interface. O --exclude precisa ficar logo apos o
+  // subcomando e ANTES do --all que esta dentro do LOG_ARGS (congelado): o git
+  // so aplica --exclude aos seletores de ref que vem DEPOIS dele ("the next
+  // --all, --branches, ..."). Antes do subcomando ele nao e aceito ("unknown
+  // option"), e depois de --all ele nao exclui nada — o grafo mostrava commits
+  // "wip" fantasmas e o total (countCommits) divergia das linhas.
+  const args = [...LOG_ARGS.slice(0, 1), "--exclude=refs/do-archive/*", ...LOG_ARGS.slice(1)];
 
   // Filtros de busca (aditivos: nao alteram LOG_ARGS)
   if (opts.q) args.push(`--grep=${opts.q}`);
