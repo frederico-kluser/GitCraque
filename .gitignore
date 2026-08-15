@@ -17,3 +17,7 @@ coverage/
 TASK_PLAN.md
 
 .deep-orchestrator/
+
+# artefatos do Playwright (web/e2e)
+test-results/
+playwright-report/
