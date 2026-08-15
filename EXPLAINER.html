@@ -144,7 +144,7 @@
 <nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
   <div class="container">
     <span class="navbar-brand fw-semibold"><i class="bi bi-diagram-3 brand-accent me-2"></i>deep-orchestrator <span class="text-body-secondary fw-normal">· EXPLAINER</span></span>
-    <span class="navbar-text small text-body-secondary d-none d-md-inline">v0.3.0-e2e-ui · 2026-08-15</span>
+    <span class="navbar-text small text-body-secondary d-none d-md-inline">v0.3.1-graph-fixes · 2026-08-15</span>
   </div>
 </nav>
 
@@ -153,9 +153,9 @@
   <header class="explainer-hero rounded-4 p-4 p-md-5 mb-4">
     <span class="badge badge-accent mb-3"><i class="bi bi-clipboard-data me-1"></i>Relatório de execução</span>
     <h1 class="display-6 fw-semibold text-white mb-2">O que aconteceu nesta execução</h1>
-    <p class="lead text-white-50 mb-3">Campanha de testes de manipulacao de git (pull, merge, rebase, cherry-pick, push) no GitCraque — projeto de exemplo subido no GitHub do usuario, testado em MOUSE e TOUCH com browser headless, com 2 bugs reais corrigidos e tudo validado (18/18 specs)</p>
+    <p class="lead text-white-50 mb-3">Grafo: mais espaco a esquerda (padding 48/24), linhas menores (52/52 — piso geometrico medido) e fim das fake branches wip (exclude do-archive na ordem correta) — comparado ao GitKraken, com pesquisa citada e tudo validado (18/18 specs)</p>
     <div class="d-flex flex-wrap gap-2">
-      <span class="badge badge-accent">v0.3.0-e2e-ui</span>
+      <span class="badge badge-accent">v0.3.1-graph-fixes</span>
       <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-15</span>
       <span class="badge badge-soft"><i class="bi bi-git-branch me-1"></i>main</span>
     </div>
@@ -213,7 +213,7 @@
     <div class="tab-pane fade show active" id="pane-visao" role="tabpanel"
          aria-labelledby="tab-visao" tabindex="0" data-print-title="Visão geral">
       <h2 class="h4 pane-title">Resumo da execução</h2>
-      <p class="text-body-secondary">Campanha de testes de manipulacao de git (pull, merge, rebase, cherry-pick, push) no GitCraque — projeto de exemplo subido no GitHub do usuario, testado em MOUSE e TOUCH com browser headless, com 2 bugs reais corrigidos e tudo validado (18/18 specs)</p>
+      <p class="text-body-secondary">Grafo: mais espaco a esquerda (padding 48/24), linhas menores (52/52 — piso geometrico medido) e fim das fake branches wip (exclude do-archive na ordem correta) — comparado ao GitKraken, com pesquisa citada e tudo validado (18/18 specs)</p>
 
       <div class="alert alert-primary d-flex gap-2" role="alert">
         <i class="bi bi-info-circle-fill flex-shrink-0"></i>
@@ -225,7 +225,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-layers fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">3</div>
+              <div class="display-6 fw-bold stat-value">1</div>
               <div class="text-body-secondary small">Ondas executadas</div>
             </div>
           </div>
@@ -234,7 +234,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-robot fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">24</div>
+              <div class="display-6 fw-bold stat-value">6</div>
               <div class="text-body-secondary small">Sub-agentes</div>
             </div>
           </div>
@@ -243,7 +243,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-git-commit fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">13</div>
+              <div class="display-6 fw-bold stat-value">3</div>
               <div class="text-body-secondary small">Commits (squash)</div>
             </div>
           </div>
@@ -254,7 +254,7 @@
       <p>O orquestrador, na fase COMMIT-FINAL, gera o explainer a partir deste template:</p>
 <pre><code class="language-bash"># Gera o explainer a partir do template
 ./scripts/generate-explainer.sh &gt; EXPLAINER.html
-# Ou preenche manualmente os placeholders 0.3.0-e2e-ui, 2026-08-15, main, ...</code></pre>
+# Ou preenche manualmente os placeholders 0.3.1-graph-fixes, 2026-08-15, main, ...</code></pre>
       <p class="text-body-secondary small">O template é <code>templates/html-explainer.html</code> — arquivo único, sem build: abre por file:// e imprime em PDF com todas as abas.</p>
 
       <details class="mt-4">
@@ -294,29 +294,13 @@
 
 <div class="table-responsive">
   <table class="table table-hover align-middle">
-    <thead>
-      <tr><th scope="col">Onda</th><th scope="col">Worktrees</th><th scope="col">Tarefas</th><th scope="col" class="text-end">Commits</th><th scope="col">Status</th></tr>
-    </thead>
+    <thead><tr><th scope="col">Onda</th><th scope="col">Worktrees</th><th scope="col">Tarefas</th><th scope="col" class="text-end">Commits</th><th scope="col">Status</th></tr></thead>
     <tbody>
       <tr>
         <td><span class="badge badge-accent">Onda 1</span></td>
-        <td>onda1-fixture-github · onda1-harness-ui · onda1-fluxos-ui · test-onda1-tooling · val-onda1-gate</td>
-        <td>Projeto de exemplo + push no GitHub · Harness Playwright · Mapa de fluxos UI · Testes herméticos do fixture</td>
-        <td class="text-end">4</td>
-        <td><span class="badge text-bg-success">Integrada</span></td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-accent">Onda 2</span></td>
-        <td>onda2-specs-mouse · onda2-specs-touch · onda2-fix-touchdrag · onda2-fix-touch-action · onda2-fix-tooling-checks</td>
-        <td>5 specs mouse + 6 specs touch (pull/merge/rebase/cherry-pick/push) · 2 fixes de bug real + 1 fix de suite</td>
-        <td class="text-end">5</td>
-        <td><span class="badge text-bg-success">Integrada</span></td>
-      </tr>
-      <tr>
-        <td><span class="badge badge-accent">Onda 3</span></td>
-        <td>onda3-drag-touch · onda3-drag-mouse · onda3-doc-sync-dnd · onda3-fix-push-spec</td>
-        <td>3 drag specs touch + 3 drag specs mouse (gesto principal) · sync de docs com o fix · fix do HIGH do push</td>
-        <td class="text-end">4</td>
+        <td>onda1-refs-archive · onda1-geometria-kraken · onda1-fix-rebase-spec</td>
+        <td>Fix das refs do-archive (wip fantasma) · espaço à esquerda + linhas menores (pesquisa GitKraken) · fix do clique do chip no spec</td>
+        <td class="text-end">3</td>
         <td><span class="badge text-bg-success">Integrada</span></td>
       </tr>
     </tbody>
@@ -339,21 +323,15 @@
 
 <div class="table-responsive">
   <table class="table table-hover align-middle">
-    <thead>
-      <tr><th scope="col">Arquivo</th><th scope="col">O que é</th><th scope="col">Mudança</th></tr>
-    </thead>
+    <thead><tr><th scope="col">Arquivo</th><th scope="col">Mudança</th></tr></thead>
     <tbody>
-      <tr><td>scripts/make-fixture.mjs</td><td>Construtor determinístico do repositório de exemplo (12 commits, merge, tag, subject com pipe)</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>scripts/remote-mutate.mjs</td><td>Mutador do remoto real (--reset / --add-one) para testes de pull/push</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>scripts/verify-fixture-tooling.mjs</td><td>55 checks herméticos do fixture e mutator (remote bare local)</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>web/e2e/playwright.config.ts</td><td>Config Playwright: projetos smoke/mouse/touch, portas distintas, headless</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>web/e2e/harness/*.ts</td><td>Servidores, fixture, UI e emulação touch real (CDP) dos testes</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>web/e2e/specs/mouse/*.spec.ts</td><td>8 specs de mouse: menu/toolbar + drag (pull/merge/rebase/cherry-pick/push)</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>web/e2e/specs/touch/*.spec.ts</td><td>9 specs de touch CDP: tap/menu/hold + drag + hold-cancel negativo</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>web/src/dnd/GitDndProvider.tsx</td><td><strong>Fix de bug real:</strong> TouchSensor para ponteiro coarse — drag touch funcionando</td><td><span class="badge text-bg-warning">fix</span></td></tr>
-      <tr><td>docs/UI-OPERATIONS-MAP.md</td><td>Mapa completo dos fluxos UI (mouse/touch) com seletores e gestos</td><td><span class="badge text-bg-success">novo</span></td></tr>
-      <tr><td>docs/ESTADO-TOUCH-MOBILE.md · .agents/skills/resolving-drag-intents/SKILL.md</td><td>Docs sincronizados com a verdade do fix TouchSensor</td><td><span class="badge text-bg-warning">sync</span></td></tr>
-      <tr><td>package.json · web/package.json · package-lock.json</td><td>Script test:e2e:ui + test:fixture-tooling + devDeps playwright</td><td><span class="badge text-bg-info">deps</span></td></tr>
+      <tr><td>server/src/git/log.mjs</td><td><strong>Bug:</strong> --exclude=refs/do-archive/* agora ANTES de --all (ordem que o git respeita) — os commits "wip" fantasma sumiram do grafo</td></tr>
+      <tr><td>server/test/log-exclude-archive.test.mjs</td><td>Teste de regressão com guard de mutação (falha no código bugado)</td></tr>
+      <tr><td>web/src/graph/paint.ts</td><td>paddingLeft 36→48 (confortável) / 16→24 (compacta); rowHeight 64→52 / 56→52 (piso geométrico medido)</td></tr>
+      <tr><td>web/src/graph/__tests__/*</td><td>Tripwires, literais de path e larguras recalibrados para as métricas novas</td></tr>
+      <tr><td>docs/graph-sample.svg</td><td>Golden regenerado pelo runner (sinal real, não ruído)</td></tr>
+      <tr><td>web/e2e/specs/mouse/rebase.spec.ts</td><td>Clique no BADGE do chip (span ficou sob o gridcell do autor com a geometria nova)</td></tr>
+      <tr><td>.agents/skills/* (2 skills)</td><td>Docs sincronizadas (56px→52px, selection trap do git log)</td></tr>
     </tbody>
   </table>
 </div>
@@ -365,19 +343,9 @@
   <table class="table table-hover align-middle">
     <thead><tr><th scope="col">Hash</th><th scope="col">Commit</th></tr></thead>
     <tbody>
-      <tr><td><code>49488675</code></td><td>onda1-fixture-github: scripts make-fixture e remote-mutate + repo de exemplo no GitHub</td></tr>
-      <tr><td><code>c6df21dd</code></td><td>onda1-harness-ui: harness Playwright web/e2e + playwright devDep + script test:e2e:ui</td></tr>
-      <tr><td><code>d0640106</code></td><td>onda1-fluxos-ui: docs/UI-OPERATIONS-MAP.md — mapa de fluxos UI</td></tr>
-      <tr><td><code>5543ae8a</code></td><td>test-onda1-tooling: verify-fixture-tooling.mjs — 55 checks herméticos</td></tr>
-      <tr><td><code>76359a8f</code></td><td>onda2-fix-tooling-checks: endurece 2 checks (URL exata do origin; contagem da árvore suja)</td></tr>
-      <tr><td><code>03738f01</code></td><td>onda2-fix-touchdrag: touchDrag com repouso 300ms — contrato real do sensor</td></tr>
-      <tr><td><code>754cae3e</code></td><td>onda2-fix-touch-action: TouchSensor p/ coarse — corrige pointercancel do pan (bug real)</td></tr>
-      <tr><td><code>6311cfa8</code></td><td>onda2-specs-mouse: 5 specs MOUSE contra o repo real do GitHub</td></tr>
-      <tr><td><code>14b59131</code></td><td>onda2-specs-touch: 6 specs TOUCH (CDP real) contra o repo real</td></tr>
-      <tr><td><code>c9b5ef68</code></td><td>onda3-fix-push-spec: push touch prova transferência real (pré-assertion)</td></tr>
-      <tr><td><code>362fb1c2</code></td><td>onda3-drag-touch: 3 drag specs touch + cherry-pick off-head real</td></tr>
-      <tr><td><code>d6767d11</code></td><td>onda3-drag-mouse: 3 drag specs mouse via PointerSensor + IntentDialog</td></tr>
-      <tr><td><code>d02baeca</code></td><td>onda3-doc-sync-dnd: docs/skill sincronizados com o fix TouchSensor</td></tr>
+      <tr><td><code>4816869d</code></td><td>onda1-refs-archive: --exclude ANTES de --all no getLog — commits wip fantasma somem (bug provado) + teste</td></tr>
+      <tr><td><code>8e6e0ba7</code></td><td>onda1-geometria-kraken: espaço à esquerda (48/24) + linhas menores (52/52, piso medido) + docs</td></tr>
+      <tr><td><code>27ef40b7</code></td><td>onda1-fix-rebase-spec: clique no badge do chip — campanha mouse 8/8</td></tr>
     </tbody>
   </table>
 </div>
@@ -393,22 +361,20 @@
   <div class="col-md-6">
     <div class="card h-100"><div class="card-header fw-bold text-bg-danger">Antes</div><div class="card-body small">
       <ul class="mb-0">
-        <li>Drag-and-drop <strong>touch</strong> de commits/branches <strong>não funcionava</strong>: o PointerSensor ativava aos 250ms, mas o navegador roubava o gesto (pointercancel ~11px) e o arraste morria — em device real também.</li>
-        <li>O helper de teste <code>touchDrag</code> movia o dedo <strong>dentro</strong> dos 250ms de repouso — cancelado pelo sensor (gesto ao contrário).</li>
-        <li>Nenhum teste de UI existia para as 4 operações de git (pull/merge/rebase/cherry-pick) — só o e2e de API (39 checks).</li>
-        <li>O spec de push touch não provava transferência: o reset do remoto rodava depois do commit, e o push do app virava no-op.</li>
-        <li>Docs diziam "um PointerSensor" e "não acrescente touch-action: none" — contradiziam a correção.</li>
+        <li>Grafo encostado na borda esquerda da coluna (padding 36/16px).</li>
+        <li>Linhas de 64px (confortável) / 56px (compacta) — "muito grandes".</li>
+        <li>16 commits "wip" de execuções antigas do deep-orchestrator apareciam como linhas fantasma no grafo (o --exclude do getLog vinha depois de --all e o git o ignorava) — o GitKraken não mostra.</li>
+        <li>Total do grafo (181) divergia do contador (164) — paginação inconsistente.</li>
       </ul>
     </div></div>
   </div>
   <div class="col-md-6">
     <div class="card h-100"><div class="card-header fw-bold text-bg-success">Depois</div><div class="card-body small">
       <ul class="mb-0">
-        <li><strong>TouchSensor</strong> para ponteiro coarse: segurar 250ms arrasta; swipe rápido rola a lista. Drag touch real funcionando (provado por probe 4/4 + specs).</li>
-        <li><code>touchDrag</code> com repouso de 300ms — o gesto do sensor de verdade.</li>
-        <li><strong>17 specs de UI</strong> (8 mouse + 9 touch) cobrindo pull, merge, rebase, cherry-pick e push — com asserção dupla (git CLI real + UI) — contra o repo real no GitHub.</li>
-        <li>Push touch com pré-assertion: o remoto NÃO tem o commit antes do push do app — transferência provada.</li>
-        <li>Docs sincronizados: ESTADO-TOUCH-MOBILE, skill resolving-drag-intents, mapa de fluxos, docstring do harness.</li>
+        <li>Mais ar à esquerda: padding 48/24px — a coluna do grafo respira (largura 154→178px).</li>
+        <li>Linhas de 52px nas duas densidades (−19% na confortável) — o piso geométrico MEDIDO (51px falha a invariante de colisão por 0,05px; a régua de toque de 44px vence a densidade desktop do GitKraken).</li>
+        <li>Zero commits "wip" fantasma: total == linhas == countCommits (167/167).</li>
+        <li>Teste de regressão impede a volta do bug (guard de mutação).</li>
       </ul>
     </div></div>
   </div>
@@ -420,27 +386,23 @@
   <table class="table table-hover align-middle">
     <thead><tr><th scope="col">Métrica</th><th scope="col" class="text-end">Valor</th><th scope="col">Nota</th></tr></thead>
     <tbody>
-      <tr><td>Specs de UI novos</td><td class="text-end"><span class="badge badge-accent">17</span></td><td>8 mouse + 9 touch (CDP real), headless</td></tr>
-      <tr><td>Execuções verdes da campanha</td><td class="text-end"><span class="badge badge-accent">18/18</span></td><td>smoke + campanha completa no estado integrado (2.0m)</td></tr>
-      <tr><td>Checks herméticos do fixture</td><td class="text-end"><span class="badge badge-accent">55</span></td><td>verify-fixture-tooling, remote bare local</td></tr>
-      <tr><td>E2E de API (golden master)</td><td class="text-end"><span class="badge badge-accent">39/39</span></td><td>intacto após todas as mudanças</td></tr>
-      <tr><td>Bugs reais do app encontrados e corrigidos</td><td class="text-end"><span class="badge text-bg-danger">2</span></td><td>drag touch morto (pointercancel) + docs contradizendo o fix</td></tr>
-      <tr><td>Push/pull reais contra o GitHub</td><td class="text-end"><span class="badge badge-accent">~30</span></td><td>ciclos reais no repo privado gitcraque-teste-operacoes</td></tr>
-      <tr><td>Revisões adversariais</td><td class="text-end"><span class="badge badge-accent">10</span></td><td>todas com verificação arquivo:linha; 3 HIGHs encontrados e fechados</td></tr>
-      <tr><td>Gates de integração</td><td class="text-end"><span class="badge text-bg-success">7/7</span></td><td>trio + specs por onda; perf flake tratado como ruído documentado (5x)</td></tr>
+      <tr><td>Commits "wip" fantasma</td><td class="text-end"><span class="badge text-bg-danger">16 → 0</span></td><td>--exclude na ordem correta + guard de mutação</td></tr>
+      <tr><td>rowHeight</td><td class="text-end"><span class="badge badge-accent">64/56 → 52/52</span></td><td>piso geométrico medido; ≥44px (régua de toque)</td></tr>
+      <tr><td>paddingLeft</td><td class="text-end"><span class="badge badge-accent">36/16 → 48/24</span></td><td>mais espaço à esquerda</td></tr>
+      <tr><td>Campanha e2e:ui</td><td class="text-end"><span class="badge badge-accent">18/18</span></td><td>geometria nova não quebrou specs (1 fix de clique no spec)</td></tr>
+      <tr><td>Gates</td><td class="text-end"><span class="badge text-bg-success">3/3</span></td><td>npm test verde de primeira nos 3 (perf flake tratado como ruído no final)</td></tr>
+      <tr><td>Revisões adversariais</td><td class="text-end"><span class="badge badge-accent">2</span></td><td>APPROVE + WARNING-fechado (3 fixes de docs)</td></tr>
     </tbody>
   </table>
 </div>
 
       <h2 class="h4 pane-title">Novas capacidades</h2>
 <ul class="mb-0">
-  <li><code>npm run test:e2e:ui</code> — a campanha inteira: smoke + 8 specs mouse + 9 specs touch, headless, contra o repo real.</li>
-  <li><code>npm run test:fixture-tooling</code> — 55 checks herméticos do fixture e do mutator do remoto.</li>
-  <li><code>node scripts/make-fixture.mjs --create-remote</code> — recria o projeto de exemplo e re-pusha o baseline no GitHub (idempotente).</li>
-  <li><code>node scripts/remote-mutate.mjs &lt;fixture&gt; --reset|--add-one</code> — simula mudanças remotas para testes de pull.</li>
-  <li><code>web/e2e/harness/touch.ts</code> — emulação touch real via CDP (tap, long-press, drag com repouso, hold-to-confirm).</li>
-  <li><code>docs/UI-OPERATIONS-MAP.md</code> — contrato de seletores e gestos das 6 operações em mouse e touch.</li>
-  <li>App corrigido: drag touch real (TouchSensor) — testável e testado ponta a ponta.</li>
+  <li>Grafo com mais ar à esquerda e linhas 19% menores na densidade confortável — sem violar a invariante de colisão nem a régua de toque.</li>
+  <li>Interface limpa: commits de refs de arquivo (do-archive/*) nunca mais aparecem — com teste de regressão que prende a ordem do exclude.</li>
+  <li>Total do grafo consistente com a paginação (total === linhas === countCommits).</li>
+  <li>Campanha e2e:ui (18 specs) validando o estado final de ponta a ponta.</li>
+  <li>Docs sincronizadas: skills com os valores reais (52px) e a armadilha de seleção do git log documentada.</li>
 </ul>
     </div>
 
@@ -451,13 +413,11 @@
       <p>O orquestrador opera em autonomia total — nenhuma pergunta é feita ao usuário. Toda premissa assumida fica registrada aqui — para revisão e reprodutibilidade.</p>
 
 <ul class="mb-0">
-  <li><strong>Repo de exemplo privado</strong> (gitcraque-teste-operacoes em frederico-kluser) — conservadorismo; publicar depois é trivial.</li>
-  <li><strong>Playwright como devDependency do workspace web</strong> — o harness vira artefato do produto, fora de <code>npm test</code> (convenção do repo).</li>
-  <li><strong>Cherry-pick touch re-planejado na Onda 2</strong> e <strong>revogado na Onda 3</strong>: o caminho real de drag ficou testável após o fix do TouchSensor — a história reflete a evolução da verdade.</li>
-  <li><strong>Não testar squash/rebase-interativo e push --force</strong>: diálogos sem caller (código morto) e force sem hold destrutivo (defeito conhecido) — vão ao relatório como achados.</li>
-  <li><strong>Gates sequenciais</strong> com os projetos de specs (rede compartilhada — pushs concorrentes são rejeitados pelo GitHub).</li>
-  <li><strong>Perf flake tratado 5x como ruído ambiental</strong> com prova (re-run isolado verde + diff que não toca web/src/graph).</li>
-  <li><strong>Subwaves 2/3 absorvidas</strong> pelos gates das ondas + gate final (decisão de processo documentada).</li>
+  <li><strong>Piso de 52px</strong> (não 48/44 propostos): medido empiricamente — 51px falha a invariante de colisão por 0,05/0,21px; 48 por ~1px. Fidelidade à invariante &gt; valor proposto.</li>
+  <li><strong>Régua de toque de 44px vence a pesquisa GitKraken</strong> (~22-30px desktop mouse-only): o GitCraque é touch-first — a linha inteira é o alvo de toque auditado.</li>
+  <li><strong>laneWidth mantido</strong> (28px): medido que alargar tem efeito marginal (28→32 melhora 16,79→16,98 e ainda falha; zeraria ~36px) — o knob que compra linha é o rowHeight.</li>
+  <li><strong>Refs do-archive antigas NÃO foram apagadas</strong> (são do .git do usuário, de outra execução): o grafo não as mostra mais; limpeza opcional é decisão do usuário.</li>
+  <li><strong>LOG_ARGS byte-frozen intacto</strong>: o fix reordena só o args do getLog (subcomando → exclude → all).</li>
 </ul>
     </div>
 
@@ -471,14 +431,10 @@
   <table class="table table-hover align-middle">
     <thead><tr><th scope="col">Momento</th><th scope="col">Evento</th></tr></thead>
     <tbody>
-      <tr><td>22:26</td><td>FASE 0 — fronteira definida; plano publicado</td></tr>
-      <tr><td>22:47–23:00</td><td>Onda 1: fixture+GitHub, harness Playwright, mapa de fluxos — 3 revisores APPROVE</td></tr>
-      <tr><td>23:00–23:26</td><td>Gates da Onda 1 com perf flake documentado; repo privado criado e pusheado</td></tr>
-      <tr><td>23:10–23:20</td><td>Testes herméticos do fixture (55 checks) + fix dos 2 checks</td></tr>
-      <tr><td>23:06–00:47</td><td>Onda 2: specs mouse/touch; <strong>bug real descoberto</strong> (drag touch morto) → fix TouchSensor; fix touchDrag (HIGH do revisor)</td></tr>
-      <tr><td>00:46–01:30</td><td>Gates mouse/touch verdes; REPLAN propõe Onda 3 (drag specs obrigatórios)</td></tr>
-      <tr><td>01:30–02:10</td><td>Onda 3: drag touch/mouse, fix do HIGH do push, sync de docs — 3 revisores APPROVE; gates verdes</td></tr>
-      <tr><td>02:1x</td><td>REPLAN final: CONVERGÊNCIA — COMMIT-FINAL: gate completo + campanha 18/18 no estado integrado</td></tr>
+      <tr><td>08:53</td><td>FASE 0 + análise: 3 itens mapeados; bug das refs do-archive provado empiricamente</td></tr>
+      <tr><td>09:0x–09:3x</td><td>Onda 1: fix do getLog (guard de mutação) + geometria (piso 52 medido, pesquisa citada) — revisores APPROVE/WARNING-fechado</td></tr>
+      <tr><td>09:4x</td><td>Gates 3/3 verdes; REPLAN convergência</td></tr>
+      <tr><td>09:5x</td><td>COMMIT-FINAL: campanha 17/18 → fix do clique no badge → 18/18 verdes</td></tr>
     </tbody>
   </table>
 </div>
@@ -487,7 +443,7 @@
   </div>
 
   <footer class="text-body-secondary small border-top mt-5 pt-3">
-    Gerado por <strong>deep-orchestrator</strong> v0.3.0-e2e-ui · 2026-08-15 · branch main.
+    Gerado por <strong>deep-orchestrator</strong> v0.3.1-graph-fixes · 2026-08-15 · branch main.
     Documento de arquivo único — salve, abra com duplo clique ou imprima em PDF (todas as abas entram no papel).
   </footer>
 
