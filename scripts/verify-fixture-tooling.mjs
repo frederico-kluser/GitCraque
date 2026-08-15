@@ -11,7 +11,8 @@
  *
  *   1. estrutura do fixture: 12 commits, 1 merge com 2 pais, tag ANOTADA
  *      v1.0.0, commit com `|` no assunto, 4 branches, arvore suja
- *      (1 modificado + 1 untracked), worktree extra, remotes origin+backup
+ *      (exatamente 1 modificado + exatamente 1 untracked), worktree extra,
+ *      remotes origin+backup, origin com a URL exata do repo de exemplo
  *   2. determinismo estrutural: duas execucoes com relogio de committer
  *      fixado darao `git log --all --pretty=%s` byte-identico — ver o
  *      comentario de FROZEN_ENV sobre POR QUE o relogio precisa ser fixado
@@ -43,6 +44,9 @@ const REMOTE_MUTATE = path.join(ROOT, "scripts", "remote-mutate.mjs");
 const PIPE_SUBJECT = "fix(parser): trata a|b como um caso so";
 /** subject fixo do commit criado pelo --add-one (contrato do remote-mutate) */
 const ADD_SUBJECT = "feat: mudanca remota para teste de pull";
+/** URL canonica do repo de exemplo — espelha REPO_OWNER/REPO_NAME de
+ * make-fixture.mjs:42-45 (nao importamos o script: ele executa CLI no import) */
+const ORIGIN_URL = "https://github.com/frederico-kluser/gitcraque-teste-operacoes.git";
 
 let passed = 0;
 let failed = 0;
@@ -163,10 +167,13 @@ safe(
   git(fixturePath, "branch", "--format=%(refname:short)").split("\n").join(", "),
 );
 safe(
-  "arvore suja: 1 modificado + 1 untracked",
+  "arvore suja: EXATAMENTE 1 modificado (src.txt) + EXATAMENTE 1 untracked (untracked.txt)",
   () => {
-    const st = git(fixturePath, "status", "--porcelain");
-    return st.includes("M src.txt") && st.includes("?? untracked.txt");
+    // o helper git() faz trim: a linha " M src.txt" do porcelain chega sem o
+    // espaco inicial. "M src.txt" (1 espaco) so casa o modificado
+    // NAO-estagiado — o estagiado seria "M  src.txt" (2 espacos).
+    const lines = git(fixturePath, "status", "--porcelain").split("\n").filter(Boolean);
+    return lines.length === 2 && lines.includes("M src.txt") && lines.includes("?? untracked.txt");
   },
   git(fixturePath, "status", "--porcelain").split("\n").join(" / "),
 );
@@ -187,8 +194,8 @@ safe(
   git(fixturePath, "remote").split("\n").join(", "),
 );
 safe(
-  "origin aponta para o repo de exemplo do GitHub",
-  () => git(fixturePath, "remote", "get-url", "origin").startsWith("https://github.com/"),
+  "origin aponta para a URL EXATA do repo de exemplo",
+  () => git(fixturePath, "remote", "get-url", "origin") === ORIGIN_URL,
   git(fixturePath, "remote", "get-url", "origin"),
 );
 
