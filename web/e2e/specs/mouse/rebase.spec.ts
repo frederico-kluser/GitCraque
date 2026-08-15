@@ -32,7 +32,7 @@ import { expect, test } from "@playwright/test";
 import { PORTS } from "../../playwright.config.ts";
 import { makeFixture } from "../../harness/fixture.ts";
 import { startAppServer, type RunningServer } from "../../harness/servers.ts";
-import { branchChip, expectToast, graphCommitRow, scrollGraphTo, waitForGraph } from "../../harness/ui.ts";
+import { expectToast, graphCommitRow, scrollGraphTo, waitForGraph } from "../../harness/ui.ts";
 import { openAppResilient } from "./retry.ts";
 import { git, gitAsAuthor } from "./git-cli.ts";
 
@@ -72,9 +72,14 @@ test("rebase de feature/auth sobre main pelo menu com hold de 1.4 s", async ({ p
   // O chip de main fica na linha do commit de merge do baseline; garante a
   // linha montada antes do clique com o botao direito.
   await scrollGraphTo(page, "merge: integra feature/auth");
-  // Clique posicionado na borda esquerda do chip (ver merge.spec.ts: a coluna
-  // de descricao e estreita no viewport 1280 e o autor cobre o centro).
-  await branchChip(page, "main").click({ button: "right", position: { x: 3, y: 10 } });
+  // Clique na borda esquerda do BADGE do chip: o span de texto do "main" fica
+  // inteiro sob o gridcell do autor (quirk de merge.spec.ts:49-52; na
+  // geometria atual o x=3 do span nao escapa, o do badge sim).
+  const chipMain = page
+    .locator('[role="rowgroup"] span.rounded-full')
+    .filter({ hasText: /^main$/ })
+    .first();
+  await chipMain.click({ button: "right", position: { x: 3, y: 10 } });
   await page.getByRole("menuitem", { name: "Rebasear feature/auth sobre esta" }).click();
 
   // ConfirmHost destrutivo: botao de hold com "Segure para rebase" (1.4 s).
