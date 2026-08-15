@@ -1,11 +1,10 @@
 /**
- * MERGE no toque — porta alcancavel do layout compacto: o "⋯" da branch no
- * rail ("Ações da branch {name}", web/src/panels/RailPanels.tsx:363) ->
- * "Mesclar em {branch}" (menu.branch.mergeInto) -> ConfirmHost.
+ * MERGE no toque — porta do MENU: o "⋯" da branch no rail ("Ações da branch
+ * {name}", web/src/panels/RailPanels.tsx:363) -> "Mesclar em {branch}"
+ * (menu.branch.mergeInto) -> ConfirmHost.
  *
- * O arrasto branch->branch (IntentDialog) NAO e alcancavel no toque deste app:
- * o browser rouba o gesto (pointercancel a ~11px; sem touch-action nos nos de
- * dnd — theme.css:389-399). Gap documentado no handoff.
+ * A porta do DRAG (chip da branch sobre o chip alvo -> IntentDialog) vive em
+ * drag-merge.spec.ts.
  *
  * Divergencia: sem ela o merge de feature/ui em main seria FAST-FORWARD (0
  * commits de distancia), sem commit de merge novo. O dialogo do merge oferece

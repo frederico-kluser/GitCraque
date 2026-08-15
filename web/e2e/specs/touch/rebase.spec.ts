@@ -1,7 +1,7 @@
 /**
- * REBASE no toque — caminho do menu (ConfirmHost), o unico alcancavel no
- * layout compacto (o arrasto branch->branch morre no roubo de gesto do
- * navegador; gap documentado no handoff).
+ * REBASE no toque — caminho do MENU (ConfirmHost, hold 1.4 s). O caminho do
+ * DRAG (chip da branch sobre o chip alvo -> IntentDialog, hold 2 s) vive em
+ * drag-rebase.spec.ts.
  *
  * O item do menu rebase a branch ATUAL em cima da branch do menu
  * (menu.branch.rebaseOnto -> openRebaseOnto, actions.ts:361-383). Entao:

@@ -6,11 +6,10 @@
  * index.tsx:136-142) e o CDP `Input.dispatchTouchEvent` entrega pointer events
  * com `pointerType: "touch"` (validado empiricamente).
  *
- * NAO ha drag aqui: o arrasto por toque neste app morre no roubo de gesto do
- * navegador (`pointercancel` quando o dedo cruza o touch-slop; o app nao seta
- * `touch-action` nos nos de dnd — theme.css:389-399 — e o Chromium cancela o
- * pointer a ~11px de movimento). Portas alcancaveis no toque: menus "⋯"
- * (ActionMenu) e dialogos de confirmacao. Gap documentado no handoff.
+ * O ARRASTO do app (chip/linha -> chip) e emitido por `touchDrag` do harness
+ * (web/e2e/harness/touch.ts — repouso 300 ms: o contrato do sensor coarse
+ * com delay 250 ms) e exercitado pelos specs drag-*.spec.ts. Aqui so moram
+ * hold-to-confirm e abertura de menus.
  */
 import type { Locator, Page } from "@playwright/test";
 import { tapBySelector } from "../../harness/touch.ts";
