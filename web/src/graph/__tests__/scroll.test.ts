@@ -37,7 +37,7 @@ const centerOn = (targetX: number, width: number): number => targetX - width / 2
 
 /** Janelas de referencia: desktop 300px e um celular de 375px. */
 const cases = [
-  { m: METRICS, width: 300, lastInside: 10, firstOutside: 11 },
+  { m: METRICS, width: 300, lastInside: 9, firstOutside: 10 },
   { m: METRICS_COMPACT, width: 375, lastInside: 12, firstOutside: 13 },
 ] as const;
 
@@ -65,17 +65,17 @@ test("o alvo do scrollTo centraliza a bola na janela", () => {
     /* depois do scrollTo, o centro da bola fica no centro da janela. */
     assert.equal(left + c.width / 2, targetX, "bola no centro apos rolar");
   }
-  /* numeros crus: confortavel lane 11 em janela 300 -> 172;
-     compacta lane 13 em janela 375 -> 192.5. */
-  assert.equal(centerOn(laneX(11, METRICS), 300), 172);
-  assert.equal(centerOn(laneX(13, METRICS_COMPACT), 375), 192.5);
+  /* numeros crus: confortavel lane 11 em janela 300 -> 184;
+     compacta lane 13 em janela 375 -> 200.5. */
+  assert.equal(centerOn(laneX(11, METRICS), 300), 184);
+  assert.equal(centerOn(laneX(13, METRICS_COMPACT), 375), 200.5);
 });
 
 test("bola ja rolada para tras: a guarda volta a rolar para a frente", () => {
-  const targetX = laneX(3, METRICS);
-  assert.equal(targetX, 114, "o centro da lane 3");
+  const targetX = laneX(2, METRICS);
+  assert.equal(targetX, 100, "o centro da lane 2");
   assert.equal(ballOutside(targetX, 120, 200), true, "bola atras da janela");
-  assert.equal(centerOn(targetX, 200), 14, "o alvo volta sem negativar");
+  assert.equal(centerOn(targetX, 200), 0, "o alvo volta sem negativar");
 });
 
 test("bola visivel nao rola nem quando o conteudo e mais largo que a janela", () => {
@@ -84,16 +84,18 @@ test("bola visivel nao rola nem quando o conteudo e mais largo que a janela", ()
   const width = 375;
   const targetX = laneX(12, METRICS_COMPACT);
   assert.equal(ballOutside(targetX, 0, width), false, "bola dentro da janela");
-  assert.equal(centerOn(targetX, width), 164.5);
+  assert.equal(centerOn(targetX, width), 172.5);
 });
 
 test("a formula antiga (com o raio somado) deslocaria a fronteira da guarda", () => {
-  /* regressao da Onda 1: somar `nodeRadius` ao alvo faz a bola da lane 10
-     parecer fora da janela de 300px — e o scroll dispararia para uma bola
-     que ja esta visivel. */
-  const width = 300;
-  const center = laneX(10, METRICS);
-  assert.equal(center, 296);
+  /* regressao da Onda 1: somar `nodeRadius` ao alvo faz a bola da lane 9
+     parecer fora da janela de 295px — e o scroll dispararia para uma bola
+     que ja esta visivel. (Com paddingLeft 48 os centros caem em 48 + 26k;
+     numa janela de 300px nao ha lane na zona de fronteira, entao a janela
+     do cenario e 295: 282 dentro, 296 fora.) */
+  const width = 295;
+  const center = laneX(9, METRICS);
+  assert.equal(center, 282);
   assert.equal(ballOutside(center, 0, width), false, "bola visivel");
   assert.equal(
     ballOutside(center + METRICS.nodeRadius, 0, width),

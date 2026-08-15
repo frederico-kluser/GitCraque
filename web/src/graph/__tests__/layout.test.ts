@@ -262,7 +262,7 @@ test("log truncado: pais fora do conjunto nao seguram lane", () => {
 });
 
 test("metricas compactas: o traco mais grosso cabe na lane de 28px", () => {
-  /* A densidade compacta encolhe a linha (48px) e a lane (28px) mas mantem o
+  /* A densidade compacta encolhe a linha (52px) e a lane (28px) mas mantem o
      traco de 3px. A tinta mais proxima de um circulo alheio fica a
      raio + traco inteiro = 17px (metade de cada lado) — dentro dos 28px de
      lane. A MESMA `findCollisions` da suite confortavel, so que com as

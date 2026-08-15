@@ -232,9 +232,9 @@ export function RefChip({ refEntry, onActivate, onContextMenu: onRefMenu, buildR
         feedback.rejects && "opacity-50 ring-2 ring-destructive/60",
         /*
          * O ALVO DE SOLTURA NO TOQUE. O chip nao pode ter `touch:min-h-tap`
-         * estatico: na linha compacta (56px) a descricao empilha chips+assunto
+         * estatico: na linha compacta (52px) a descricao empilha chips+assunto
          * sobre a linha de metadados, e 44px no chip estouraria a linha
-         * (~70px > 56px). Em vez disso ele CRESCE durante o arraste, e so no
+         * (~70px > 52px). Em vez disso ele CRESCE durante o arraste, e so no
          * toque (`touch:`) — escala e a unica forma de crescer sem reflow. O
          * `getBoundingClientRect` inclui transform, entao o retangulo que o
          * @dnd-kit mede no INICIO do arrasto ja e o escalado — a classe

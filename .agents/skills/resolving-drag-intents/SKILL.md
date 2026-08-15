@@ -92,10 +92,10 @@ what the provider passes to `useSensor`.
 audit (`web/src/__audit__/touch-targets.domtest.ts`) scans only the shell
 (app/panels/dialogs) and only `button`/`role=button`/`menuitem` — a `RefChip`
 passes without any `touch:` utility and can still be a 21px drop target in the
-middle of a 56px compact row. It also cannot take a static `touch:min-h-tap`
+middle of a 52px compact row. It also cannot take a static `touch:min-h-tap`
 (44px): the compact row stacks chips+subject over the meta line
 (`web/src/graph/CommitRow.tsx:495-498`), and 44px chips would overflow the
-56px row (`paint.ts:89`). The mobile pattern that fits is a transform scale
+52px row (`paint.ts:101`, o `rowHeight` das metricas compactas). The mobile pattern that fits is a transform scale
 **while a drag is active**: `feedback.dragging && "touch:scale-150"` in
 `RefChip.tsx` — no reflow, and the drop hit area grows with the visual. The
 mechanism is NOT re-measuring: with the default `frequency: "optimized"`,

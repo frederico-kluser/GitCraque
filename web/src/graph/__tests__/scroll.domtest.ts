@@ -85,7 +85,7 @@ test("grafo de 16 lanes: a largura de conteudo passa do piso e vai ao DOM", () =
   );
   assert.ok(expected > 480, `esperava passar do piso, veio ${expected}`);
   assert.ok(html.includes(`min-width:${expected}px`), "o DOM carrega a largura exata");
-  assert.ok(html.includes("--graph-col:452px"), "16 lanes compactas = 452px de coluna");
+  assert.ok(html.includes("--graph-col:468px"), "16 lanes compactas = 468px de coluna");
 });
 
 test("confortavel nao monta rolador horizontal nenhum", () => {
@@ -93,7 +93,7 @@ test("confortavel nao monta rolador horizontal nenhum", () => {
 
   assert.ok(!html.includes("overflow-x-auto"), "sem rolador no confortavel");
   assert.ok(!html.includes("min-width"), "sem piso de conteudo no confortavel");
-  assert.ok(html.includes("--graph-col:72px"), "coluna confortavel de uma lane = 72px");
+  assert.ok(html.includes("--graph-col:96px"), "coluna confortavel de uma lane = 96px");
 });
 
 test("o reveal num grafo largo compacto renderiza sem quebrar", () => {

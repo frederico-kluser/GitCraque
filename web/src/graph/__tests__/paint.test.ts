@@ -23,27 +23,27 @@ import { METRICS, METRICS_COMPACT } from "../paint.ts";
 
 test("confortavel: os cinco numeros do desenho desktop", () => {
   assert.deepEqual(METRICS, {
-    rowHeight: 64,
+    rowHeight: 52,
     laneWidth: 26,
     nodeRadius: 14,
-    paddingLeft: 36,
+    paddingLeft: 48,
     strokeWidth: 2.5,
   });
 });
 
 test("compacta: os cinco numeros do desenho de celular", () => {
   assert.deepEqual(METRICS_COMPACT, {
-    rowHeight: 56,
+    rowHeight: 52,
     laneWidth: 28,
     nodeRadius: 14,
-    paddingLeft: 16,
+    paddingLeft: 24,
     strokeWidth: 3,
   });
 });
 
 test("a bola cabe na linha e nao corta a borda esquerda", () => {
   for (const m of [METRICS, METRICS_COMPACT]) {
-    /* 28px de diametro dentro de uma linha de 64/56px: a bola respira. */
+    /* 28px de diametro dentro de uma linha de 52px: a bola respira. */
     assert.ok(m.nodeRadius * 2 < m.rowHeight, "diametro menor que a linha");
     /* o traco nao domina a bola: o desenho nao vira arame. */
     assert.ok(m.strokeWidth < m.nodeRadius, "traco mais fino que o raio");

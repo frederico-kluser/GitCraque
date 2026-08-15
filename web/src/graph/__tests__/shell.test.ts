@@ -60,13 +60,13 @@ test("um repositorio sintetico realista nao escapa do piso", () => {
 });
 
 test("graphColumnWidth com as metricas da Onda 1", () => {
-  /* confortavel: paddingLeft 36 dos dois lados, lanes de 26px. */
-  assert.equal(graphColumnWidth(1, METRICS), 72);
-  assert.equal(graphColumnWidth(2, METRICS), 98);
-  assert.equal(graphColumnWidth(16, METRICS), 462);
-  /* compacta: paddingLeft 16, lanes de 28px, e o piso de 56px na lane 1. */
+  /* confortavel: paddingLeft 48 dos dois lados, lanes de 26px. */
+  assert.equal(graphColumnWidth(1, METRICS), 96);
+  assert.equal(graphColumnWidth(2, METRICS), 122);
+  assert.equal(graphColumnWidth(16, METRICS), 486);
+  /* compacta: paddingLeft 24, lanes de 28px, e o piso de 56px na lane 1. */
   assert.equal(graphColumnWidth(1, METRICS_COMPACT), 56);
-  assert.equal(graphColumnWidth(16, METRICS_COMPACT), 452);
+  assert.equal(graphColumnWidth(16, METRICS_COMPACT), 468);
 });
 
 test("a coluna sempre cobre a bola da ultima lane", () => {

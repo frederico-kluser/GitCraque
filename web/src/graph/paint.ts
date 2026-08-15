@@ -55,14 +55,23 @@ import type { GraphMetrics } from "@/types/modules";
  * (`GraphView.tsx`, `LoadingRows`) e cabem menos commits na tela.
  */
 export const METRICS: GraphMetrics = {
-  /** altura de uma linha. 64 = a bola de 28px de diametro respira sem virar lista de email */
-  rowHeight: 64,
+  /**
+   * altura de uma linha. 52 e o MENOR valor que passa a varredura de colisao
+   * (`findCollisions` em layout.test.ts, amostragem fina): 51 falha por 0.05px
+   * e 48 falha por ~0.8px — o piso e geometrico (a curva de merge, de UMA
+   * linha, passa a raio + traco de distancia dos circulos vizinhos), nao de
+   * estilo. Comparado com o GitLens/GitKraken desktop (linhas de ~22px, so
+   * mouse; a pesquisa web nao publica o valor exato do GitKraken), 52 ainda
+   * e folgado; a regua de toque de 44px nao deixa descer mais (a linha
+   * inteira e o alvo).
+   */
+  rowHeight: 52,
   /** distancia horizontal entre duas lanes. Precisa ficar acima da folga do item 3 */
   laneWidth: 26,
   /** raio da bola do commit, antes de qualquer anel */
   nodeRadius: 14,
-  /** margem a esquerda antes da lane 0 */
-  paddingLeft: 36,
+  /** margem a esquerda antes da lane 0 — mais ar (pedido do usuario: o grafo nao pode ficar encostado na borda) */
+  paddingLeft: 48,
   /** espessura do traco das arestas e do contorno da bola */
   strokeWidth: 2.5,
 };
@@ -77,22 +86,28 @@ export const METRICS: GraphMetrics = {
  * `layout.test.ts` prova as duas com `findCollisions`.
  *
  * `rowHeight` nao pode descer abaixo do alvo de toque de 44px: a linha inteira
- * e um alvo (selecao, arraste, toque longo), e 48px deixa folga.
+ * e um alvo (selecao, arraste, toque longo), e 52px deixa folga — alem de ser
+ * o piso medido da varredura de colisao (ver o comentario do `rowHeight`
+ * abaixo).
  */
 export const METRICS_COMPACT: GraphMetrics = {
-  /* altura de uma linha — acima do alvo de toque de 44px, e 56 e o menor
-     valor que a curva de merge deixa passar a varredura de lanes a um
-     raio + traco de distancia dos circulos vizinhos (o mesmo `findCollisions`
-     da suite confortavel, com folga de tinta de ~1.6px — medido, nao
-     estimado). 48px colidiria por ~1px com o commit da lane intermediaria na
-     linha de baixo do merge. */
-  rowHeight: 56,
+  /* altura de uma linha — o piso e o MESMO da confortavel, medido na varredura
+     de colisao (`findCollisions`, layout.test.ts): 52px e o menor valor que a
+     curva de merge, de UMA linha, deixa passar a raio + traco de distancia dos
+     circulos vizinhos (51 falha por 0.21px). Alargar `laneWidth` tem efeito
+     marginal perto do piso (medido a 51px: 28 -> 32px de lane melhora a pior
+     distancia de 16.79 para 16.98px e ainda falha; zeraria so perto de 36px)
+     — a amostra critica passa a dx ~2-5px e dy ~16px do commit, entao o gap
+     VERTICAL da curva domina, nao o horizontal; o knob que compra linha e o
+     rowHeight, nao a lane. Manter 28px e piso 52 continua, 8px acima do alvo
+     de toque de 44px. */
+  rowHeight: 52,
   /** distancia horizontal entre duas lanes. Acima da folga de 17px do item 3 */
   laneWidth: 28,
   /** raio da bola do commit */
   nodeRadius: 14,
-  /** margem a esquerda antes da lane 0 */
-  paddingLeft: 16,
+  /** margem a esquerda antes da lane 0 — mais ar que os 16px, onde a bola quase tocava a borda */
+  paddingLeft: 24,
   /** espessura do traco das arestas e do contorno da bola — mais grossa que a confortavel */
   strokeWidth: 3,
 };

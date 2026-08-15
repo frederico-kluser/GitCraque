@@ -161,7 +161,7 @@ test("densidade compacta: colunas colapsadas, metadado na linha e menu por dedo"
   assert.ok(html.includes("0000000"), "hash curto na linha compacta");
 
   /* a linha compacta usa as metricas do celular */
-  assert.match(html, /height:56px/);
+  assert.match(html, /height:52px/);
 
   /* o "..." (ActionMenu) e a porta do menu por dedo: o gatilho anuncia o
      alvo, mesmo sem o popup no markup (menu fechado nao portaliza nada em
