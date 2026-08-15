@@ -4,12 +4,12 @@
  *
  * Tres responsabilidades, e so estas:
  *
- *  1. Sensores. `PointerSensor` com o ativador escolhido pelo ponteiro
- *     (`activationConstraintFor`, de `sensors.ts`): no mouse, `distance: 6`
- *     para que um clique simples num commit continue sendo selecao (o grafo
- *     depende disso); no toque, `delay: 250` com `tolerance: 5`, senao rolar
- *     com o dedo viraria arrasto. Mais `KeyboardSensor` para arrastar sem
- *     mouse.
+ *  1. Sensores. No mouse, `PointerSensor` com `distance: 6` para que um clique
+ *     simples num commit continue sendo selecao (o grafo depende disso). No
+ *     dedo (ponteiro coarse), `TouchSensor` com `delay: 250` e `tolerance: 5`
+ *     — o touchmove nao-passivo dele trava o pan do navegador durante o
+ *     arraste, e um swipe rapido (que passa da folga) desliga o sensor e deixa
+ *     a lista rolar. Mais `KeyboardSensor` para arrastar sem mouse.
  *  2. Feedback de validade em tempo real. A cada `onDragOver` a intencao e
  *     resolvida contra o alvo sob o cursor e publicada por contexto; os alvos
  *     leem com `useDropFeedback(id)` e se pintam de aceita/recusa.
@@ -26,6 +26,7 @@ import {
   KeyboardSensor,
   MeasuringStrategy,
   PointerSensor,
+  TouchSensor,
   pointerWithin,
   rectIntersection,
   useSensor,
@@ -208,14 +209,28 @@ const collisionDetection: CollisionDetection = (args) => {
 export function GitDndProvider({ children, onIntent }: GitDndProviderProps) {
   const [feedback, setFeedback] = useState<FeedbackValue>(EMPTY);
 
+  const coarsePointer = getViewport().coarsePointer;
+
   const sensors = useSensors(
     // Um sensor so, com o ativador escolhido pelo ponteiro (`getViewport` le a
     // media query `(pointer: coarse)` na hora do render). Nada de TouchSensor
     // ao lado do PointerSensor: os dois disparariam ativacao dupla. E o
     // @dnd-kit trata o ativador como UNION — { distance } OU { delay,
     // tolerance }; passar os dois juntos faz o distance ser ignorado.
-    useSensor(PointerSensor, {
-      activationConstraint: activationConstraintFor(getViewport().coarsePointer),
+    //
+    // NO DEDO o sensor e o `TouchSensor`, NAO o `PointerSensor`. Com o
+    // PointerSensor, `touch-action: auto` deixa o navegador roubar o toque
+    // (pan) quando o dedo passa do slop e matar o arraste com `pointercancel`
+    // — mesmo depois da ativacao por atraso. O `touch-action` nao resolve
+    // dinamicamente: ele e decidido no touchstart e mudar depois nao vale
+    // (regra do CSS + comportamento medido). O `TouchSensor` resolve sem CSS:
+    // o `touchmove` nao-passivo com `preventDefault` e o mecanismo que trava
+    // o pan — mas so DEPOIS da ativacao (250ms). Um swipe rapido passa da
+    // folga (5px), o sensor se desliga sem preventDefault e o navegador rola
+    // a lista normalmente. E a recomendacao do proprio dnd-kit para listas
+    // rolaveis.
+    useSensor(coarsePointer ? TouchSensor : PointerSensor, {
+      activationConstraint: activationConstraintFor(coarsePointer),
     }),
     useSensor(KeyboardSensor),
   );
