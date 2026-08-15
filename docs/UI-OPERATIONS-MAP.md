@@ -36,8 +36,8 @@ Regras de ouro do app que os specs devem respeitar:
 | Selecao de commit | clique simples = substitui; Shift+clique = intervalo; Ctrl/⌘+clique = alterna | tap = substitui; intervalo so no modo "Selecionar varios" | `web/src/graph/CommitRow.tsx:251-255`; `web/src/i18n/locales/pt.ts:1466-1469` (`selection.touch.*`) |
 | Duplo clique em chip de branch | troca para a branch (checkout) | "toque duas vezes" — mesmo gesto | `web/src/graph/RefChip.tsx:183-193`; `pt.ts:403-404` (`graph.refChip.hint`) e `pt.ts:1448-1449` (`graph.refChip.hint.touch`) |
 | Menu de contexto | botao direito (`contextmenu`) | toque longo **500 ms** (`LONG_PRESS_MS`), tolerancia de movimento **10 px**; janela fantasma de 900 ms engole o `contextmenu` sintetico do Android e o clique fantasma | `web/src/hooks/useShellStore.ts:215`; `web/src/hooks/useLongPress.ts:125,137,200`; `web/src/hooks/useShellStore.ts:548-553` |
-| Drag (DnD) | `PointerSensor` com `{distance: 6}` px — clique simples nunca vira arrasto | `PointerSensor` com `{delay: 250, tolerance: 5}` — dedo parado 250 ms acorda o arrasto MESMO sem movimento; derivar mais de 5 px antes dos 250 ms cancela e vira rolagem | `web/src/dnd/sensors.ts:56-65,74-78`; `web/src/dnd/GitDndProvider.tsx:211-221` |
-| Regra do dedo parado | — | **Arrasto sempre vence o menu de toque longo**: `DND_DELAY_MS` (250) < `LONG_PRESS_MS` (500), e o `onDragStart` chama `cancelLongPress()` | `web/src/hooks/useShellStore.ts:215-240`; `web/src/dnd/GitDndProvider.tsx:239-247`; `web/src/hooks/useLongPress.ts:191-203` |
+| Drag (DnD) | `PointerSensor` com `{distance: 6}` px — clique simples nunca vira arrasto | `TouchSensor` com `{delay: 250, tolerance: 5}` — dedo parado 250 ms acorda o arrasto MESMO sem movimento; derivar mais de 5 px antes dos 250 ms cancela e vira rolagem; o `touchmove` nao-passivo do sensor trava o pan SO depois da ativacao | `web/src/dnd/sensors.ts:56-59,74-78`; `web/src/dnd/GitDndProvider.tsx:232` |
+| Regra do dedo parado | — | **Arrasto sempre vence o menu de toque longo**: `DND_DELAY_MS` (250) < `LONG_PRESS_MS` (500), e o `onDragStart` chama `cancelLongPress()` | `web/src/hooks/useShellStore.ts:215-240`; `web/src/dnd/GitDndProvider.tsx:254-262`; `web/src/hooks/useLongPress.ts:191-203` |
 | Hold-to-confirm | segurar o botao pressionado (ou **tecla Space** segura; Enter NAO confirma destrutivo) | segurar o dedo no botao; **soltar antes do fim cancela** (a progressao volta a zero com a transicao "snap" e nada executa) | componente `web/src/components/motion-ui/hold-to-confirm/index.tsx:101-107,115-135`; default `holdSeconds = 2` em `:68,185` |
 | Swipe entre paineis (mobile) | nao existe (so dedo; o wrapper e inerte com mouse) | 80 px OU 40% da largura, com velocidade > 300 px/s, dominante horizontal; desabilitado durante DnD e com menu aberto | `web/src/app/PaneSwipe.tsx:45-51,67-90`; `web/src/app/App.tsx:310-314` |
 | Teclado (paleta ⌘K) | ⌘K abre a paleta com todos os comandos, incluindo pull/push/fetch | o botao `⌘` da toolbar abre a paleta (porta tocavel) | `web/src/app/CommandPaletteHost.tsx`; `web/src/panels/Toolbar.tsx:487-497`; `web/src/app/commands.ts:176-202` |
@@ -311,7 +311,7 @@ Duas portas, ambas confirmam antes de executar:
 - **Mobile**: os alvos de soltura sao os chips do grafo (escalam 1.5x durante
   o arrasto, `RefChip.tsx:245`) e as linhas do rail; no layout compacto o
   DragOverlay mostra a dica `dnd.drop.missed.title` = "Arraste sobre um ramo"
-  (`pt.ts:1104`) enquanto nao ha alvo sob o dedo (`GitDndProvider.tsx:338-341`).
+  (`pt.ts:1104`) enquanto nao ha alvo sob o dedo (`GitDndProvider.tsx:349-356`).
 
 ### 3.4 REBASE
 
@@ -436,15 +436,20 @@ Duas portas, ambas confirmam antes de executar:
    `MARK_DURATION_MS` (`GraphView.tsx:285-356`); no compacto, revelar TAMBEM
    centraliza a lane horizontalmente (329-344) e o clique numa linha
    evidencia o commit com o mesmo scroll lateral (358-378).
-4. **Drag com dedo**: acorda aos 250 ms mesmo parado; o chip da branch escala
+4. **Drag com dedo**: acorda aos 250 ms mesmo parado; o sensor de ponteiro e o
+   `TouchSensor` (`GitDndProvider.tsx:232`) — com `PointerSensor` +
+   `touch-action: auto` o pan do navegador matava o drag com `pointercancel`
+   (`touch-action` e decidido no `touchstart` e travado no gesto; o
+   `TouchSensor` trava o pan via `touchmove` nao-passivo com `preventDefault`,
+   so depois da ativacao, `sensors.ts:56-59`); o chip da branch escala
    para 1.5x enquanto um arrasto esta ativo (`RefChip.tsx:245`) — a area de
    drop cresce com o visual (medida uma vez, com transform, no inicio do
    drag). Dica "Arraste sobre um ramo" no overlay enquanto nao ha alvo sob o
-   dedo (`GitDndProvider.tsx:338-341`; `pt.ts:1104`).
+   dedo (`GitDndProvider.tsx:349-356`; `pt.ts:1104`).
 5. **Hold-to-confirm nas acoes destrutivas**: rebase, squash, abort, delete,
    push --force (na versao nao alcancavel do PushDialog). 1.4 s no
-   `ConfirmHost`; 2 s nos dialogos de drag/conflicto. Soltar antes = cancelar
-   (progresso volta a zero).
+   `ConfirmHost` (`ConfirmHost.tsx:266`); 2 s nos dialogos de drag/conflicto.
+   Soltar antes = cancelar (progresso volta a zero).
 6. **O que NAO e touchable** (o spec de toque nao deve tentar):
    - atalhos de teclado: ⌘K (ha botao equivalente), ⌘R, setas, PageUp/Down,
      Home/End, Shift+setas, F10/ContextMenu, Space-hold nos botoes de hold;

@@ -356,18 +356,34 @@ Parece a solução pronta para bottom sheet. Não é:
 só a geometria; `drag="y"` **apenas no cabeçalho/puxador**, nunca no corpo
 rolável — que é exatamente o erro do componente do catálogo.
 
-### 5.6 `touch-action: manipulation` **não** quebrou o arraste
+### 5.6 O arraste por toque é o `TouchSensor` — `PointerSensor` + `touch-action` é impossível
 
 Duas leituras se contradisseram; a especificação resolve: `manipulation` é
 **subconjunto estrito** de `auto` (tira só o duplo-toque para zoom). Os dois
-deixam o navegador roubar o toque. A causa real do arraste não funcionar era
-`activationConstraint: { distance: 6 }` em `dnd/GitDndProvider.tsx:208` — o
-navegador vence o pan antes dos 6px.
+deixam o navegador roubar o toque. Mas o diagnóstico antigo da causa — "era
+`activationConstraint: { distance: 6 }`, o navegador vence o pan antes dos
+6px" — estava **errado**, e o probe headless real (commit 754cae3e) provou:
+com `PointerSensor` + `{delay: 250, tolerance: 5}` (`sensors.ts:56-59`), o
+arraste **ativava** aos 250 ms, e mesmo assim o pan com `touch-action: auto`
+disparava `pointercancel` no primeiro move além do slop (~11 px), matando o
+arraste. E `touch-action` não se resolve dinamicamente: é decidido no
+`touchstart` e travado no gesto — o "toggler de touch-action no pointerdown" é
+empiricamente impossível (docs do dnd-kit).
 
-A exclusão dos nós de dnd foi feita mesmo assim, por ser defesa barata.
-**Não acrescente `touch-action: none`**: o ativador por atraso dispensa, e
-`none` num `<div role="row">` de lista virtualizada mataria a rolagem vertical
-do histórico inteiro.
+Decisão vigente: **exatamente UM sensor de ponteiro** (`GitDndProvider.tsx:232`)
+— `TouchSensor` para `(pointer: coarse)`, `PointerSensor` para mouse. O
+`TouchSensor` resolve sem CSS: o `touchmove` não-passivo com `preventDefault` é
+o mecanismo que trava o pan — mas só DEPOIS da ativação (250 ms); um swipe
+rápido passa da folga (5 px), o sensor se desliga sem `preventDefault` e a
+lista rola normalmente. É a recomendação do próprio dnd-kit para listas
+roláveis.
+
+A exclusão dos nós de dnd do `touch-action` no CSS (`theme.css`) foi mantida
+mesmo assim, por ser defesa barata. **Não acrescente `touch-action: none`**: o
+`TouchSensor` dispensa (eventos touch ignoram `touch-action`), e `none` num
+`<div role="row">` de lista virtualizada mataria a rolagem vertical do
+histórico inteiro. (O hold destrutivo segue em `ConfirmHost.tsx:266` —
+`holdSeconds = 1.4` — e não convive com o arraste no mesmo elemento, §5.4.)
 
 ### 5.7 Restrições do repositório que mordem
 

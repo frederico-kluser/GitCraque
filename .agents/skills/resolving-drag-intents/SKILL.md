@@ -52,22 +52,34 @@ is unchanged. `useDropFeedback(target, scope)` must receive the *same* scope as
 `useDroppableTarget` or feedback never matches.
 
 **dnd-kit configuration that was chosen, not defaulted**
-(`web/src/dnd/GitDndProvider.tsx`): ONE `PointerSensor`, its constraint picked
-by `activationConstraintFor(getViewport().coarsePointer)` from
+(`web/src/dnd/GitDndProvider.tsx`): exactly ONE pointer sensor — `TouchSensor`
+for `(pointer: coarse)`, `PointerSensor` for the mouse, chosen by
+`coarsePointer ? TouchSensor : PointerSensor` (`:232`) — plus the
+`KeyboardSensor` for accessibility. The sensor choice is load-bearing, not
+cosmetic: with a `PointerSensor`, `touch-action: auto` lets the browser steal
+the touch for the pan and kill the drag with `pointercancel` on the first move
+past the slop (~11px) — even after delay activation — and `touch-action` is
+decided at `touchstart` and locked for the gesture, so it cannot be toggled from
+JS (dnd-kit docs). The `TouchSensor` solves it without CSS: a non-passive
+`touchmove` with `preventDefault` locks the pan, but only AFTER activation
+(250ms); a fast swipe passes the 5px tolerance, the sensor deactivates without
+`preventDefault`, and the list scrolls normally — dnd-kit's own recommendation
+for scrollable lists. The constraint is picked by
+`activationConstraintFor(getViewport().coarsePointer)` from
 `web/src/dnd/sensors.ts` — `{distance: 6}` on a fine pointer so a plain click
-stays a selection, `{delay: 250, tolerance: 5}` on `(pointer: coarse)` so
-scrolling by touch never becomes a drag. Two traps, both load-bearing: never add
-a `TouchSensor` next to the `PointerSensor` (double activation), and never pass
-`{distance}` and `{delay, tolerance}` together — dnd-kit types the constraint as
-a union and silently ignores `distance` when both are present, so `sensors.ts`
-types it as the union itself. `onDragStart` calls `cancelLongPress()` (from
-`@/hooks`): drag always beats the long-press menu because
-`DND_DELAY_MS = 250 < LONG_PRESS_MS = 500` (`sensors.ts:34`, mirrored from
-`useShellStore.ts`). Collision is `pointerWithin` falling back to
-`rectIntersection` (`:194-197`) because `closestCenter` misbehaves with small
-adjacent branch chips; `MeasuringStrategy.Always` (`:318`) because the commit
-list is virtualized and scrolls mid-drag. Payload reads are defensive — bad
-`data` yields `null`, never a throw (`:138-150`).
+stays a selection, `{delay: 250, tolerance: 5}` on `(pointer: coarse)`
+(`sensors.ts:56-59`) so scrolling by touch never becomes a drag. Two traps, both
+load-bearing: never mount a second pointer sensor next to the chosen one
+(double activation), and never pass `{distance}` and `{delay, tolerance}`
+together — dnd-kit types the constraint as a union and silently ignores
+`distance` when both are present, so `sensors.ts` types it as the union itself.
+`onDragStart` calls `cancelLongPress()` (from `@/hooks`): drag always beats the
+long-press menu because `DND_DELAY_MS = 250 < LONG_PRESS_MS = 500`
+(`sensors.ts:56`, mirrored from `useShellStore.ts`). Collision is `pointerWithin`
+falling back to `rectIntersection` (`:200-203`) because `closestCenter`
+misbehaves with small adjacent branch chips; `MeasuringStrategy.Always`
+(`:364`) because the commit list is virtualized and scrolls mid-drag. Payload
+reads are defensive — bad `data` yields `null`, never a throw (`:144-152`).
 
 **The dnd suites test only the pure modules.** `intents.test.mjs`, `ids.test.mjs`
 and `sensors.test.mjs` load `intents.ts`, `ids.ts`, `sensors.ts` — never

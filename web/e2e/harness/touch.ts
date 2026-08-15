@@ -58,12 +58,17 @@ export async function longPress(page: Page, x: number, y: number, ms = 600): Pro
  * ate `to`, touchEnd.
  *
  * O repouso NAO e enfeite — e o contrato do sensor real. Para ponteiro coarse
- * o app usa `PointerSensor` com `{ delay: 250, tolerance: 5 }`
- * (`web/src/dnd/sensors.ts`, `DND_DELAY_MS`/`DND_TOLERANCE_PX`): o arraste so
+ * o app usa `TouchSensor` com `{ delay: 250, tolerance: 5 }`
+ * (`web/src/dnd/GitDndProvider.tsx:232`; `web/src/dnd/sensors.ts:56-59`,
+ * `DND_DELAY_MS`/`DND_TOLERANCE_PX`): o arraste so
  * acorda por TEMPO DE REPOUSO, e qualquer deslocamento maior que 5 px
  * acumulados DENTRO da janela de 250 ms CANCELA a ativacao (dnd-kit 6.3.1,
  * `handleMove` -> `handleCancel`). Mover cedo e rapido (como o gesto antigo
  * fazia, terminando antes dos 250 ms) matava o drag no primeiro move.
+ * (NAO e `PointerSensor` para o dedo: com ele o pan do `touch-action: auto`
+ * matava o drag com `pointercancel` mesmo apos a ativacao; o `TouchSensor`
+ * trava o pan com o `touchmove` nao-passivo SO depois dos 250 ms — swipe
+ * rapido passa dos 5 px e a lista rola.)
  * 300 ms = 250 ms do delay + ~50 ms de folga para o timer do dnd-kit
  * disparar e a ativacao se completar; so depois disso os moves passam a mover
  * o arrasto ativo. O passo pequeno (default 12) e o intervalo (~15 ms) dao ao
