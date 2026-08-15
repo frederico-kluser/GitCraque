@@ -54,10 +54,21 @@ export async function longPress(page: Page, x: number, y: number, ms = 600): Pro
 }
 
 /**
- * Arraste: touchStart em `from`, N touchMove interpolados ate `to`, touchEnd.
- * O passo pequeno (default 12) e o intervalo (~15 ms) dao ao dnd-kit os
- * eventos progressivos que o sensor de toque espera — um teleporte unico nao
- * dispara drag em lugar nenhum.
+ * Arraste: touchStart em `from`, REPOUSO de 300 ms, N touchMove interpolados
+ * ate `to`, touchEnd.
+ *
+ * O repouso NAO e enfeite — e o contrato do sensor real. Para ponteiro coarse
+ * o app usa `PointerSensor` com `{ delay: 250, tolerance: 5 }`
+ * (`web/src/dnd/sensors.ts`, `DND_DELAY_MS`/`DND_TOLERANCE_PX`): o arraste so
+ * acorda por TEMPO DE REPOUSO, e qualquer deslocamento maior que 5 px
+ * acumulados DENTRO da janela de 250 ms CANCELA a ativacao (dnd-kit 6.3.1,
+ * `handleMove` -> `handleCancel`). Mover cedo e rapido (como o gesto antigo
+ * fazia, terminando antes dos 250 ms) matava o drag no primeiro move.
+ * 300 ms = 250 ms do delay + ~50 ms de folga para o timer do dnd-kit
+ * disparar e a ativacao se completar; so depois disso os moves passam a mover
+ * o arrasto ativo. O passo pequeno (default 12) e o intervalo (~15 ms) dao ao
+ * dnd-kit os eventos progressivos que ele espera — um teleporte unico nao
+ * move drag em lugar nenhum.
  */
 export async function touchDrag(
   page: Page,
@@ -66,7 +77,8 @@ export async function touchDrag(
   steps = 12,
 ): Promise<void> {
   await dispatch(page, "touchStart", [{ x: from.x, y: from.y }]);
-  await page.waitForTimeout(60);
+  // Repouso sem moves: o dedo PARADO acorda o arraste aos 250 ms.
+  await page.waitForTimeout(300);
   for (let i = 1; i <= steps; i += 1) {
     const t = i / steps;
     await dispatch(page, "touchMove", [
