@@ -10,10 +10,17 @@
  * web/src/app/actions.ts:133-193).
  *
  * O remoto e COMPARTILHADO com as specs mouse (paralelas): o push e retentado
- * com resetRemote antes de cada tentativa. No fim o fixture volta ao baseline
- * e o remoto e restaurado.
+ * com resetRemote antes de cada tentativa. O reset roda ANTES de o commit da
+ * gaveta existir (remoto alinhado ao baseline), e cada tentativa recria o
+ * estado pre-push: remoto no baseline, main local com o commit novo (reset
+ * local a baseline + resetRemote + devolucao do main ao commit). Sem isso o
+ * resetRemote forca-push da main JA com o commit e o push do app viraria
+ * no-op ("Everything up-to-date") sem transferir nada. No fim o fixture volta
+ * ao baseline e o remoto e restaurado.
  *
- * Verificacao: ls-remote de origin/main == main local apos o push.
+ * Verificacao: pre-assertion de que origin/main NAO tem o commit (so o push
+ * do app pode entrega-lo) + ls-remote de origin/main == main local apos o
+ * push.
  */
 import { expect, test } from "@playwright/test";
 import { execFileSync } from "node:child_process";
@@ -62,6 +69,17 @@ test("push no toque: commit pela gaveta + overflow Push -> remoto atualizado", a
 
   baselineHash = execFileSync("git", ["-C", fixture, "rev-parse", "main"], { encoding: "utf8" }).trim();
 
+  // Re-alinha o remoto ao baseline ANTES de o commit da gaveta existir: no
+  // momento do push do app, origin/main (baseline) != main local (com o
+  // commit novo) — o push do app e quem transfere o commit. Se o reset
+  // rodasse depois, ele forca-push da main JA com o commit e o push viraria
+  // no-op sem transferir nada (a pre-assertion abaixo vigia isto).
+  try {
+    await resetRemote(fixture);
+  } catch {
+    // remoto disputado agora; o loop por tentativa re-reseta antes de cada push
+  }
+
   // ---- 1) cria o commit local pela gaveta de alteracoes (tudo por tap) ----
   await tapBySelector(page, changesButton(page));
   await expect(page.getByRole("button", { name: "Preparar tudo", exact: true }).first()).toBeVisible({
@@ -92,19 +110,36 @@ test("push no toque: commit pela gaveta + overflow Push -> remoto atualizado", a
     .trim();
   expect(localSubject).toBe(COMMIT_SUBJECT);
 
-  // ---- 2) fecha a gaveta e empurra pelo estouro (com retentativa) ---------
+  // ---- 2) fecha a gaveta ------------------------------------------------
   // Fecha a gaveta pelo X proprio (changes.sheet.close = "Fechar alterações").
   await tapBySelector(page, page.getByRole("button", { name: "Fechar alterações", exact: true }));
   await expect(page.getByRole("button", { name: "Histórico", exact: true })).toBeVisible({ timeout: 5_000 });
 
+  // ---- 3) pre-assertion: o remoto ainda NAO tem o commit -----------------
+  // Se origin/main ja tivesse o commit, o push do app seria "Everything
+  // up-to-date" (no-op) e a assercao final passaria sem transferir nada. O
+  // loop abaixo so re-alinha origin/main ao baseline (nunca ao commit), entao
+  // mover origin/main para localMain so pode ser o push do app — esta
+  // pre-assertion + a pos-push provam a transferencia.
+  const remoteBefore = lsRemoteMain();
+  expect(remoteBefore).not.toBe(localMain);
+
+  // ---- 4) empurra pelo estouro (com retentativa) -------------------------
   const toast = page.getByText("Push concluído", { exact: true });
   const failToast = page.getByText("Push falhou", { exact: true });
   let done = false;
   for (let attempt = 1; attempt <= 8 && !done; attempt += 1) {
     try {
-      await resetRemote(fixture); // garante o baseline remoto para o push valer
+      // Recria o estado pre-push a cada tentativa: main local no baseline
+      // para o resetRemote re-alinhar origin/main ao baseline, e depois
+      // devolve main ao commit da gaveta. Se o resetRemote rodasse com a
+      // main JA no commit, origin/main ficaria == main local e o push do app
+      // viraria no-op — o defeito que a pre-assertion acima vigia.
+      execFileSync("git", ["-C", fixture, "reset", "--hard", baselineHash], { encoding: "utf8" });
+      await resetRemote(fixture);
+      execFileSync("git", ["-C", fixture, "reset", "--hard", localMain], { encoding: "utf8" });
     } catch {
-      continue;
+      continue; // remoto disputado; o estado pre-push e recriado na proxima
     }
     // Se a tentativa anterior falhou e o dialogo ficou aberto, fecha antes.
     const dialogOpen = page.getByRole("dialog");
@@ -133,7 +168,7 @@ test("push no toque: commit pela gaveta + overflow Push -> remoto atualizado", a
   }
   expect(done, "o push nao concluiu em 8 tentativas (remoto disputado com as specs mouse)").toBeTruthy();
 
-  // ---- 3) remoto atualizado ----------------------------------------------
+  // ---- 5) remoto atualizado ----------------------------------------------
   const remoteMain = lsRemoteMain();
   expect(remoteMain).toBe(localMain);
 
