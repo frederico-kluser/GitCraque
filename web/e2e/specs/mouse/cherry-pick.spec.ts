@@ -49,13 +49,15 @@ test("cherry-pick do commit de feature/ui para main", async ({ page }) => {
   const sourceHash = git(fixture, "rev-parse", "feature/ui");
   const countBefore = Number(git(fixture, "rev-list", "--count", "main"));
 
-  // Menu de contexto da LINHA do commit (clique no centro da linha: no
-  // viewport 1280 a coluna de descricao tem ~50 px e o subject fica com
-  // largura 0 quando o chip da branch ocupa a celula — o clique na linha
-  // inteira cai no handler do menu do commit de qualquer forma).
+  // Menu de contexto da LINHA do commit. O clique na linha inteira nao cai
+  // mais no menu do commit: com o `relative z-10` do gridcell de descricao
+  // (CommitRow.tsx) o transbordo do chip fica por cima das colunas de
+  // metadados — o centro da linha passa a ser o CHIP (menu da branch). O
+  // clique vai entao na area do GRAFO da linha (a esquerda, x=20), onde nao
+  // ha chip nem subject.
   const row = graphCommitRow(page, PICK_SUBJECT);
   await expect(row.first()).toBeVisible();
-  await row.first().click({ button: "right" });
+  await row.first().click({ button: "right", position: { x: 20, y: 26 } });
   await page.getByRole("menuitem", { name: "Cherry-pick na branch atual" }).click();
 
   // ConfirmHost nao-destrutivo: botao de clique com o label do catalogo.

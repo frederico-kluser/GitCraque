@@ -72,14 +72,20 @@ test("rebase de feature/auth sobre main pelo menu com hold de 1.4 s", async ({ p
   // O chip de main fica na linha do commit de merge do baseline; garante a
   // linha montada antes do clique com o botao direito.
   await scrollGraphTo(page, "merge: integra feature/auth");
-  // Clique na borda esquerda do BADGE do chip: o span de texto do "main" fica
-  // inteiro sob o gridcell do autor (quirk de merge.spec.ts:49-52; na
-  // geometria atual o x=3 do span nao escapa, o do badge sim).
+  // Clique no CENTRO do BADGE do chip, em PIXELS: o `position` do Playwright
+  // e um offset em pixels da borda do elemento (0.5 nao significa "metade" —
+  // no canto arredondado do chip o ponteiro nem chega ao span). O gridcell
+  // de descricao carrega `relative z-10` (CommitRow.tsx), entao o chip fica
+  // por cima das colunas de metadados em hit-testing — o botao direito em
+  // QUALQUER ponto do chip abre o menu da branch (gesto real, RefChip.tsx:8-14);
+  // um futuro regresso do stacking falha alto aqui (o Playwright recusa
+  // clique em ponto coberto).
   const chipMain = page
     .locator('[role="rowgroup"] span.rounded-full')
     .filter({ hasText: /^main$/ })
     .first();
-  await chipMain.click({ button: "right", position: { x: 3, y: 10 } });
+  const box = (await chipMain.boundingBox())!;
+  await chipMain.click({ button: "right", position: { x: box.width / 2, y: box.height / 2 } });
   await page.getByRole("menuitem", { name: "Rebasear feature/auth sobre esta" }).click();
 
   // ConfirmHost destrutivo: botao de hold com "Segure para rebase" (1.4 s).

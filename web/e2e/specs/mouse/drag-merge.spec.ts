@@ -18,14 +18,14 @@
  *
  * GESTO: page.mouse com passos intermediarios — o PointerSensor ativa por
  * DISTANCIA ACUMULADA >= 6px (web/src/dnd/sensors.ts:65,74-78); teleporte nao
- * ativa. O pointerdown vai na BORDA ESQUERDA do span do chip: em algumas
- * linhas do grafo a linha de meta do commit COBRE o centro do chip
- * (elementFromPoint comprova; por isso os specs existentes clicam no chip com
- * position {x:3,y:10}); a borda esquerda do span e o unico ponto sempre do
- * chip. O DROP usa a geometria do @dnd-kit (getBoundingClientRect, colisao
- * pointerWithin), entao o centro do span alvo e ponto seguro mesmo se coberto
- * pela meta — so os CHIPS sao droppables no grafo (CommitRow nao registra
- * droppable), logo o over final so pode ser o chip main.
+ * ativa. O pointerdown vai no CENTRO do span do chip de origem: o gridcell de
+ * descricao carrega `relative z-10` (CommitRow.tsx), entao o chip fica por
+ * cima das colunas de metadados em hit-testing — o gesto real e pegar o chip
+ * em QUALQUER ponto; um futuro regresso do stacking falha alto aqui. O DROP
+ * usa a geometria do @dnd-kit (getBoundingClientRect, colisao pointerWithin),
+ * entao o centro do span alvo e ponto seguro mesmo se coberto pela meta — so
+ * os CHIPS sao droppables no grafo (CommitRow nao registra droppable), logo o
+ * over final so pode ser o chip main.
  */
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
@@ -55,13 +55,13 @@ async function chipSpan(page: Page, name: string): Promise<{ x: number; y: numbe
 
 /**
  * Arrasta o chip de `srcName` sobre o chip de `dstName` com passos
- * intermediarios (sensor: distance 6px acumulada). Pointerdown na borda
- * esquerda do span de origem; soltura no centro do span alvo.
+ * intermediarios (sensor: distance 6px acumulada). Pointerdown no centro do
+ * span de origem; soltura no centro do span alvo.
  */
 async function dragChipOver(page: Page, srcName: string, dstName: string): Promise<void> {
   const src = await chipSpan(page, srcName);
   const dst = await chipSpan(page, dstName);
-  const sx = src.x + 4;
+  const sx = src.x + src.width / 2;
   const sy = src.y + src.height / 2;
   const dx = dst.x + dst.width / 2;
   const dy = dst.y + dst.height / 2;

@@ -20,11 +20,12 @@
  *
  * GESTO: page.mouse com passos intermediarios (PointerSensor ativa por
  * distancia acumulada >= 6px, web/src/dnd/sensors.ts:65,74-78). Pointerdown
- * na borda esquerda do span do chip de origem — a linha de meta do commit
- * cobre o centro do chip em algumas linhas do grafo (elementFromPoint
- * comprova; specs existentes clicam com position {x:3,y:10}). Drop no centro
- * do span alvo: a colisao do @dnd-kit (pointerWithin) usa getBoundingClientRect
- * dos droppables (so chips no grafo), independente do que cobre visualmente.
+ * no CENTRO do span do chip de origem: o gridcell de descricao carrega
+ * `relative z-10` (CommitRow.tsx), entao o chip fica por cima das colunas de
+ * metadados em hit-testing — o gesto real e pegar o chip em QUALQUER ponto;
+ * um futuro regresso do stacking falha alto aqui. Drop no centro do span
+ * alvo: a colisao do @dnd-kit (pointerWithin) usa getBoundingClientRect dos
+ * droppables (so chips no grafo), independente do que cobre visualmente.
  * A confirmacao e SEGURAR 2 s no botao (hold-to-confirm/index.tsx:68,185);
  * soltar antes cancela e nada roda. O backend rebase usa --autostash
  * (server/src/git/ops.mjs:284-288), entao a arvore suja do fixture nao
@@ -60,7 +61,7 @@ async function chipSpan(page: Page, name: string): Promise<{ x: number; y: numbe
 async function dragChipOver(page: Page, srcName: string, dstName: string): Promise<void> {
   const src = await chipSpan(page, srcName);
   const dst = await chipSpan(page, dstName);
-  const sx = src.x + 4;
+  const sx = src.x + src.width / 2;
   const sy = src.y + src.height / 2;
   const dx = dst.x + dst.width / 2;
   const dy = dst.y + dst.height / 2;

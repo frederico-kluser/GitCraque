@@ -481,6 +481,13 @@ export const CommitRow = memo(function CommitRow({
         </g>
       </svg>
 
+      {/* `relative z-10` no gridcell de descricao (os dois ramos): com muitas
+          lanes o `min-w-0` empurra a descricao para a direita e o chip de ref
+          (shrink-0) transborda por cima das colunas de metadados (autor, data,
+          hash) — pintadas DEPOIS na ordem do DOM, elas roubariam os ponteiros
+          e o clique no chip abriria o menu do commit. O z-10 local coloca o
+          transbordo acima delas em hit-testing e pintura, sem chegar aos
+          overlays (z-40+). RefChip.tsx:8-14 — o chip e o alvo do produto. */}
       {/* ---- descricao: refs + assunto --------------------------------- */}
       {compact ? (
         /* No compacto a descricao empilha: os metadados que a coluna da direita
@@ -490,7 +497,7 @@ export const CommitRow = memo(function CommitRow({
            textos, nao so o de cima. */
         <div
           role="gridcell"
-          className="flex min-w-0 flex-col items-start justify-center gap-0.5 py-1 pr-2 pl-2"
+          className="relative z-10 flex min-w-0 flex-col items-start justify-center gap-0.5 py-1 pr-2 pl-2"
         >
           <div className="flex min-w-0 items-center gap-1.5">
             <RefChips
@@ -506,7 +513,7 @@ export const CommitRow = memo(function CommitRow({
           <CommitMetaLine commit={commit} />
         </div>
       ) : (
-        <div role="gridcell" className="flex min-w-0 items-center gap-1.5 pr-3 pl-2">
+        <div role="gridcell" className="relative z-10 flex min-w-0 items-center gap-1.5 pr-3 pl-2">
           <RefChips
             refs={commit.refs}
             onActivate={data.onRefActivate}

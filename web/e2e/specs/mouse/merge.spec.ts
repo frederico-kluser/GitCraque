@@ -20,7 +20,7 @@ import { expect, test } from "@playwright/test";
 import { PORTS } from "../../playwright.config.ts";
 import { makeFixture } from "../../harness/fixture.ts";
 import { startAppServer, type RunningServer } from "../../harness/servers.ts";
-import { branchChip, expectToast, graphCommitRow, waitForGraph } from "../../harness/ui.ts";
+import { expectToast, graphCommitRow, waitForGraph } from "../../harness/ui.ts";
 import { openAppResilient } from "./retry.ts";
 import { git } from "./git-cli.ts";
 
@@ -46,10 +46,20 @@ test.afterAll(async () => {
 
 test("merge --no-ff de feature/ui em main cria commit de merge de 2 pais", async ({ page }) => {
   // Menu de contexto do chip da branch (grafo): "Mesclar em {branch atual}".
-  // Clique posicionado na borda esquerda do chip: no viewport 1280 a coluna de
-  // descricao da linha tem ~50 px e chips mais largos transbordam para a
-  // coluna do autor, que cobre o centro do chip (a borda esquerda fica livre).
-  await branchChip(page, "feature/ui").click({ button: "right", position: { x: 3, y: 10 } });
+  // Clique no CENTRO do chip, em PIXELS: o `position` do Playwright e um
+  // offset em pixels da borda do elemento (0.5 nao significa "metade" — no
+  // canto arredondado do chip o ponteiro nem chega ao span). O gridcell de
+  // descricao carrega `relative z-10` (CommitRow.tsx), entao o transbordo do
+  // chip fica por cima das colunas de metadados em hit-testing — o gesto
+  // real e o botao direito em QUALQUER ponto do chip (RefChip.tsx:8-14); um
+  // futuro regresso do stacking falha alto aqui (o Playwright recusa clique
+  // em ponto coberto).
+  const chip = page
+    .locator('[role="rowgroup"] span.rounded-full')
+    .filter({ hasText: /^feature\/ui$/ })
+    .first();
+  const box = (await chip.boundingBox())!;
+  await chip.click({ button: "right", position: { x: box.width / 2, y: box.height / 2 } });
   await page.getByRole("menuitem", { name: "Mesclar em main" }).click();
 
   // ConfirmHost: titulo, argv `git merge --no-edit feature/ui`, toggle --no-ff.
