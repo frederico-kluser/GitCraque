@@ -15,7 +15,6 @@ import {
   ArrowUpFromLine,
   Check,
   ChevronDown,
-  CircleAlert,
   Clock,
   Command,
   FolderTree,
@@ -924,13 +923,9 @@ export function Toolbar({ className }: PanelProps) {
         <PendingBanner />
       </AnimatePresence>
 
-      {/* --- conexao caida: banner explicito --- */}
-      {connection !== "open" && (
-        <div className="flex items-center gap-2 border-t border-border bg-surface-inset px-4 py-1.5 text-[11px] text-muted-foreground">
-          <CircleAlert className="size-3.5 shrink-0 text-warning" />
-          {connection === "closed" ? t("toolbar.ws.closed") : t("toolbar.ws.reconnecting")}
-        </div>
-      )}
+      {/* Conexao em dois avisos e so: o badge da toolbar (estado do ws) e o
+          banner fixo "Reconectando" do App. O bannerzinho de baixo da barra
+          repetia os dois e saiu. */}
     </header>
   );
 }

@@ -173,8 +173,6 @@ export const en: Messages = {
   "toolbar.action.refresh.title": "Reload (⌘R)",
   "toolbar.progress.label": "Operation running",
   "toolbar.progress.running": "Running git command",
-  "toolbar.ws.closed": "WebSocket closed — the app is not receiving repository events.",
-  "toolbar.ws.reconnecting": "Re-establishing the connection to the server…",
 
   /* ---------------------------------------------------------------- */
   /* Rail                                                              */
@@ -226,7 +224,6 @@ export const en: Messages = {
   "rail.remotes.editUrl": "Edit url",
   "rail.remotes.push": "Push to this remote",
   "rail.remotes.removeRemote": "Remove remote",
-  "rail.remotes.createLocal": "Create local branch from here",
   "rail.remotes.deleteRemote": "Delete Branch (Origin)",
   "rail.remotes.noBranches": "No known remote branches.",
   "rail.remotes.empty.title": "No remotes",
@@ -325,7 +322,6 @@ export const en: Messages = {
   "commit.placeholder": "Commit message",
   "commit.placeholder.amend": "New message (empty keeps the original)",
   "commit.subjectCounter": "First line: {length} of {limit} recommended characters",
-  "commit.subjectTooLong": "The first line passed {limit} characters — it is the commit subject.",
   "commit.button": "Commit",
   "commit.button.loading": "Committing…",
   "commit.button.ok": "Committed",
@@ -457,11 +453,8 @@ export const en: Messages = {
   /* Status footer                                                     */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "server process.cwd()",
-  "footer.gitVersion": "git binary version",
   "footer.commits": "Commits loaded / reachable via --all",
   "footer.commitsSuffix": "commits",
-  "footer.elapsed": "Time of the last `git log`",
-  "footer.websocket": "WebSocket",
 
   /* ---------------------------------------------------------------- */
   /* Confirmations                                                     */
@@ -1184,7 +1177,6 @@ export const en: Messages = {
   "menu.commit.copyHashes": "Copy the hashes",
   "menu.commit.clearSelection": "Clear the selection",
   "menu.commit.checkout": "Checkout this commit",
-  "menu.commit.createBranch": "Create branch here",
   "menu.commit.createTag": "Create tag here",
   "menu.commit.cherryPick": "Cherry-pick onto the current branch",
   "menu.commit.revert": "Revert",
@@ -1197,7 +1189,6 @@ export const en: Messages = {
   "menu.branch.createFrom": "Create branch from here",
   "menu.remoteBranch.checkoutExisting": "Checkout {name}",
   "menu.remoteBranch.checkoutNew": "Checkout (creates the local one tracking it)",
-  "menu.tag.createBranch": "Create branch from the tag",
 
   "menu.remote.fetch": "Fetch --prune from this remote",
   "menu.remote.copyFetchUrl": "Copy the fetch url",

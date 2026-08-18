@@ -10,7 +10,7 @@
  * apaga trabalho do disco sem rede de seguranca no git.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { AlertTriangle, Check, Minus, Plus, Trash2 } from "lucide-react";
+import { Check, Minus, Plus, Trash2 } from "lucide-react";
 import { HoldToConfirmButton } from "@/components/motion-ui/hold-to-confirm";
 import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
 import { SwipeAction, SwipeActions, SwipeActionsList } from "@/components/motion-ui/swipe-actions";
@@ -355,6 +355,10 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
             overLimit ? "border-warning" : "border-input",
           )}
         />
+        {/* O unico aviso da regra de 72: o contador fica warning quando a
+            primeira linha passa do limite (o border do textarea acompanha).
+            O paragrafo repetido da mesma regra saiu — dois avisos para a
+            mesma coisa so fazem a tela gritar duas vezes. */}
         <span
           className={cn(
             "pointer-events-none absolute right-2 bottom-1.5 font-mono text-[10px] tabular-nums",
@@ -365,13 +369,6 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
           {firstLine.length}/{SUBJECT_LIMIT}
         </span>
       </div>
-
-      {overLimit && (
-        <p className="flex items-center gap-1.5 text-[11px] text-warning">
-          <AlertTriangle className="size-3" />
-          {t("commit.subjectTooLong", { limit: SUBJECT_LIMIT })}
-        </p>
-      )}
 
       <div className="flex flex-wrap items-center gap-1.5">
         <ToolButton

@@ -167,7 +167,6 @@ export function commitMenu(hash: string): MenuItemSpec[] {
       hint: t("menu.hint.detached"),
       onSelect: () => openCheckoutCommit(hash),
     },
-    { label: t("menu.commit.createBranch"), icon: GitBranchPlus, onSelect: () => openCreateBranch(hash) },
     { label: t("menu.commit.createTag"), icon: TagIcon, onSelect: () => openCreateTag(hash) },
     {
       label: t("menu.commit.cherryPick"),
@@ -314,11 +313,6 @@ export function remoteBranchMenu(rb: RemoteBranch): MenuItemSpec[] {
         doActivateRef({ kind: "remoteBranch", name: rb.name, fullName: rb.fullName, isHead: false, remote: rb.remote }),
     },
     {
-      label: t("rail.remotes.createLocal"),
-      icon: GitBranchPlus,
-      onSelect: () => openCreateBranch(rb.name),
-    },
-    {
       label: t("menu.reveal"),
       icon: Crosshair,
       onSelect: () => selectRef(rb.fullName),
@@ -353,11 +347,6 @@ export function tagMenu(tag: Tag): MenuItemSpec[] {
       label: t("menu.reveal"),
       icon: Crosshair,
       onSelect: () => selectRef(tag.fullName),
-    },
-    {
-      label: t("menu.tag.createBranch"),
-      icon: GitBranchPlus,
-      onSelect: () => openCreateBranch(tag.name),
     },
     {
       label: t("menu.copyName"),

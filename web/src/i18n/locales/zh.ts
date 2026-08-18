@@ -171,8 +171,6 @@ export const zh: Messages = {
   "toolbar.action.refresh.title": "重新加载（⌘R）",
   "toolbar.progress.label": "操作进行中",
   "toolbar.progress.running": "正在执行 git 命令",
-  "toolbar.ws.closed": "WebSocket 已关闭 —— 应用收不到仓库事件。",
-  "toolbar.ws.reconnecting": "正在重新建立与服务器的连接…",
 
   /* ---------------------------------------------------------------- */
   /* 侧栏                                                              */
@@ -224,7 +222,6 @@ export const zh: Messages = {
   "rail.remotes.editUrl": "编辑地址",
   "rail.remotes.push": "推送到此远程",
   "rail.remotes.removeRemote": "移除远程",
-  "rail.remotes.createLocal": "以此创建本地分支",
   "rail.remotes.deleteRemote": "删除分支（Origin）",
   "rail.remotes.noBranches": "没有已知的远程分支。",
   "rail.remotes.empty.title": "没有远程",
@@ -321,7 +318,6 @@ export const zh: Messages = {
   "commit.placeholder": "提交信息",
   "commit.placeholder.amend": "新的提交信息（留空则保留原信息）",
   "commit.subjectCounter": "第一行：{length} / {limit} 个推荐字符",
-  "commit.subjectTooLong": "第一行超过了 {limit} 个字符 —— 它是提交的标题。",
   "commit.button": "提交",
   "commit.button.loading": "提交中…",
   "commit.button.ok": "已提交",
@@ -448,11 +444,8 @@ export const zh: Messages = {
   /* 状态栏                                                            */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "服务器的 process.cwd()",
-  "footer.gitVersion": "git 二进制版本",
   "footer.commits": "已加载 / --all 可达的提交数",
   "footer.commitsSuffix": "个提交",
-  "footer.elapsed": "上一次 `git log` 的耗时",
-  "footer.websocket": "WebSocket",
 
   /* ---------------------------------------------------------------- */
   /* 确认对话框                                                        */
@@ -1144,7 +1137,6 @@ export const zh: Messages = {
   "menu.commit.copyHashes": "复制这些哈希",
   "menu.commit.clearSelection": "清除选区",
   "menu.commit.checkout": "检出此提交",
-  "menu.commit.createBranch": "在此创建分支",
   "menu.commit.createTag": "在此创建标签",
   "menu.commit.cherryPick": "Cherry-pick 到当前分支",
   "menu.commit.revert": "还原",
@@ -1157,7 +1149,6 @@ export const zh: Messages = {
   "menu.branch.createFrom": "以此创建分支",
   "menu.remoteBranch.checkoutExisting": "检出 {name}",
   "menu.remoteBranch.checkoutNew": "检出（创建跟踪它的本地分支）",
-  "menu.tag.createBranch": "以该标签创建分支",
 
   "menu.remote.fetch": "从此远程执行 Fetch --prune",
   "menu.remote.copyFetchUrl": "复制 fetch 地址",

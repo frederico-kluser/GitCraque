@@ -182,8 +182,6 @@ export const pt = {
   "toolbar.action.refresh.title": "Recarregar (⌘R)",
   "toolbar.progress.label": "Operação em curso",
   "toolbar.progress.running": "Executando comando git",
-  "toolbar.ws.closed": "WebSocket fechado — o app não está recebendo eventos do repositório.",
-  "toolbar.ws.reconnecting": "Restabelecendo a conexão com o servidor…",
 
   /* ---------------------------------------------------------------- */
   /* Rail                                                              */
@@ -235,7 +233,6 @@ export const pt = {
   "rail.remotes.editUrl": "Editar url",
   "rail.remotes.push": "Push para este remoto",
   "rail.remotes.removeRemote": "Remover remoto",
-  "rail.remotes.createLocal": "Criar branch local daqui",
   "rail.remotes.deleteRemote": "Deletar Branch (Origin)",
   "rail.remotes.noBranches": "Nenhuma branch remota conhecida.",
   "rail.remotes.empty.title": "Nenhum remoto",
@@ -336,8 +333,6 @@ export const pt = {
   "commit.placeholder": "Mensagem do commit",
   "commit.placeholder.amend": "Nova mensagem (vazio mantém a original)",
   "commit.subjectCounter": "Primeira linha: {length} de {limit} caracteres recomendados",
-  "commit.subjectTooLong":
-    "A primeira linha passou de {limit} caracteres — ela é o assunto do commit.",
   "commit.button": "Commit",
   "commit.button.loading": "Commitando…",
   "commit.button.ok": "Commitado",
@@ -470,11 +465,8 @@ export const pt = {
   /* Rodape de diagnostico                                             */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "process.cwd() do servidor",
-  "footer.gitVersion": "Versão do binário do git",
   "footer.commits": "Commits carregados / alcançáveis por --all",
   "footer.commitsSuffix": "commits",
-  "footer.elapsed": "Tempo do último `git log`",
-  "footer.websocket": "WebSocket",
 
   /* ---------------------------------------------------------------- */
   /* Confirmacoes (ConfirmHost)                                        */
@@ -1206,7 +1198,6 @@ export const pt = {
   "menu.commit.copyHashes": "Copiar os hashes",
   "menu.commit.clearSelection": "Limpar a seleção",
   "menu.commit.checkout": "Checkout deste commit",
-  "menu.commit.createBranch": "Criar branch aqui",
   "menu.commit.createTag": "Criar tag aqui",
   "menu.commit.cherryPick": "Cherry-pick na branch atual",
   "menu.commit.revert": "Reverter",
@@ -1219,7 +1210,6 @@ export const pt = {
   "menu.branch.createFrom": "Criar branch a partir daqui",
   "menu.remoteBranch.checkoutExisting": "Checkout de {name}",
   "menu.remoteBranch.checkoutNew": "Checkout (cria a local rastreando)",
-  "menu.tag.createBranch": "Criar branch a partir da tag",
 
   "menu.remote.fetch": "Fetch --prune deste remoto",
   "menu.remote.copyFetchUrl": "Copiar url de fetch",

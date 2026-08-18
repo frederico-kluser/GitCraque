@@ -522,11 +522,13 @@ function StashDiffView({ ref, diffs, loading, error }: { ref: string; diffs: Dif
         )}
         {!loading && !error && diffs && diffs.length > 0 && (
           <div className="rounded-md border border-border bg-card">
+            {/* Linha de leitura, nao botao: nao ha rota simples para abrir um
+                arquivo de stash no visualizador (`openFile` so conhece hash de
+                commit), entao fingir que a linha clica seria mentira visual. */}
             {diffs.map((file) => (
-              <button
+              <div
                 key={file.path}
-                type="button"
-                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px] hover:bg-accent touch:min-h-tap"
+                className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[11px]"
               >
                 <FilePath path={file.path} className="flex-1" />
                 {file.oldPath && (
@@ -542,7 +544,7 @@ function StashDiffView({ ref, diffs, loading, error }: { ref: string; diffs: Dif
                     deletions={file.hunks.reduce((a, h) => a + h.lines.filter((l) => l.kind === "del").length, 0)}
                   />
                 )}
-              </button>
+              </div>
             ))}
           </div>
         )}

@@ -173,8 +173,6 @@ export const es: Messages = {
   "toolbar.action.refresh.title": "Recargar (⌘R)",
   "toolbar.progress.label": "Operación en curso",
   "toolbar.progress.running": "Ejecutando comando git",
-  "toolbar.ws.closed": "WebSocket cerrado — la app no está recibiendo eventos del repositorio.",
-  "toolbar.ws.reconnecting": "Restableciendo la conexión con el servidor…",
 
   /* ---------------------------------------------------------------- */
   /* Rail                                                              */
@@ -226,7 +224,6 @@ export const es: Messages = {
   "rail.remotes.editUrl": "Editar url",
   "rail.remotes.push": "Push a este remoto",
   "rail.remotes.removeRemote": "Quitar remoto",
-  "rail.remotes.createLocal": "Crear rama local desde aquí",
   "rail.remotes.deleteRemote": "Borrar rama (Origin)",
   "rail.remotes.noBranches": "Ninguna rama remota conocida.",
   "rail.remotes.empty.title": "Ningún remoto",
@@ -325,8 +322,6 @@ export const es: Messages = {
   "commit.placeholder": "Mensaje del commit",
   "commit.placeholder.amend": "Nuevo mensaje (vacío mantiene el original)",
   "commit.subjectCounter": "Primera línea: {length} de {limit} caracteres recomendados",
-  "commit.subjectTooLong":
-    "La primera línea superó los {limit} caracteres — es el asunto del commit.",
   "commit.button": "Commit",
   "commit.button.loading": "Haciendo commit…",
   "commit.button.ok": "Commit hecho",
@@ -460,11 +455,8 @@ export const es: Messages = {
   /* Pie de diagnóstico                                                */
   /* ---------------------------------------------------------------- */
   "footer.cwd": "process.cwd() del servidor",
-  "footer.gitVersion": "Versión del binario de git",
   "footer.commits": "Commits cargados / alcanzables por --all",
   "footer.commitsSuffix": "commits",
-  "footer.elapsed": "Tiempo del último `git log`",
-  "footer.websocket": "WebSocket",
 
   /* ---------------------------------------------------------------- */
   /* Confirmaciones                                                    */
@@ -1199,7 +1191,6 @@ export const es: Messages = {
   "menu.commit.copyHashes": "Copiar los hashes",
   "menu.commit.clearSelection": "Limpiar la selección",
   "menu.commit.checkout": "Checkout de este commit",
-  "menu.commit.createBranch": "Crear rama aquí",
   "menu.commit.createTag": "Crear etiqueta aquí",
   "menu.commit.cherryPick": "Cherry-pick en la rama actual",
   "menu.commit.revert": "Revertir",
@@ -1212,7 +1203,6 @@ export const es: Messages = {
   "menu.branch.createFrom": "Crear rama a partir de aquí",
   "menu.remoteBranch.checkoutExisting": "Checkout de {name}",
   "menu.remoteBranch.checkoutNew": "Checkout (crea la local siguiéndola)",
-  "menu.tag.createBranch": "Crear rama a partir de la etiqueta",
 
   "menu.remote.fetch": "Fetch --prune de este remoto",
   "menu.remote.copyFetchUrl": "Copiar la url de fetch",
