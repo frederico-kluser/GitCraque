@@ -67,10 +67,31 @@ in Y; **cubic segments are emitted whole and clipped by the `<svg>` box**
 rejected.
 
 **Virtualization is the performance contract.** `FixedSizeList` with
-`itemKey = commit.hash` (`web/src/graph/GraphView.tsx:402-415`); each row renders
-its **own** `<svg>` containing only the edges crossing that band. A single giant
-SVG is forbidden — it is exactly what freezes on large repositories, and
-`virtualization.domtest.ts` asserts the DOM does not grow with the repo.
+`itemKey = commit.hash` (`web/src/graph/GraphView.tsx:636-649`); each row renders
+its **own** `<svg>` containing only the
+edges crossing that band. A single giant SVG is forbidden — it is exactly what
+freezes on large repositories, and `virtualization.domtest.ts` asserts the DOM
+does not grow with the repo.
+
+**The column scrolls sideways without re-rendering a single row.** Past
+`COLUMN.max` the drawing is wider than the column (`graphColumnSpan` vs
+`graphColumnBox`, `shell.ts`) and the excess pans inside it. The mechanism is a
+CSS variable written imperatively on the grid node — `--graph-scroll-x`, set
+from the scrollbar's `onScroll` — and read by one `<g>` per row. Putting the
+offset in state instead would re-render every mounted row on every scroll frame,
+which is the exact cost the list exists to avoid. Two details that are easy to
+get wrong: the variable is **never** declared in `graphVars` (React's style
+diffing would overwrite the imperative write, so rows read
+`var(--graph-scroll-x, 0px)` and the fallback is the resting value), and an
+effect must re-sync it from the scroller's `scrollLeft` when the span or box
+changes, or a graph that stops being scrollable stays frozen off-centre.
+
+**Anything that counts nodes must scope itself to the graph cells.**
+`virtualization.domtest.ts` counts `<path>` to prove one path per crossing edge;
+counting them across the whole markup silently mixes in lucide icons — the
+scroll hint alone brings four — and the assertion fails for a reason that has
+nothing to do with the graph. It now matches `<svg role="gridcell">…</svg>`
+blocks first.
 
 **`reveal.ts` is pure and lives outside React** so it is testable with a fake
 surface and no DOM. Four rules it exists to enforce
@@ -106,7 +127,7 @@ against a HEAD worktree before believing it. The
 tightest assertion in the module is `virtualization.domtest.ts:74-77`: DOM node
 count may vary under 15% between 200 and 20 000 commits. The suite prints the
 three counts it measured, so read them instead of trusting a number quoted here —
-they are 473 / 453 / 432 today, i.e. 8.7%. What eats that headroom is anything
+they are 414 / 400 / 389 today, i.e. 6.0%. What eats that headroom is anything
 scaling with **edge density**, not a constant element per row: a constant one
 grows the denominator and makes the assertion easier. When a per-row wrapper is
 genuinely unwanted, Base UI's `render` prop fuses the behaviour into the existing

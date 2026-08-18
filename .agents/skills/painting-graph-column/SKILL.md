@@ -49,6 +49,8 @@ run `npm run test:graph`, look at `docs/graph-sample.svg`.** Reaching into
 | edge translucency, caps, joins | `EDGE.*` |
 | subject / metadata / chip font size | `TEXT.*` |
 | roundness and colour of the row highlights | `SURFACE.*` |
+| how wide the column may get before it scrolls | `COLUMN.max` / `COLUMN.maxCompact` |
+| the look of the column's scrollbar | `SCROLLER.*` |
 | the colours themselves | **not here** — `web/src/styles/theme.css`, `--lane-0..7`, light and dark |
 
 Lane colours are deliberately *not* in `paint.ts`: they are theme tokens, they
@@ -77,6 +79,32 @@ radius, giving roots a different core: all of it is editing that one function.
 Both renderers then map the alias to a real token, and they differ in exactly one
 place — the UI resolves `"surface"` to `--surface-graph`, the sample SVG to its
 own `--surface`.
+
+## The column has a ceiling, and its scrollbar is hand-drawn
+
+The column stops growing at `COLUMN.max` (256px comfortable, 160px compact);
+past that the drawing scrolls **inside** the column while the text columns stay
+put. Two consequences for anything visual you add there:
+
+- **The row's `<svg>` is the width of the BOX, not of the drawing.** Everything
+  it paints hangs off one `<g>` translated by `translateX(var(--graph-scroll-x,
+  0px))`, so the whole column pans with a single CSS-variable write. The
+  fallback in that `var()` is load-bearing — the variable is deliberately never
+  declared in `graphVars`, or React's style diffing would fight the imperative
+  write.
+- **A native scrollbar is not a visible affordance.** Chromium paints it as an
+  overlay: absent at rest, `scrollbar-width: thin` included, which left a blank
+  band under the header. So `SCROLLER` hides the system bar
+  (`[scrollbar-width:none]` + `[&::-webkit-scrollbar]:hidden`) and draws the
+  thumb: width `calc(var(--graph-col) * var(--graph-ratio))`, offset
+  `translateX(calc(var(--graph-scroll-x, 0px) * -1 * var(--graph-ratio)))`. No
+  number is computed in JavaScript and nothing re-renders while it moves.
+
+The bar sits against the **header**, not under the list, and that is a shell
+constraint rather than taste: the AI area is `fixed inset-x-0 bottom-6` and
+floats over the bottom of every panel, so with the bar at the foot of the
+column `document.elementFromPoint` on its right end returned the AI section —
+half the control was unclickable (measured at 1440x900).
 
 ## Hover is CSS, and that is not negotiable
 
@@ -107,7 +135,7 @@ hand-written milliseconds, and carry `motion-reduce:transition-none`.
 **1. The DOM node budget** (`__tests__/virtualization.domtest.ts:66-78`). Hard
 ceiling of 1200 nodes for the mounted window, and the count may not vary more
 than 15% between a 200-commit and a 20 000-commit repository. Measured after this
-repaint: 473 → 432, i.e. **8.7%**. There is room for another element or two per
+column ceiling landed: 414 → 389, i.e. **6.0%**. There is room for another element or two per
 row, not for ten. Counter-intuitively, adding a *constant* element per row makes
 the variance assertion easier, not harder — it grows the denominator. What breaks
 it is anything that scales with edge density.
