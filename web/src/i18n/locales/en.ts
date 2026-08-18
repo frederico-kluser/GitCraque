@@ -310,6 +310,11 @@ export const en: Messages = {
   "changes.unstageAll": "Unstage all",
   "changes.viewFile": "View {path} in the viewer",
   "changes.hold": "hold",
+  "changes.preview.label": "Working tree summary",
+  "changes.preview.hint": "Click a file to see its diff",
+  "changes.preview.all": "See all",
+  "changes.preview.more_one": "and {count} more file",
+  "changes.preview.more_other": "and {count} more files",
   "changes.filesChanged_one": "{count} file changed",
   "changes.filesChanged_other": "{count} files changed",
   "changes.staged_one": "{count} file staged",
@@ -1389,7 +1394,8 @@ export const en: Messages = {
   "graph.meta.reveal": "Show this commit's author, date and hash",
   "graph.meta.hide": "Hide this commit's author, date and hash",
   "graph.column.meta": "Details",
-  "graph.hint.horizontalScroll": "With many parallel lanes, the history also scrolls sideways.",
+  "graph.hint.horizontalScroll": "With many parallel lanes, the graph column scrolls sideways.",
+  "graph.scroll.label": "Graph horizontal scroll",
 
   /* -- layout preference, in the settings modal -- */
   "settings.layout.title": "Layout",

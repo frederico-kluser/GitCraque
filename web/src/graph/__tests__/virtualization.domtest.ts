@@ -93,7 +93,12 @@ test("cada linha montada desenha so as arestas que a cruzam", () => {
   const html = render(commits);
 
   const rows = countTags(html, 'div role="row"') - 1; // -1: o cabecalho
-  const paths = countTags(html, "path");
+  /* So os `<path>` DO GRAFO contam. A pagina tem outros: o aviso de rolagem
+     lateral, que aparece quando o desenho passa do teto da coluna, traz um
+     icone do lucide com 4 paths proprios. Contar `<path>` na marcacao inteira
+     misturava desenho com iconografia e fazia este teste falhar por um icone. */
+  const graphCells = html.match(/<svg role="gridcell"[\s\S]*?<\/svg>/g) ?? [];
+  const paths = graphCells.reduce((total, cell) => total + countTags(cell, "path"), 0);
 
   let expected = 0;
   for (let row = 0; row < rows; row++) expected += layout.rowEdges.forRow(row).length;

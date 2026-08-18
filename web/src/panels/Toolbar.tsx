@@ -72,6 +72,7 @@ import {
   openRepoPicker,
   openStashPush,
 } from "@/app/actions";
+import { ChangesPreview } from "./ChangesPreview";
 import { CommitSearch } from "./CommitSearch";
 import { UndoRedo } from "./UndoRedo";
 import { Rich, t } from "@/i18n";
@@ -433,6 +434,12 @@ function ProjectSelector() {
  * a borda enquanto ha o que commitar e para sozinho sob `prefers-reduced-motion`
  * e fora da tela. O `active` dele e o mesmo booleano que pinta o botao, entao
  * nao ha dois estados para discordarem.
+ *
+ * O NUMERO NAO BASTA. "7" nao diz quais sete arquivos nem quantos ja estao
+ * preparados, e descobrir custava abrir a gaveta — que tapa exatamente a coluna
+ * onde o diff apareceria. Por isso o botao vem embrulhado no `ChangesPreview`:
+ * parar o ponteiro em cima abre o balao com a lista agrupada. No toque o balao
+ * nao existe e o botao continua sozinho, como sempre foi.
  */
 function CommitButton() {
   const changeCount = useAppState((s) => s.status?.entries.length ?? 0);
@@ -444,32 +451,34 @@ function CommitButton() {
     : t("toolbar.commit.clean");
 
   return (
-    <BorderBeam active={dirty && !open} size={140} duration={5} thickness={2} className="shrink-0">
-      <button
-        type="button"
-        onClick={toggleChanges}
-        disabled={!dirty}
-        aria-label={t("toolbar.commit.label")}
-        aria-expanded={open}
-        title={title}
-        className={cn(
-          "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium touch:min-h-tap",
-          "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
-          dirty
-            ? "border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90"
-            : "border-border bg-card text-muted-foreground opacity-60",
-          FOCUS_RING,
-        )}
-      >
-        <GitCommitHorizontal className="size-3.5 shrink-0" />
-        {t("commit.button")}
-        {dirty && (
-          <span className="rounded-sm bg-primary-foreground/20 px-1 font-mono text-[10px] tabular-nums">
-            {changeCount}
-          </span>
-        )}
-      </button>
-    </BorderBeam>
+    <ChangesPreview>
+      <BorderBeam active={dirty && !open} size={140} duration={5} thickness={2} className="shrink-0">
+        <button
+          type="button"
+          onClick={toggleChanges}
+          disabled={!dirty}
+          aria-label={t("toolbar.commit.label")}
+          aria-expanded={open}
+          title={title}
+          className={cn(
+            "flex items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-xs font-medium touch:min-h-tap",
+            "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+            dirty
+              ? "border-primary/40 bg-primary text-primary-foreground hover:bg-primary/90"
+              : "border-border bg-card text-muted-foreground opacity-60",
+            FOCUS_RING,
+          )}
+        >
+          <GitCommitHorizontal className="size-3.5 shrink-0" />
+          {t("commit.button")}
+          {dirty && (
+            <span className="rounded-sm bg-primary-foreground/20 px-1 font-mono text-[10px] tabular-nums">
+              {changeCount}
+            </span>
+          )}
+        </button>
+      </BorderBeam>
+    </ChangesPreview>
   );
 }
 

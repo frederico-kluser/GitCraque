@@ -219,7 +219,7 @@ export const CommitRow = memo(function CommitRow({
   style,
   data,
 }: ListChildComponentProps<GraphRowData>) {
-  const { layout, metrics, graphWidth, selected, primary, headHash, marked, density, buildCommitMenu } = data;
+  const { layout, metrics, graphBox, selected, primary, headHash, marked, density, buildCommitMenu } = data;
   const compact = density === "compact";
   const node = layout.nodes[row];
   const snap = useMotionUITransition("snap");
@@ -388,95 +388,109 @@ export const CommitRow = memo(function CommitRow({
       <svg
         role="gridcell"
         aria-label={`lane ${node.lane}`}
-        width={graphWidth}
+        width={graphBox}
         height={metrics.rowHeight}
-        viewBox={`0 0 ${graphWidth} ${metrics.rowHeight}`}
+        viewBox={`0 0 ${graphBox} ${metrics.rowHeight}`}
         className="pointer-events-none relative block overflow-hidden"
       >
-        {edges.map((edge) => {
-          const d = clipEdgePath(edge, metrics, row, row);
-          if (d === null) return null;
-          return (
-            <path
-              key={edge.id}
-              d={d}
-              fill="none"
-              stroke={laneVar(edge.color)}
-              strokeWidth={metrics.strokeWidth}
-              strokeLinecap={EDGE.linecap}
-              strokeLinejoin={EDGE.linejoin}
-              opacity={EDGE.opacity}
-            />
-          );
-        })}
+        {/* O PAN DA COLUNA — o desenho inteiro desliza dentro do `<svg>`, que
+            e do tamanho do BOX e recorta o que sobra (o `viewBox` do svg de
+            fora ja e o recorte; nao ha clipPath a manter).
 
-        {/* O no inteiro num grupo TRANSLADADO ate o centro: assim as formas sao
-            todas concentricas em (0,0) e a escala do hover nao precisa saber
-            onde a lane esta. */}
-        <g transform={`translate(${cx} ${cy})`}>
-          <g className={NODE_GROUP_CLASS} style={{ transformBox: "fill-box", transformOrigin: "center" }}>
-            {/* Halo da selecao — escala e opacidade, nunca o raio. Fica DENTRO
-                do grupo que cresce, entao a bola nunca escapa do proprio halo.
-                Invisivel em repouso, mas ainda assim alvo do ponteiro: e ele que
-                da folga ao hover. */}
-            <motion.circle
-              r={metrics.nodeRadius + NODE.haloDelta}
-              fill={laneColor}
-              initial={false}
-              animate={{
-                opacity: isSelected ? NODE.haloOpacity : 0,
-                scale: isSelected ? 1 : NODE.haloRestScale,
-              }}
-              transition={snap}
-              style={{ transformBox: "fill-box", transformOrigin: "center" }}
-            />
-            {/* As formas do no vem prontas de `paint.ts` — aqui so viram
-                elementos. Acrescentar um anel, mudar um raio ou trocar o miolo
-                da raiz e mexer LA, nao aqui. */}
-            {commitNodeShapes({
-              isMerge: node.isMerge,
-              isRoot: node.isRoot,
-              isHead,
-            }).map((shape) => {
-              /* o corpo de um commit — comum ou merge — NAO e desenhado por
-                 `paint.ts`: no lugar dele entra o retrato do autor, logo
-                 abaixo — e o miolo da raiz tambem, para nao pintar por cima
-                 da foto. O anel de HEAD e o anel do merge continuam vindo de
-                 la (no merge o anel fica por fora do retrato, de moldura). */
-              if (shape.key === "body" || (!node.isMerge && shape.key === "root-core")) {
-                return null;
-              }
-              return (
-                <circle
-                  key={shape.key}
-                  r={shape.r}
-                  fill={tone(shape.fill, laneColor)}
-                  stroke={tone(shape.stroke, laneColor)}
-                  strokeWidth={shape.strokeWidth}
-                  opacity={shape.opacity}
-                />
-              );
-            })}
-            {/* O retrato do autor: corpo da bolinha de todo commit — comum ou
-                merge —, com o anel colorido da lane como borda. No merge o
-                anel externo (`merge-ring`) continua por fora, de moldura.
-                Vive dentro do grupo que cresce no hover — a escala continua
-                valendo para ele. */}
-            <CommitAvatarNode
-              name={commit.authorName}
-              email={commit.authorEmail}
-              radius={metrics.nodeRadius}
-              strokeWidth={metrics.strokeWidth}
-              laneColor={laneColor}
-              isMerge={node.isMerge}
-            />
-            {/* A raiz nao muda de corpo por causa do retrato: o miolo cheio
-                continua por cima da foto — e o que distingue o commit sem pai.
-                Espelha o root-core de `paint.ts` (mesmo raio e mesma cor,
-                resolvida aqui na cor da lane). */}
-            {node.isRoot && !node.isMerge && (
-              <circle r={metrics.nodeRadius * NODE.rootCoreRatio} fill={laneColor} />
-            )}
+            O deslocamento e uma variavel CSS herdada do container, nunca
+            estado do React: rolar a coluna com 20 000 commits nao pode
+            re-renderizar uma unica linha, e a lista existe justamente para nao
+            re-renderizar. `GraphView` escreve `--graph-scroll-x` no proprio no
+            do grid, e as linhas montadas seguem juntas no mesmo quadro.
+
+            O fallback `0px` e o que permite ninguem declarar a variavel: sem
+            barra de rolagem (grafo estreito) ela simplesmente nao existe. */}
+        <g style={{ transform: "translateX(var(--graph-scroll-x, 0px))" }}>
+          {edges.map((edge) => {
+            const d = clipEdgePath(edge, metrics, row, row);
+            if (d === null) return null;
+            return (
+              <path
+                key={edge.id}
+                d={d}
+                fill="none"
+                stroke={laneVar(edge.color)}
+                strokeWidth={metrics.strokeWidth}
+                strokeLinecap={EDGE.linecap}
+                strokeLinejoin={EDGE.linejoin}
+                opacity={EDGE.opacity}
+              />
+            );
+          })}
+
+          {/* O no inteiro num grupo TRANSLADADO ate o centro: assim as formas sao
+              todas concentricas em (0,0) e a escala do hover nao precisa saber
+              onde a lane esta. */}
+          <g transform={`translate(${cx} ${cy})`}>
+            <g className={NODE_GROUP_CLASS} style={{ transformBox: "fill-box", transformOrigin: "center" }}>
+              {/* Halo da selecao — escala e opacidade, nunca o raio. Fica DENTRO
+                  do grupo que cresce, entao a bola nunca escapa do proprio halo.
+                  Invisivel em repouso, mas ainda assim alvo do ponteiro: e ele que
+                  da folga ao hover. */}
+              <motion.circle
+                r={metrics.nodeRadius + NODE.haloDelta}
+                fill={laneColor}
+                initial={false}
+                animate={{
+                  opacity: isSelected ? NODE.haloOpacity : 0,
+                  scale: isSelected ? 1 : NODE.haloRestScale,
+                }}
+                transition={snap}
+                style={{ transformBox: "fill-box", transformOrigin: "center" }}
+              />
+              {/* As formas do no vem prontas de `paint.ts` — aqui so viram
+                  elementos. Acrescentar um anel, mudar um raio ou trocar o miolo
+                  da raiz e mexer LA, nao aqui. */}
+              {commitNodeShapes({
+                isMerge: node.isMerge,
+                isRoot: node.isRoot,
+                isHead,
+              }).map((shape) => {
+                /* o corpo de um commit — comum ou merge — NAO e desenhado por
+                   `paint.ts`: no lugar dele entra o retrato do autor, logo
+                   abaixo — e o miolo da raiz tambem, para nao pintar por cima
+                   da foto. O anel de HEAD e o anel do merge continuam vindo de
+                   la (no merge o anel fica por fora do retrato, de moldura). */
+                if (shape.key === "body" || (!node.isMerge && shape.key === "root-core")) {
+                  return null;
+                }
+                return (
+                  <circle
+                    key={shape.key}
+                    r={shape.r}
+                    fill={tone(shape.fill, laneColor)}
+                    stroke={tone(shape.stroke, laneColor)}
+                    strokeWidth={shape.strokeWidth}
+                    opacity={shape.opacity}
+                  />
+                );
+              })}
+              {/* O retrato do autor: corpo da bolinha de todo commit — comum ou
+                  merge —, com o anel colorido da lane como borda. No merge o
+                  anel externo (`merge-ring`) continua por fora, de moldura.
+                  Vive dentro do grupo que cresce no hover — a escala continua
+                  valendo para ele. */}
+              <CommitAvatarNode
+                name={commit.authorName}
+                email={commit.authorEmail}
+                radius={metrics.nodeRadius}
+                strokeWidth={metrics.strokeWidth}
+                laneColor={laneColor}
+                isMerge={node.isMerge}
+              />
+              {/* A raiz nao muda de corpo por causa do retrato: o miolo cheio
+                  continua por cima da foto — e o que distingue o commit sem pai.
+                  Espelha o root-core de `paint.ts` (mesmo raio e mesma cor,
+                  resolvida aqui na cor da lane). */}
+              {node.isRoot && !node.isMerge && (
+                <circle r={metrics.nodeRadius * NODE.rootCoreRatio} fill={laneColor} />
+              )}
+            </g>
           </g>
         </g>
       </svg>

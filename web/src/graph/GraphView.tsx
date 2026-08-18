@@ -9,7 +9,13 @@
  * `layout.ts` e a geometria das curvas de `bezier.ts`.
  */
 import { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties, HTMLAttributes, KeyboardEvent } from "react";
+import type {
+  CSSProperties,
+  HTMLAttributes,
+  KeyboardEvent,
+  PointerEvent,
+  WheelEvent,
+} from "react";
 import { Tooltip } from "@base-ui/react/tooltip";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeftRight } from "lucide-react";
@@ -31,17 +37,19 @@ import { CommitTooltip } from "./CommitTooltip.tsx";
 import { COMPACT_METRICS, computeGraphLayout, DEFAULT_METRICS } from "./layout.ts";
 import { applyRevealPlan, MARK_DURATION_MS, planReveal } from "./reveal.ts";
 import type { RevealSurface, RevealTarget } from "./reveal.ts";
+import { SCROLLER } from "./paint.ts";
 import {
   FALLBACK_HEIGHT,
   OVERSCAN,
   ROW_GRID,
   compactContentWidth,
-  graphColumnWidth,
+  graphColumnBox,
+  graphColumnSpan,
   graphVars,
   rowDomId,
 } from "./shell.ts";
 import type { GraphDensity, GraphRowData } from "./shell.ts";
-import { useElementHeight, useElementWidth } from "./useElementSize.ts";
+import { useElementHeight } from "./useElementSize.ts";
 
 /* O `innerElementType` da lista e o rowgroup do role="grid". */
 const ListInner = forwardRef<HTMLDivElement, HTMLAttributes<HTMLDivElement>>(
@@ -200,7 +208,12 @@ export function GraphView({
   const ui = useMotionUITransition("ui");
   const layout = useMemo(() => computeGraphLayout(commits), [commits]);
   const selectedSet = useMemo(() => new Set(selected), [selected]);
-  const graphWidth = graphColumnWidth(layout.laneCount, metrics);
+  /* SPAN e o desenho inteiro, BOX e a janela por onde ele aparece. Enquanto o
+     grafo e estreito os dois sao o mesmo numero; passando do teto de `COLUMN`
+     o box para de crescer, a coluna para junto e a diferenca vira rolagem. */
+  const graphSpan = graphColumnSpan(layout.laneCount, metrics);
+  const graphBox = graphColumnBox(graphSpan, density);
+  const scrollable = graphSpan > graphBox;
   const headHash = refs?.head.hash ?? null;
 
   const gridRef = useRef<HTMLDivElement>(null);
@@ -208,36 +221,115 @@ export function GraphView({
   const { ref: bodyRef, height } = useElementHeight<HTMLDivElement>();
   const viewportHeight = height || FALLBACK_HEIGHT;
 
-  /* ---- rolagem lateral da densidade compacta ------------------------- */
+  /* ---- rolagem horizontal DA COLUNA do grafo -------------------------- */
 
-  /* O grafo largo (muitas lanes paralelas) nao cabe na largura do celular: a
-     linha compacta rola para o lado dentro do proprio container, e o aviso
-     abaixo diz que o conteudo continua. So existe no compacto — no confortavel
-     o DOM fica o de sempre, byte a byte. */
-  /* A janela visivel do rolador compacto — o ref medido e o MESMO ref da
-     rolagem: o no do rolador e o que interessa para as duas coisas. Quem a
-     medida compara e a largura visivel com o minimo do conteudo
-     (`compactContentWidth`) para decidir se o aviso de rolagem aparece. */
-  const { ref: scrollerRef, width: scrollerWidth } = useElementWidth<HTMLDivElement>();
-  const contentWidth = compactContentWidth(graphWidth);
-  const scrollable = compact && scrollerWidth > 0 && contentWidth > scrollerWidth;
+  /* Um repositorio com muitos merges vivos ao mesmo tempo desenhava uma coluna
+     de 500px e alem, comendo o assunto do commit. Agora a coluna tem teto e o
+     que passa dele rola AQUI DENTRO: as colunas de texto ficam paradas.
+
+     O rolador e um `overflow-x-auto` de verdade — inercia, gesto de dois dedos
+     e teclado vem de graca —, mas ele nao carrega conteudo nenhum: e uma barra
+     de 10px com um espacador da largura do SPAN. Quem se desloca sao os `<svg>`
+     das linhas, pela variavel CSS `--graph-scroll-x` que o `onScroll` escreve
+     no no do grid. Uma escrita de estilo por quadro contra um re-render de
+     todas as linhas montadas — a lista e virtualizada exatamente para isso nao
+     acontecer. */
+  const graphScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleGraphScroll = useCallback(() => {
+    const el = graphScrollRef.current;
+    if (el === null) return;
+    gridRef.current?.style.setProperty("--graph-scroll-x", `${-el.scrollLeft}px`);
+    setHintDismissed(true);
+  }, []);
+
+  /* Trocar de repositorio, filtrar ou simplesmente encolher a topologia muda o
+     span: o navegador ja limita o `scrollLeft` do rolador sozinho, e este
+     efeito copia o valor limitado de volta para a variavel. Sem ele, um grafo
+     que deixa de ser rolavel ficaria congelado deslocado. */
+  useEffect(() => {
+    const left = graphScrollRef.current?.scrollLeft ?? 0;
+    gridRef.current?.style.setProperty("--graph-scroll-x", `${-left}px`);
+  }, [graphSpan, graphBox]);
+
+  /* Roda do mouse: Shift+roda (o gesto classico) e o `deltaX` que o trackpad
+     manda sozinho. Sem `preventDefault` de proposito — o listener de roda do
+     React e passivo, e nao ha nada para cancelar: o container nao rola no eixo
+     x, entao ninguem disputa o gesto. */
+  const handleWheel = useCallback((event: WheelEvent<HTMLDivElement>) => {
+    const el = graphScrollRef.current;
+    if (el === null) return;
+    const dx = event.shiftKey ? event.deltaY : event.deltaX;
+    if (dx === 0) return;
+    el.scrollLeft += dx;
+  }, []);
+
+  /* ARRASTAR O POLEGAR com o mouse. O toque nao passa por aqui: dentro de um
+     rolador nativo o dedo ja arrasta o conteudo sozinho, e reagir ao pointer
+     tambem faria a barra andar duas vezes. O fator de conversao e o inverso da
+     razao que dimensiona o polegar — cada pixel de trilho vale `span / box`
+     pixels de desenho. */
+  const dragRef = useRef<{ x: number; left: number } | null>(null);
+
+  const handleThumbDown = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    const el = graphScrollRef.current;
+    if (event.pointerType === "touch" || el === null) return;
+    dragRef.current = { x: event.clientX, left: el.scrollLeft };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  }, []);
+
+  const handleThumbMove = useCallback(
+    (event: PointerEvent<HTMLDivElement>) => {
+      const drag = dragRef.current;
+      const el = graphScrollRef.current;
+      if (drag === null || el === null || graphBox === 0) return;
+      el.scrollLeft = drag.left + (event.clientX - drag.x) * (graphSpan / graphBox);
+    },
+    [graphSpan, graphBox],
+  );
+
+  const handleThumbUp = useCallback((event: PointerEvent<HTMLDivElement>) => {
+    dragRef.current = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
 
   /* O aviso dura um instante e morre no primeiro gesto de rolagem — quem ja
      viu uma vez nao precisa ver de novo no mesmo repositorio. */
   const [hintDismissed, setHintDismissed] = useState(false);
   const hintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    if (!compact) return;
+    if (!scrollable) return;
     setHintDismissed(false);
     if (hintTimerRef.current !== null) clearTimeout(hintTimerRef.current);
     hintTimerRef.current = setTimeout(() => setHintDismissed(true), 4000);
     return () => {
       if (hintTimerRef.current !== null) clearTimeout(hintTimerRef.current);
     };
-  }, [compact]);
+  }, [scrollable]);
 
-  const handleScrollerScroll = useCallback(() => setHintDismissed(true), []);
-  const showHint = compact && scrollable && !hintDismissed;
+  const showHint = scrollable && !hintDismissed;
+
+  /**
+   * Leva a bola de uma lane ao centro da janela do grafo — e SO quando ela
+   * esta fora dela.
+   *
+   * A guarda e o que separa "evidenciar o commit" de "sacudir a tela": clicar
+   * numa linha cuja bola ja aparece nao pode deslocar o desenho. `laneX` JA e
+   * o centro da bola (convencao presa por `paint.test.ts`); somar `nodeRadius`
+   * moveria a fronteira em 14px e faria a rolagem disparar a toa.
+   */
+  const centerLane = useCallback(
+    (lane: number) => {
+      const scroller = graphScrollRef.current;
+      if (scroller === null) return;
+      const targetX = laneX(lane, metrics);
+      if (targetX >= scroller.scrollLeft && targetX <= scroller.scrollLeft + graphBox) return;
+      scroller.scrollTo({ left: targetX - graphBox / 2, behavior: "smooth" });
+    },
+    [metrics, graphBox],
+  );
 
   /* ancora da selecao por intervalo: o store usa `primary` como ponta, e o
      Shift+seta precisa manter a ponta ORIGINAL para o intervalo crescer. */
@@ -319,28 +411,14 @@ export function GraphView({
     if (plan !== null) servedNonceRef.current = plan.nonce;
     applyRevealPlan(plan, surface);
 
-    /* No compacto, centralizar a LINHA nao basta: a lane do commit pode estar
-       fora da janela horizontal (grafo largo num celular). Depois do scroll
-       vertical, leva o rolador lateral ao centro da bola do commit revelado —
-       `laneX` JA e o centro da bola, sem somar `nodeRadius`. A guarda so
-       dispara quando a bola esta FORA da janela: se o commit ja aparece, o
-       scroll lateral nao mexe (clicar numa branch do rail nao desloca a tela
-       inteira sem necessidade). */
-    if (compact && plan !== null && plan.row !== null && scrollerWidth > 0) {
+    /* Centralizar a LINHA nao basta quando o grafo passa do teto: a lane do
+       commit revelado pode estar fora da janela horizontal da coluna. Depois
+       do scroll vertical, leva a coluna ate ela. Vale nas duas densidades —
+       antes so o compacto rolava de lado, agora o confortavel tambem tem
+       coluna com teto. */
+    if (plan !== null && plan.row !== null) {
       const node = layout.nodes[plan.row];
-      const scroller = scrollerRef.current;
-      if (node !== undefined && scroller !== null) {
-        const targetX = laneX(node.lane, metrics);
-        if (
-          targetX < scroller.scrollLeft ||
-          targetX > scroller.scrollLeft + scrollerWidth
-        ) {
-          scroller.scrollTo({
-            left: targetX - scrollerWidth / 2,
-            behavior: "smooth",
-          });
-        }
-      }
+      if (node !== undefined) centerLane(node.lane);
     }
   }, [
     revealHash,
@@ -348,33 +426,22 @@ export function GraphView({
     layout,
     viewportHeight,
     metrics.rowHeight,
-    metrics.paddingLeft,
-    metrics.laneWidth,
     loading,
-    compact,
-    scrollerWidth,
+    centerLane,
   ]);
 
   const handleSelect = useCallback<GraphViewProps["onSelect"]>(
     (hash, mode) => {
       if (mode !== "range") anchorRef.current = hash;
       onSelect(hash, mode);
-      /* No compacto, o clique direto numa linha tambem evidencia o commit:
-         rola lateralmente ate a bola ficar no centro da janela — o mesmo
-         gesto do reveal, so que disparado pela selecao. */
-      if (compact && scrollerRef.current !== null) {
-        const row = layout.index.get(hash);
-        const node = row !== undefined ? layout.nodes[row] : undefined;
-        if (node !== undefined) {
-          const targetX = laneX(node.lane, metrics);
-          scrollerRef.current.scrollTo({
-            left: targetX - scrollerWidth / 2,
-            behavior: "smooth",
-          });
-        }
-      }
+      /* O clique direto numa linha tambem evidencia o commit: se a bola dele
+         estiver fora da janela da coluna, a coluna rola ate centraliza-la — o
+         mesmo gesto do reveal, so que disparado pela selecao. */
+      const row = layout.index.get(hash);
+      const node = row !== undefined ? layout.nodes[row] : undefined;
+      if (node !== undefined) centerLane(node.lane);
     },
-    [onSelect, compact, layout, metrics, scrollerWidth],
+    [onSelect, layout, centerLane],
   );
 
   const moveTo = useCallback(
@@ -464,7 +531,7 @@ export function GraphView({
     () => ({
       layout,
       metrics,
-      graphWidth,
+      graphBox,
       selected: selectedSet,
       primary,
       headHash,
@@ -482,7 +549,7 @@ export function GraphView({
     [
       layout,
       metrics,
-      graphWidth,
+      graphBox,
       selectedSet,
       primary,
       headHash,
@@ -500,6 +567,92 @@ export function GraphView({
 
   const isEmpty = commits.length === 0;
   const showSkeleton = isEmpty && loading === true;
+
+  /**
+   * Cabecalho + lista + barra da coluna: o MESMO bloco nas duas densidades.
+   *
+   * O que a densidade troca e so o ENVOLTORIO. No compacto ele ainda rola para
+   * o lado, mas agora por um motivo residual: com o teto da coluna a grade
+   * inteira mede `compactContentWidth` (368px com o teto compacto) e cabe em
+   * qualquer celular de 375px para cima — o rolador da linha so entra em acao
+   * numa tela de 320px, onde a alternativa seria cortar o conteudo.
+   */
+  const content = (
+    <>
+      <ColumnHeader density={density} />
+
+      {/* A BARRA DA COLUNA — so existe quando o desenho passa do teto.
+
+          Ela nao contem o grafo: contem um espacador da largura do SPAN, e e o
+          `onScroll` dela que desloca os `<svg>` das linhas pela variavel CSS.
+          Larga exatamente como a coluna (`--graph-col`), entao fica sobre o
+          grafo e nao sobre a descricao. `tabIndex` porque um rolador tem de ser
+          alcancavel pelo teclado — com o foco nele, as setas rolam.
+
+          POR QUE NO TOPO, e nao sob a lista, onde uma barra horizontal
+          normalmente mora: a area de IA e `fixed inset-x-0 bottom-6` e flutua
+          sobre o rodape de TODOS os paineis (`app/AiBar.tsx`; a armadilha esta
+          descrita em `composing-shell-interface`). Medido a 1440x900 com a
+          barra no rodape: a faixa ficava em y 866..876 e o
+          `document.elementFromPoint` na ponta direita dela devolvia a secao da
+          IA — ou seja, metade do controle era inclicavel. Encostada no
+          cabecalho ela nunca disputa com nada. */}
+      {scrollable && (
+        <div
+          className={cn(SCROLLER.rail, "border-b border-border")}
+          onPointerDown={handleThumbDown}
+          onPointerMove={handleThumbMove}
+          onPointerUp={handleThumbUp}
+          onPointerCancel={handleThumbUp}
+        >
+          <div
+            ref={graphScrollRef}
+            data-graph-scroller
+            tabIndex={0}
+            aria-label={t("graph.scroll.label")}
+            onScroll={handleGraphScroll}
+            className={SCROLLER.track}
+          >
+            <div className={SCROLLER.spacer} style={{ width: graphSpan }} />
+          </div>
+          <div aria-hidden className={SCROLLER.thumb} style={SCROLLER.thumbStyle} />
+        </div>
+      )}
+      {/* o container medido fica SEMPRE montado, para o ResizeObserver nao
+          perder o no quando o estado troca de esqueleto para arvore. */}
+      <div ref={bodyRef} className="min-h-0 flex-1">
+        {showSkeleton ? (
+          <LoadingRows metrics={metrics} density={density} />
+        ) : isEmpty ? (
+          <EmptyState />
+        ) : (
+          /* a arvore entra com o token "ui" quando o log chega */
+          <motion.div
+            className="h-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={ui}
+          >
+            <FixedSizeList<GraphRowData>
+              ref={listRef}
+              height={viewportHeight}
+              width="100%"
+              itemCount={commits.length}
+              itemSize={metrics.rowHeight}
+              overscanCount={OVERSCAN}
+              onScroll={handleListScroll}
+              itemData={itemData}
+              itemKey={(index, data) => data.layout.nodes[index].commit.hash}
+              innerElementType={ListInner}
+            >
+              {CommitRow}
+            </FixedSizeList>
+          </motion.div>
+        )}
+      </div>
+
+    </>
+  );
 
   return (
     /* O `Provider` do Base UI e OBRIGATORIO aqui, e nao e enfeite: gatilho e
@@ -524,7 +677,8 @@ export function GraphView({
         data-graph-edges={layout.edges.length}
         data-graph-elapsed={layout.elapsedMs.toFixed(2)}
         onKeyDown={handleKeyDown}
-        style={graphVars(graphWidth, metrics, density) as CSSProperties}
+        onWheel={handleWheel}
+        style={graphVars(graphBox, graphSpan, metrics, density) as CSSProperties}
         className={cn(
           "relative flex h-full min-h-0 flex-col bg-surface-graph outline-none",
           "focus-visible:ring-1 focus-visible:ring-ring focus-visible:ring-inset",
@@ -532,107 +686,32 @@ export function GraphView({
         )}
       >
         {compact ? (
-          /* No compacto o container medido (o da lista) ganha um PAI que rola
-             para o lado quando o grafo e largo demais: o conteudo tem largura
-             propria (`compactContentWidth`, com piso fixo de 480px — nem um
-             grafo de uma lane deixa a linha espremer abaixo disso em telas
-             estreitas, o scroll lateral e obrigatorio) e o CABECALHO rola
-             junto — fora do rolador ele espremeria as colunas ate desalinhar
-             da lista. `overscroll-x-contain` devolve o gesto ao resto da
-             pagina quando o conteudo termina — rolagem aninhada em cadeia,
-             nao disputada. */
-          <div
-            ref={scrollerRef}
-            onScroll={handleScrollerScroll}
-            className="min-h-0 flex-1 overflow-x-auto overscroll-x-contain"
-          >
-            {/* `min-width` (CSS) e o que prende a largura de verdade: a grade
-                inteira (coluna do grafo + assunto + meta) nunca fica menor
-                que `compactContentWidth`, entao o rolador sempre tem o que
-                rolar quando a janela e estreita. */}
+          /* `min-width` (CSS) e o que prende a largura de verdade: a grade
+             inteira (coluna do grafo + assunto + meta) nunca fica menor que
+             `compactContentWidth`, entao numa tela estreita demais ha o que
+             rolar em vez de conteudo cortado. `overscroll-x-contain` devolve o
+             gesto ao resto da pagina quando o conteudo termina. O CABECALHO
+             mora dentro do rolador — fora dele espremeria as colunas ate
+             desalinhar da lista. */
+          <div className="min-h-0 flex-1 overflow-x-auto overscroll-x-contain">
             <div
               className="flex h-full min-h-0 flex-col"
-              style={{ minWidth: compactContentWidth(graphWidth) }}
+              style={{ minWidth: compactContentWidth(graphBox) }}
             >
-              <ColumnHeader density={density} />
-              {/* o container medido fica SEMPRE montado, para o ResizeObserver
-                  nao perder o no quando o estado troca de esqueleto para
-                  arvore. */}
-              <div ref={bodyRef} className="min-h-0 flex-1">
-                {showSkeleton ? (
-                  <LoadingRows metrics={metrics} density={density} />
-                ) : isEmpty ? (
-                  <EmptyState />
-                ) : (
-                  <motion.div
-                    className="h-full"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={ui}
-                  >
-                    <FixedSizeList<GraphRowData>
-                      ref={listRef}
-                      height={viewportHeight}
-                      width="100%"
-                      itemCount={commits.length}
-                      itemSize={metrics.rowHeight}
-                      overscanCount={OVERSCAN}
-                      onScroll={handleListScroll}
-                      itemData={itemData}
-                      itemKey={(index, data) => data.layout.nodes[index].commit.hash}
-                      innerElementType={ListInner}
-                    >
-                      {CommitRow}
-                    </FixedSizeList>
-                  </motion.div>
-                )}
-              </div>
+              {content}
             </div>
           </div>
         ) : (
-          /* o cabecalho confortavel fica FORA do container medido, como era
-             antes — o DOM confortavel nao muda byte a byte. */
-          <>
-            <ColumnHeader density={density} />
-            {/* o container medido fica SEMPRE montado, para o ResizeObserver nao
-                perder o no quando o estado troca de esqueleto para arvore. */}
-            <div ref={bodyRef} className="min-h-0 flex-1">
-              {showSkeleton ? (
-                <LoadingRows metrics={metrics} density={density} />
-              ) : isEmpty ? (
-                <EmptyState />
-              ) : (
-                /* a arvore entra com o token "ui" quando o log chega */
-                <motion.div
-                  className="h-full"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={ui}
-                >
-                  <FixedSizeList<GraphRowData>
-                    ref={listRef}
-                    height={viewportHeight}
-                    width="100%"
-                    itemCount={commits.length}
-                    itemSize={metrics.rowHeight}
-                    overscanCount={OVERSCAN}
-                    onScroll={handleListScroll}
-                    itemData={itemData}
-                    itemKey={(index, data) => data.layout.nodes[index].commit.hash}
-                    innerElementType={ListInner}
-                  >
-                    {CommitRow}
-                  </FixedSizeList>
-                </motion.div>
-              )}
-            </div>
-          </>
+          content
         )}
 
-        {/* O aviso de rolagem lateral: aparece so no compacto, quando a linha e
-            mais larga que a janela, e so por um tempo — a primeira rolagem
-            dispensa. Sobe e desce como um balao: sem estado de movimento
-            persistente no container, so a entrada e a saida do pill. */}
+        {/* O aviso de rolagem lateral: aparece quando o desenho passa do teto
+            da coluna, e so por um tempo — a primeira rolagem dispensa. Entra e
+            sai como um balao: sem estado de movimento persistente no
+            container, so a entrada e a saida do pill.
+
+            Mora no TOPO pelo mesmo motivo da barra: no rodape a area de IA
+            passa por cima dele. */}
         <AnimatePresence>
           {showHint && (
             <motion.div
@@ -642,7 +721,7 @@ export function GraphView({
               animate={{ opacity: 1, y: 0, x: "-50%" }}
               exit={{ opacity: 0, y: 8, x: "-50%" }}
               transition={ui}
-              className="pointer-events-none absolute bottom-3 left-1/2 z-10"
+              className="pointer-events-none absolute top-12 left-1/2 z-10"
             >
               <div className="flex items-center gap-1.5 rounded-full border border-border bg-popover px-3 py-1.5 text-[11px] text-muted-foreground shadow-lg">
                 <ArrowLeftRight aria-hidden className="size-3.5 shrink-0" />

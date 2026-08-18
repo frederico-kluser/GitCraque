@@ -321,6 +321,11 @@ export const pt = {
   "changes.unstageAll": "Despreparar tudo",
   "changes.viewFile": "Ver {path} no visualizador",
   "changes.hold": "segure",
+  "changes.preview.label": "Resumo das alterações",
+  "changes.preview.hint": "Clique num arquivo para ver o diff",
+  "changes.preview.all": "Ver tudo",
+  "changes.preview.more_one": "e mais {count} arquivo",
+  "changes.preview.more_other": "e mais {count} arquivos",
   "changes.filesChanged_one": "{count} arquivo alterado",
   "changes.filesChanged_other": "{count} arquivos alterados",
   "changes.staged_one": "{count} arquivo preparado",
@@ -1410,7 +1415,9 @@ export const pt = {
   "graph.meta.reveal": "Mostrar autor, data e hash deste commit",
   "graph.meta.hide": "Esconder autor, data e hash deste commit",
   "graph.column.meta": "Detalhes",
-  "graph.hint.horizontalScroll": "Com muitas linhas paralelas, o histórico rola também para o lado.",
+  "graph.hint.horizontalScroll":
+    "Com muitas linhas paralelas, a coluna do grafo rola para o lado.",
+  "graph.scroll.label": "Rolagem horizontal do grafo",
 
   /* -- preferencia de layout, no modal de configuracoes -- */
   "settings.layout.title": "Layout",

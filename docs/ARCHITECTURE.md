@@ -274,6 +274,28 @@ falha limpo em vez de travar.
 - **X = lane**, alocada pela heuristica abaixo.
   `x = paddingLeft + lane * laneWidth`.
 
+### Largura da coluna: span, box e a rolagem propria
+
+A coluna tem duas larguras, e a diferenca entre elas e o que impede o grafo de
+comer o resto da linha (`web/src/graph/shell.ts`):
+
+- **span** (`graphColumnSpan`) e o desenho inteiro — `paddingLeft * 2 +
+  (lanes - 1) * laneWidth`. Cresce com a topologia, sem limite: e nele que as
+  coordenadas acima vivem.
+- **box** (`graphColumnBox`) e a janela por onde ele aparece — o span limitado
+  pelo teto de `COLUMN` (`paint.ts`): 256px no confortavel, 160px no compacto.
+  E o box que vira a faixa `--graph-col` da grade e a largura do `<svg>` de cada
+  linha.
+
+Enquanto `span <= box` nada muda. Passando disso a coluna PARA de crescer e a
+diferenca vira rolagem horizontal dentro da propria coluna — as colunas de
+texto nao se mexem. O deslocamento e a variavel CSS `--graph-scroll-x`, escrita
+no container pelo `onScroll` da barra e lida por um `<g>` em cada linha: rolar
+nao re-renderiza nenhuma linha, o que a lista virtualizada nao suportaria. A
+barra fica encostada no cabecalho (o rodape de todo painel e coberto pela area
+de IA, que e `fixed ... bottom-6`) e tem polegar desenhado, porque a barra
+nativa e overlay e nao aparece em repouso.
+
 ### Heuristica de lanes (filhos de ramificacao x filhos de mesclagem)
 
 Percorre os commits **de cima para baixo** (do mais novo para o mais antigo,

@@ -40,6 +40,7 @@
  *    ela nao e infinita: bola muito maior sem afastar as lanes reprova
  *    `layout.test.ts`.
  */
+import type { CSSProperties } from "react";
 import type { GraphMetrics } from "@/types/modules";
 
 /* ================================================================== *
@@ -122,6 +123,76 @@ export const METRICS_COMPACT: GraphMetrics = {
   /** espessura do traco das arestas e do contorno da bola — mais grossa que a confortavel */
   strokeWidth: 3,
 };
+
+/* ================================================================== *
+ * 1.5 A COLUNA — o teto de largura e a barra que aparece depois dele
+ * ================================================================== */
+
+/**
+ * O TETO da largura da coluna do grafo, por densidade.
+ *
+ * A largura NATURAL da coluna cresce com quantas lanes vivem ao mesmo tempo
+ * (`graphColumnSpan`, em `shell.ts`): um repositorio com muitos merges
+ * paralelos empurrava a coluna para 500px e alem, e o assunto do commit — a
+ * unica coisa que se le de relance — ia sendo espremido junto, sem teto
+ * nenhum. Daqui para cima a coluna PARA de crescer e o desenho passa a rolar
+ * DENTRO dela, com as colunas de texto imoveis.
+ *
+ * 256px no confortavel: com `paddingLeft` de 64 dos dois lados sobram 128px de
+ * pista, ou seja as lanes 0 a 4 inteiras (64 + 4*26 + 14 = 182) e a lane 5
+ * ainda aparecendo — a topologia do dia a dia cabe sem rolar.
+ *
+ * 160px no compacto e conta de tela, nao de estetica: 160 (grafo) + 160
+ * (minimo do assunto, `COMPACT_SUBJECT_MIN`) + 48 (`COMPACT_META_COL`) = 368px,
+ * o maior valor que ainda cabe nos 375px do celular mais estreito comum. Em
+ * 180 a LINHA inteira voltaria a rolar — exatamente o rolador aninhado que
+ * este teto existe para eliminar.
+ */
+export const COLUMN = {
+  /** teto da coluna na densidade confortavel */
+  max: 256,
+  /** teto da coluna na densidade compacta */
+  maxCompact: 160,
+} as const;
+
+/**
+ * A BARRA que aparece sob o cabecalho quando o desenho nao cabe na coluna.
+ *
+ * Por baixo e um rolador NATIVO (`overflow-x-auto`), e nao um arraste
+ * reimplementado: inercia, gesto de dois dedos, roda com Shift, teclado e o
+ * `scrollTo` suave do reveal vem todos de graca. Fina sob o ponteiro, alvo de
+ * 44px no dedo (`touch:h-tap`, a regua de toque do projeto).
+ *
+ * O POLEGAR E DESENHADO, a barra do sistema fica escondida. Nao e enfeite: a
+ * barra nativa e OVERLAY nas plataformas de hoje — some em repouso e so
+ * aparece durante o gesto —, entao no lugar dela sobrava uma faixa em branco
+ * sob o cabecalho, sem dizer que ha o que rolar (medido no Chromium: nem com
+ * `scrollbar-width: thin` ela e pintada em repouso). O polegar desenhado
+ * aparece sempre e nas duas plataformas.
+ *
+ * Largura e posicao do polegar saem de CALC sobre as MESMAS variaveis que o
+ * desenho ja usa — `--graph-col` (a janela), `--graph-ratio` (janela/desenho) e
+ * `--graph-scroll-x` (o deslocamento, negativo). Nenhum numero e calculado em
+ * JavaScript e nada re-renderiza ao rolar: o navegador refaz o calc sozinho
+ * quando a variavel muda.
+ */
+export const SCROLLER = {
+  /** o trilho: a caixa relativa que empilha rolador e polegar */
+  rail: "relative shrink-0 w-[var(--graph-col)] h-2.5 touch:h-tap",
+  /** o rolador de verdade, invisivel, por baixo do polegar */
+  track:
+    "size-full overflow-x-auto overscroll-x-contain " +
+    "[scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+  /** o espacador de dentro: existe so para dar ao rolador o que rolar */
+  spacer: "h-px",
+  /** o polegar desenhado — nao recebe ponteiro, o gesto e do rolador de baixo */
+  thumb: "pointer-events-none absolute left-0 top-[calc(50%-3px)] h-1.5 rounded-full bg-border",
+  /** o tamanho e o deslocamento do polegar, os dois derivados das variaveis */
+  thumbStyle: {
+    width: "calc(var(--graph-col) * var(--graph-ratio))",
+    transform: "translateX(calc(var(--graph-scroll-x, 0px) * -1 * var(--graph-ratio)))",
+  } as CSSProperties,
+} as const;
 
 /* ================================================================== *
  * 2. CURVATURA — o quanto o cotovelo da aresta abre

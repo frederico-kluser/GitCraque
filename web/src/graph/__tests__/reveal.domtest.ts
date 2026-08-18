@@ -29,7 +29,7 @@ function renderRow(row: number, patch: Partial<GraphRowData> = {}): string {
   const data: GraphRowData = {
     layout,
     metrics: DEFAULT_METRICS,
-    graphWidth: 96,
+    graphBox: 96,
     selected: new Set<string>(),
     primary: null,
     headHash: null,

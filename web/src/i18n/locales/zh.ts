@@ -307,6 +307,11 @@ export const zh: Messages = {
   "changes.unstageAll": "全部取消暂存",
   "changes.viewFile": "在查看器中查看 {path}",
   "changes.hold": "按住",
+  "changes.preview.label": "更改摘要",
+  "changes.preview.hint": "点击文件查看差异",
+  "changes.preview.all": "查看全部",
+  "changes.preview.more_one": "还有 {count} 个文件",
+  "changes.preview.more_other": "还有 {count} 个文件",
   "changes.filesChanged_one": "{count} 个文件已更改",
   "changes.filesChanged_other": "{count} 个文件已更改",
   "changes.staged_one": "{count} 个文件已暂存",
@@ -1342,7 +1347,8 @@ export const zh: Messages = {
   "graph.meta.reveal": "显示该提交的作者、日期和哈希",
   "graph.meta.hide": "隐藏该提交的作者、日期和哈希",
   "graph.column.meta": "元信息",
-  "graph.hint.horizontalScroll": "并行分支较多时，历史还可以左右滚动。",
+  "graph.hint.horizontalScroll": "并行分支较多时，图形列可以左右滚动。",
+  "graph.scroll.label": "图形横向滚动",
 
   /* -- 布局偏好，位于设置弹窗 -- */
   "settings.layout.title": "布局",
