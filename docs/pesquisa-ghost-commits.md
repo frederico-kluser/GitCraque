@@ -253,8 +253,9 @@ alcançáveis e aparecem no `--all`. O fix é de seleção, não de limpeza.
 **Resumo da decisão:** limpeza destrutiva é para refs de **backup/transitórias**
 após a operação que as criou (filter-branch, rebase morto, bisect abandonado).
 Para refs **vivas** (stash, archive de ferramenta), a resposta é excluir da
-seleção do log — que é o que o GitCraque já faz com `do-archive` e precisa
-fazer também com `stash`.
+seleção do log — que é o que o GitCraque já faz: `do-archive` e `stash` desde
+a onda 1, e `refs/original/*` e `refs/rewritten/*` desde a onda 2, via
+`EXCLUDED_REF_PATTERNS`.
 
 ---
 

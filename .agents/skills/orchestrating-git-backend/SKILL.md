@@ -98,21 +98,43 @@ remains in the middle is the subject (`server/src/git/log.mjs:17-51`). A plain
 that come **after** it in argv — git's own doc says "the next `--all`,
 `--branches`, ..." — and before the subcommand it dies with "unknown option".
 When assembling a `log`/`rev-list` argv, the exclude must sit between the
-subcommand and `--all` (`server/src/git/log.mjs:173-177`). A wrong order ships
+subcommand and `--all` (`server/src/git/log.mjs:168-174`). A wrong order ships
 ghost commits silently: `git log --all --exclude=...` still lists them (proven
-on git 2.43.0; `server/test/log-exclude-archive.test.mjs` pins the ordering).
+on git 2.43.0; `server/test/log-refs-exclusion.test.mjs` pins the ordering).
+Also know what `--all` is selecting: it takes EVERY ref under `refs/` —
+branches, remotes and tags, but also `refs/stash` (the work cache), the
+`refs/original/*` backups left by filter-branch, the transient
+`refs/rewritten/*` labels of interactive rebase, and any custom tool
+namespace. The backend excludes the known ones through the
+`EXCLUDED_REF_PATTERNS` constant — four patterns, `do-archive`, `stash`,
+`original`, `rewritten` (`server/src/git/log.mjs:176-181`) — applied at BOTH
+selection points: `getLog` (`:198-202`) and `countCommits` (`:259-262`), so
+the pagination total always pays from the same ref set as the rendered lines
+— that log/total symmetry is the invariant the tests enforce. Excluded
+commits never reach the parser; legit refs still decorate via `%d`
+(`LOG_PRETTY_FORMAT`, `server/src/contract.mjs:19`).
 
 **Word-diff trap.** `git diff --word-diff=porcelain` does NOT emit
 `[-...-]`/`{+...+}` — that is `--word-diff=plain`. Porcelain emits marker
 lines (` ` / `+` / `-`) plus a `~` line after each piece that ended a source
-line, and its context chunks come from the NEW-side buffer, so the removed
-side's inter-word gaps are unrecoverable (an insertion doubles a space in any
-reconstruction of the old line). Word-diff therefore runs TWO commands per
-file and merges (`mergeWordDiff` / `parseWordDiffPorcelain`,
-`server/src/git/status.mjs:285,506`): the plain patch provides structure,
-numbers and content, the porcelain only the word pieces, assigned by absolute
-line position per hunk. Also: `--word-diff` must sit AFTER the subcommand in
-argv — before `diff`/`show` it is an unknown GLOBAL option and dies.
+line — and that `~` closes the current logical line of BOTH sides, not just
+the last marker's side (closing one side only fuses removed lines that do
+not exist around a pure-add line). Its context chunks come from the NEW-side
+buffer, so the removed side's inter-word gaps are unrecoverable (an insertion
+doubles a space in any reconstruction of the old line). Word-diff therefore
+runs TWO commands per file and merges (`parseWordDiffPorcelain` /
+`mergeWordDiff` / `assignWordPieces`, `server/src/git/status.mjs:286,511,553`):
+the plain patch provides structure, numbers and content, the porcelain only
+the word pieces. Pieces are assigned BY LINE STRUCTURE, not by absolute
+position per hunk: the k-th `del` line of the classic hunk receives the
+pieces of the k-th changed removed-side line of the porcelain, and the `add`
+side likewise. When the counts diverge (the word xdiff fuses N old + M new
+lines into one region), the merge falls back BY CONTENT: each piece goes to
+the first classic line that contains it, in order, and an orphan piece is
+DISCARDED — a lost highlight is better than a word rendered on the wrong
+line (`server/test/status-diff.test.mjs` pins the pairing). Also:
+`--word-diff` must sit AFTER the subcommand in argv — before `diff`/`show`
+it is an unknown GLOBAL option and dies.
 
 **A watcher without an `error` listener kills the server.** The Linux recursive
 `fs.watch` walks the tree itself and emits `error` when a directory vanishes

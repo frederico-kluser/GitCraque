@@ -10,8 +10,10 @@
  *   - refs legitimas (heads locais, remotes, tags) continuam decorando via %d.
  *
  * O mecanismo (ja implementado em server/src/git/log.mjs):
- *   - getLog monta `[...LOG_ARGS.slice(0,1), --exclude de do-archive, --exclude
- *     de stash, ...LOG_ARGS.slice(1)]` — os excludes ficam entre o subcomando
+ *   - a constante EXCLUDED_REF_PATTERNS carrega os 4 padroes —
+ *     refs/do-archive/*, refs/stash, refs/original/*, refs/rewritten/* — e o
+ *     getLog monta `[...LOG_ARGS.slice(0,1), --exclude de cada padrao da
+ *     constante, ...LOG_ARGS.slice(1)]` — os excludes ficam entre o subcomando
  *     `log` e o `--all` do LOG_ARGS congelado;
  *   - countCommits idem com `rev-list`.
  *
