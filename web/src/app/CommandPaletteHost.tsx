@@ -17,6 +17,13 @@
  * Foco ao fechar: o Dialog devolve o foco ao gatilho interno, que esta
  * `display:none` — o navegador cai para o `body`. Aceito: a abertura por ⌘K
  * ou pelo botao da toolbar devolve o foco ao input da paleta na proxima vez.
+ *
+ * Alvo de toque: o botao do gatilho e o unico do catalogo cujo `className` o
+ * wrapper nao alcanca (o vendor monta a classe inteira do `Dialog.Trigger`,
+ * sem pass-through). A declaracao do 44px mora aqui, no container, pela
+ * variante arbitraria `[&>div:first-child>button]:touch:min-h-tap` — a mesma
+ * mecanica que o `:hidden` usa — e a auditoria de toque honra essa declaracao
+ * (ver `web/src/__audit__/touch-targets.domtest.ts`).
  */
 import { CommandPalette, type CommandPaletteItem } from "@/components/motion-ui/command-palette";
 import { closePalette, selectPaletteOpen, useShellState } from "@/hooks";
@@ -28,7 +35,7 @@ export function CommandPaletteHost() {
   const open = useShellState(selectPaletteOpen);
 
   return (
-    <div className="[&>div:first-child]:hidden">
+    <div className="[&>div:first-child]:hidden [&>div:first-child>button]:touch:min-h-tap">
       <CommandPalette
         open={open}
         onOpenChange={closePalette}

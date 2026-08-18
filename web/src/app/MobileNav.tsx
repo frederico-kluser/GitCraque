@@ -91,7 +91,7 @@ export function MobileNav() {
               disabled={tab.disabled}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[11px] text-muted-foreground",
+                "flex min-w-0 flex-col items-center justify-center gap-1 px-1 text-[11px] text-muted-foreground touch:min-h-tap",
                 "transition-colors",
                 "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
                 "disabled:opacity-40",

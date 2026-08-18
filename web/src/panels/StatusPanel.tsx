@@ -406,6 +406,7 @@ function CommitBox({ stagedCount, conflicts }: { stagedCount: number; conflicts:
                 : "bg-primary text-primary-foreground"
           }
           pillClassName="rounded-md px-3 py-1.5 text-xs font-medium touch:min-h-tap touch:px-4"
+          className="touch:min-h-tap"
           announce={`${t("commit.button")}: ${state}`}
           aria-label={t("commit.button.label")}
         >

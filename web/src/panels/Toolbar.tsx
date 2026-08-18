@@ -127,6 +127,7 @@ function NetButton({
       feedback={state === "error" ? "shake" : state === "ok" ? "pop" : "none"}
       surfaceClassName={NET_SURFACE[state]}
       pillClassName="rounded-md px-2.5 py-1.5 text-xs font-medium"
+      className="touch:min-h-tap"
       announce={`${label}: ${state}`}
       aria-label={label}
     >

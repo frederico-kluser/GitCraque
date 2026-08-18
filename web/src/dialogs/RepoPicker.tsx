@@ -548,7 +548,7 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
          */}
         <div className="overflow-x-auto">
           <SmoothTabsList ariaLabel={t("picker.tabs.aria")}>
-            <SmoothTabsTab value="favoritos">
+            <SmoothTabsTab value="favoritos" className="touch:min-h-tap">
               <Star
                 className="mr-1.5 inline size-3.5"
                 fill={favoritos.entries.length ? "currentColor" : "none"}
@@ -556,19 +556,19 @@ export function RepoPicker({ variant = "dialog", onOpened, className }: RepoPick
               {t("picker.tab.favorites")}{" "}
               {favoritos.entries.length ? `(${favoritos.entries.length})` : ""}
             </SmoothTabsTab>
-            <SmoothTabsTab value="recentes">
+            <SmoothTabsTab value="recentes" className="touch:min-h-tap">
               <Clock className="mr-1.5 inline size-3.5" />
               {t("picker.tab.recents")} {recentes?.length ? `(${recentes.length})` : ""}
             </SmoothTabsTab>
-            <SmoothTabsTab value="buscar">
+            <SmoothTabsTab value="buscar" className="touch:min-h-tap">
               <Search className="mr-1.5 inline size-3.5" />
               {t("picker.tab.search")} {globais?.length ? `(${globais.length})` : ""}
             </SmoothTabsTab>
-            <SmoothTabsTab value="procurar">
+            <SmoothTabsTab value="procurar" className="touch:min-h-tap">
               <Radar className="mr-1.5 inline size-3.5" />
               {t("picker.tab.scan")} {encontrados?.length ? `(${encontrados.length})` : ""}
             </SmoothTabsTab>
-            <SmoothTabsTab value="navegar">
+            <SmoothTabsTab value="navegar" className="touch:min-h-tap">
               <FolderOpen className="mr-1.5 inline size-3.5" />
               {t("picker.tab.browse")}
             </SmoothTabsTab>

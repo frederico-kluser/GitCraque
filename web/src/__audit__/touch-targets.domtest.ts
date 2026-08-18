@@ -31,6 +31,20 @@
  *   3. elemento interno de SVG (path, circle...) dentro de um SVG que ja tem
  *      recipiente dimensionado para toque.
  *
+ * DECLARACAO NO CONTAINER — a excecao do `CommandPalette` do catalogo. O
+ * botao-gatilho dele e o unico cujo `className` o wrapper nao alcanca: o
+ * vendor monta a classe inteira do `Dialog.Trigger`, sem pass-through. O host
+ * (`app/CommandPaletteHost.tsx`) declara o alvo de toque NO CONTAINER, pela
+ * variante arbitraria de descendente `[&>div:first-child>button]:touch:min-h-tap`
+ * — a mesma mecanica que o `:hidden` da barra usa — e a barra fica em
+ * `display:none` (um dedo nunca chega ao botao). Um ancestral `div` cuja
+ * classe carrega um token `[...&...]:touch:` (variante arbitraria de
+ * DESCENDENTE — exige `&` dentro dos colchetes) conta como consideracao de
+ * toque do elemento: a declaracao existe, so que no wrapper, nao na classe do
+ * botao. So valem tokens nessa forma exata — um `touch:px-3` solto num div,
+ * e uma variante de si-mesmo como `[data-open]:touch:` (dimensiona a div, nao
+ * o botao), NAO isentam o botao dentro dele.
+ *
  * COBERTURA — o SSR renderiza o estado INITIAL dos stores (o
  * `getServerSnapshot` do `useSyncExternalStore`): fica de fora, documentado,
  * tudo que so existe com estado — toasts, ConfirmHost aberto, menu de
@@ -105,6 +119,24 @@ interface InteractiveElement {
   klass: string;
   exempt: boolean;
   touchClass: string | null;
+  /** um ancestral `div` declarou utilitario touch: via variante arbitraria de
+   *  descendente (`[...]:touch:`) — a excecao do CommandPalette, ver cabecalho */
+  ancestorTouchDeclared: boolean;
+}
+
+/** `[&>div:first-child>button]:touch:min-h-tap` — variante arbitraria que
+ *  declara um utilitario touch: para um descendente do proprio elemento.
+ *  So esta forma conta (tokens `touch:` soltos num div nao isentam o botao).
+ *  O `&` dentro dos colchetes e obrigatorio: a forma descendente sempre o
+ *  carrega (no SSR emitido, `&amp;`), e uma variante de si-mesmo como
+ *  `[data-open]:touch:` dimensiona a propria div, nao o botao dentro dela. */
+const DESCENDANT_TOUCH_TOKEN = /^\[[^\]]*&[^\]]*\]:touch:/;
+
+function declaresDescendantTouch(klass: string): boolean {
+  for (const token of klass.split(/\s+/)) {
+    if (DESCENDANT_TOUCH_TOKEN.test(token)) return true;
+  }
+  return false;
 }
 
 /**
@@ -113,15 +145,21 @@ interface InteractiveElement {
  * dnd-kit) e `[role="menuitem"]` (item de popup do Base UI).
  *
  * Nao monta arvore nenhuma: cada tag aberta e avaliada sozinha — o que basta,
- * porque a regra olha os atributos do proprio no.
+ * porque a regra olha os atributos do proprio no. A unica excecao e a
+ * DECLARACAO NO CONTAINER do cabecalho: a pilha de `div` abertos (com as
+ * classes) acompanha a varredura para reconhecer `[...]:touch:` num ancestral.
  */
 function interactiveElements(html: string): InteractiveElement[] {
   const out: InteractiveElement[] = [];
   const re = /<(\/?)([a-zA-Z][-a-zA-Z0-9:]*)((?:"[^"]*"|'[^']*'|[^"'>])*)>/g;
+  const divStack: string[] = [];
   let m: RegExpExecArray | null;
   while ((m = re.exec(html)) !== null) {
     const [, slash, tag, rawAttrs] = m;
-    if (slash) continue; // tag de fechamento
+    if (slash) {
+      if (tag === "div") divStack.pop();
+      continue; // tag de fechamento
+    }
     const attrs = parseAttrs(rawAttrs);
     const role = attrs["role"] ?? null;
     const roledesc = attrs["aria-roledescription"] ?? null;
@@ -129,16 +167,18 @@ function interactiveElements(html: string): InteractiveElement[] {
     const isButton = tag === "button";
     const isRoleButton = role === "button" && roledesc !== "draggable";
     const isMenuItem = role === "menuitem";
-    if (!isButton && !isRoleButton && !isMenuItem) continue;
-
-    out.push({
-      at: m.index,
-      tag,
-      role,
-      klass: attrs["class"] ?? "",
-      exempt: "data-tap-exempt" in attrs,
-      touchClass: firstTouchUtility(attrs["class"] ?? ""),
-    });
+    if (isButton || isRoleButton || isMenuItem) {
+      out.push({
+        at: m.index,
+        tag,
+        role,
+        klass: attrs["class"] ?? "",
+        exempt: "data-tap-exempt" in attrs,
+        touchClass: firstTouchUtility(attrs["class"] ?? ""),
+        ancestorTouchDeclared: divStack.some(declaresDescendantTouch),
+      });
+    }
+    if (tag === "div") divStack.push(attrs["class"] ?? "");
   }
   return out;
 }
@@ -150,7 +190,8 @@ function firstTouchUtility(klass: string): string | null {
   return null;
 }
 
-const ok = (el: InteractiveElement) => el.exempt || el.touchClass !== null;
+const ok = (el: InteractiveElement) =>
+  el.exempt || el.touchClass !== null || el.ancestorTouchDeclared;
 
 function describe(el: InteractiveElement): string {
   const role = el.role ? ` role="${el.role}"` : "";
@@ -354,6 +395,23 @@ test("a regra aceita qualquer utilitario touch:, nao so os de dimensao", () => {
 test("data-tap-exempt isenta qualquer elemento, mesmo sem classe", () => {
   const html = `<button data-tap-exempt>sair</button>`;
   assert.deepEqual(interactiveElements(html).filter((el) => !ok(el)), []);
+});
+
+test("um div ancestral que declara touch: por variante arbitraria isenta o botao", () => {
+  const html = [
+    `<div class="[&amp;&gt;div:first-child&gt;button]:touch:min-h-tap">`,
+    `<div class="barra"><button class="gatilho">x</button></div>`,
+    `</div>`,
+    `<div class="touch:px-3"><button class="solto">y</button></div>`,
+    `<div class="[data-open]:touch:px-3"><button class="si-mesmo">w</button></div>`,
+    `<button class="orfao">z</button>`,
+  ].join("");
+  const sem = interactiveElements(html).filter((el) => !ok(el));
+  assert.deepEqual(
+    sem.map((el) => el.klass),
+    ["solto", "si-mesmo", "orfao"],
+    "so o gatilho do container declarado passa — touch: solto no div, variante de si-mesmo ([data-open]:touch:) e orfao violam",
+  );
 });
 
 test("no do dnd-kit ([aria-roledescription=draggable]) nao conta como role=button", () => {
