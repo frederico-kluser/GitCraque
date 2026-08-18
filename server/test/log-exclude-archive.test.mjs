@@ -1,6 +1,8 @@
 /**
- * Regressao: commits alcancaveis APENAS por refs/do-archive/* (branches
- * arquivadas pelo deep-orchestrator) nao podem aparecer no log nem no total.
+ * Regressao: commits alcancaveis APENAS por refs especiais nao podem aparecer
+ * no log nem no total. Dois casos: refs/do-archive/* (branches arquivadas pelo
+ * deep-orchestrator) e refs/stash (o cache de trabalho — "WIP on ..." /
+ * "index on ...", commits soltos e abandonados no grafo).
  *
  * O bug: getLog montava `[...LOG_ARGS, "--exclude=refs/do-archive/*"]`, com o
  * --exclude DEPOIS do --all do LOG_ARGS. O git so aplica --exclude aos
@@ -9,7 +11,9 @@
  * mostra, e o total (countCommits, que ja usava a ordem certa) divergia das
  * linhas — paginacao inconsistente. Se o --exclude vier antes do subcomando,
  * o git rejeita com "unknown option". A ordem correta e: subcomando, exclude,
- * --all (dentro do LOG_ARGS congelado).
+ * --all (dentro do LOG_ARGS congelado). Como o `--all` considera TODAS as
+ * refs sob refs/ (stash inclusive), cada namespace especial precisa do seu
+ * proprio --exclude, sempre nessa ordem.
  */
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -75,6 +79,61 @@ test("refs/do-archive/* somem do log e do total; refs legitimas continuam decora
     assert.ok(remota, "branch remota continua decorada no merge");
     assert.equal(remota.kind, "remoteBranch");
     assert.equal(remota.remote, "origin");
+    assert.ok(
+      merge.refs.some((r) => r.kind === "localBranch" && r.name === "main" && r.isHead),
+      "branch local HEAD continua decorada",
+    );
+
+    const pipe = payload.commits.find((c) => c.hash === fixture.hashes.pipe);
+    const nomesPipe = pipe.refs.map((r) => r.name);
+    assert.ok(nomesPipe.includes("v1.0"), "tag anotada continua decorada");
+    assert.ok(nomesPipe.includes("leve"), "tag leve continua decorada");
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("refs/stash (commit orfao do cache de trabalho) some do log e do total", async () => {
+  const fixture = makeFixtureRepo();
+  try {
+    // Commit "WIP" alcancavel APENAS por refs/stash: cria numa branch
+    // temporaria, anota o hash, apaga a branch, move a ref de stash — o mesmo
+    // formato do case de refs/do-archive/*, com a ref especial do git.
+    git(fixture.root, "checkout", "-q", "-b", "temporaria-stash");
+    const stashFile = path.join(fixture.root, "stash.txt");
+    fs.writeFileSync(stashFile, "trabalho em progresso\n");
+    git(fixture.root, "add", "-A");
+    git(fixture.root, "commit", "-q", "-m", "WIP on main");
+    const stashHash = git(fixture.root, "rev-parse", "HEAD");
+    git(fixture.root, "checkout", "-q", "main");
+    git(fixture.root, "branch", "-q", "-D", "temporaria-stash");
+    git(fixture.root, "update-ref", "refs/stash", stashHash);
+
+    const payload = await getLog({ cwd: fixture.root });
+
+    // 1. O commit do stash nao pode aparecer no grafo.
+    assert.ok(
+      payload.commits.every((c) => c.hash !== stashHash),
+      "commit alcancavel so por refs/stash nao pode aparecer no log",
+    );
+
+    // 2. O total paga da mesma selecao que as linhas: log e countCommits.
+    assert.equal(
+      payload.total,
+      payload.commits.length,
+      "total do log tem de bater com as linhas (paginacao consistente)",
+    );
+    assert.equal(await countCommits(fixture.root), payload.commits.length);
+
+    // 3. O teste exercita o exclude de verdade: sem ele, o stash entraria.
+    const comExcluido = Number(
+      git(fixture.root, "rev-list", "--exclude=refs/stash", "--all", "--count"),
+    );
+    const semExcluir = Number(git(fixture.root, "rev-list", "--all", "--count"));
+    assert.equal(semExcluir, comExcluido + 1, "sem o exclude o stash seria alcancavel");
+
+    // 4. Refs legitimas continuam decorando: branch local HEAD e tags.
+    const merge = payload.commits.find((c) => c.hash === fixture.hashes.merge);
     assert.ok(
       merge.refs.some((r) => r.kind === "localBranch" && r.name === "main" && r.isHead),
       "branch local HEAD continua decorada",

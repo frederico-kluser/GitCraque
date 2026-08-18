@@ -167,14 +167,21 @@ function isEmptyRepoError(stderr) {
  */
 export async function getLog(opts = {}) {
   const cwd = opts.cwd || process.cwd();
-  // Branches arquivados pelo deep-orchestrator ficam em refs/do-archive/* e nao
-  // devem aparecer na interface. O --exclude precisa ficar logo apos o
-  // subcomando e ANTES do --all que esta dentro do LOG_ARGS (congelado): o git
-  // so aplica --exclude aos seletores de ref que vem DEPOIS dele ("the next
-  // --all, --branches, ..."). Antes do subcomando ele nao e aceito ("unknown
-  // option"), e depois de --all ele nao exclui nada — o grafo mostrava commits
-  // "wip" fantasmas e o total (countCommits) divergia das linhas.
-  const args = [...LOG_ARGS.slice(0, 1), "--exclude=refs/do-archive/*", ...LOG_ARGS.slice(1)];
+  // Refs especiais nao entram no grafo: refs/do-archive/* (branches arquivadas
+  // pelo deep-orchestrator) e refs/stash (o cache de trabalho — os commits
+  // "WIP on ..." / "index on ..." apareciam soltos e abandonados, alcancaveis
+  // so por ele). O --exclude precisa ficar logo apos o subcomando e ANTES do
+  // --all que esta dentro do LOG_ARGS (congelado): o git so aplica --exclude
+  // aos seletores de ref que vem DEPOIS dele ("the next --all, --branches,
+  // ..."). Antes do subcomando ele nao e aceito ("unknown option"), e depois de
+  // --all ele nao exclui nada — o grafo mostrava commits "wip" fantasmas e o
+  // total (countCommits) divergia das linhas.
+  const args = [
+    ...LOG_ARGS.slice(0, 1),
+    "--exclude=refs/do-archive/*",
+    "--exclude=refs/stash",
+    ...LOG_ARGS.slice(1),
+  ];
 
   // Filtros de busca (aditivos: nao alteram LOG_ARGS)
   if (opts.q) args.push(`--grep=${opts.q}`);
@@ -228,9 +235,12 @@ export async function getLog(opts = {}) {
 
 /** `git rev-list --all --count` — o total para a virtualizacao paginar. */
 export async function countCommits(cwd = process.cwd()) {
-  // --exclude deve vir ANTES de --all: refs/do-archive/* sao arquivados do
-  // deep-orchestrator e nao entram no total.
-  const line = await readGitLine(["rev-list", "--exclude=refs/do-archive/*", "--all", "--count"], { cwd });
+  // --exclude deve vir ANTES de --all: refs/do-archive/* (arquivadas do
+  // deep-orchestrator) e refs/stash (cache de trabalho) nao entram no total.
+  const line = await readGitLine(
+    ["rev-list", "--exclude=refs/do-archive/*", "--exclude=refs/stash", "--all", "--count"],
+    { cwd },
+  );
   const n = Number.parseInt(line ?? "", 10);
   return Number.isFinite(n) ? n : 0;
 }
