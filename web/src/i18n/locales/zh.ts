@@ -398,6 +398,8 @@ export const zh: Messages = {
     "在提交详情或更改面板中选择一个文件。它会以 diff、渲染（markdown 时）和原文三种方式显示在这里。",
   "viewer.error.patch": "无法读取该 patch",
   "viewer.error.file": "无法读取该文件",
+  "viewer.prevFile": "上一个文件",
+  "viewer.nextFile": "下一个文件",
   "viewer.summary.lines_one": "{count} 行 · {size}",
   "viewer.summary.lines_other": "{count} 行 · {size}",
 
@@ -408,6 +410,8 @@ export const zh: Messages = {
   "diff.emptyPatch.title": "空 patch",
   "diff.emptyPatch.body": "没有任何片段发生变化 —— git 记录了变更但未改动内容（模式、重命名）。",
   "diff.renamedFrom": "重命名自 {path}",
+  "diff.hunk.collapse": "折叠更改块",
+  "diff.hunk.expand": "展开更改块",
 
   "raw.binary.title": "二进制文件",
   "raw.binary.body": "{size} —— 没有可作为文本渲染的内容。",

@@ -115,7 +115,7 @@ export const api = {
   log: (opts: { limit?: number; skip?: number; q?: string; author?: string; path?: string; before?: string; after?: string } = {}) =>
     get<LogPayload>(`/log${qs({ limit: opts.limit, skip: opts.skip, q: opts.q, author: opts.author, path: opts.path, before: opts.before, after: opts.after })}`),
   commit: (hash: string) => get<CommitDetail>(`/commit/${encodeURIComponent(hash)}`),
-  diff: (opts: { hash?: string; path?: string; staged?: boolean; against?: string }) =>
+  diff: (opts: { hash?: string; path?: string; staged?: boolean; against?: string; wordDiff?: boolean }) =>
     get<DiffPayload[]>(`/diff${qs(opts as Record<string, string | boolean | undefined>)}`),
 
   /* ---- refs ---- */

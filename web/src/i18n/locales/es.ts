@@ -405,6 +405,8 @@ export const es: Messages = {
     "Elige un archivo en el detalle del commit o en el panel de cambios. Aparecerá aquí en diff, formateado (cuando sea markdown) y crudo.",
   "viewer.error.patch": "No se pudo leer el patch",
   "viewer.error.file": "No se pudo leer el archivo",
+  "viewer.prevFile": "Archivo anterior",
+  "viewer.nextFile": "Siguiente archivo",
   "viewer.summary.lines_one": "{count} línea · {size}",
   "viewer.summary.lines_other": "{count} líneas · {size}",
 
@@ -417,6 +419,8 @@ export const es: Messages = {
   "diff.emptyPatch.body":
     "Ningún fragmento cambió — git registró el cambio sin tocar el contenido (modo, renombrado).",
   "diff.renamedFrom": "renombrado desde {path}",
+  "diff.hunk.collapse": "Contraer bloque de cambios",
+  "diff.hunk.expand": "Expandir bloque de cambios",
 
   "raw.binary.title": "Archivo binario",
   "raw.binary.body": "{size} — nada que renderizar como texto.",

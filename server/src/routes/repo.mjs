@@ -38,6 +38,7 @@ export function registerRepoRoutes(router) {
       path: ctx.query.path,
       staged: boolParam(ctx.query.staged),
       against: ctx.query.against,
+      wordDiff: boolParam(ctx.query.wordDiff),
     }),
   );
 

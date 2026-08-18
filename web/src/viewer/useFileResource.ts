@@ -99,10 +99,22 @@ const fileKey = (file: OpenFile | null) =>
 /**
  * O patch do arquivo — `api.diff` devolve UMA entrada por arquivo, entao a
  * lista vem filtrada pelo caminho pedido.
+ *
+ * `wordDiff` liga o highlight intra-linha no backend (comando separado com
+ * `--word-diff=porcelain`). Parametro aditivo, default false: quem nao pede
+ * recebe o patch classico, byte a byte.
  */
-export function useDiffResource(file: OpenFile | null, enabled: boolean): Resource<DiffPayload[]> {
+export function useDiffResource(
+  file: OpenFile | null,
+  enabled: boolean,
+  wordDiff = false,
+): Resource<DiffPayload[]> {
   return useResource(fileKey(file), enabled, () =>
-    api.diff(file?.hash ? { hash: file.hash, path: file.path } : { path: file?.path }),
+    api.diff(
+      file?.hash
+        ? { hash: file.hash, path: file.path, ...(wordDiff ? { wordDiff: true } : {}) }
+        : { path: file?.path, ...(wordDiff ? { wordDiff: true } : {}) },
+    ),
   );
 }
 

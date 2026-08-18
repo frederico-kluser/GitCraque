@@ -102,6 +102,18 @@ subcommand and `--all` (`server/src/git/log.mjs:173-177`). A wrong order ships
 ghost commits silently: `git log --all --exclude=...` still lists them (proven
 on git 2.43.0; `server/test/log-exclude-archive.test.mjs` pins the ordering).
 
+**Word-diff trap.** `git diff --word-diff=porcelain` does NOT emit
+`[-...-]`/`{+...+}` — that is `--word-diff=plain`. Porcelain emits marker
+lines (` ` / `+` / `-`) plus a `~` line after each piece that ended a source
+line, and its context chunks come from the NEW-side buffer, so the removed
+side's inter-word gaps are unrecoverable (an insertion doubles a space in any
+reconstruction of the old line). Word-diff therefore runs TWO commands per
+file and merges (`mergeWordDiff` / `parseWordDiffPorcelain`,
+`server/src/git/status.mjs:285,506`): the plain patch provides structure,
+numbers and content, the porcelain only the word pieces, assigned by absolute
+line position per hunk. Also: `--word-diff` must sit AFTER the subcommand in
+argv — before `diff`/`show` it is an unknown GLOBAL option and dies.
+
 **A watcher without an `error` listener kills the server.** The Linux recursive
 `fs.watch` walks the tree itself and emits `error` when a directory vanishes
 between the event and the scandir — an ENOENT on `refs/remotes/<remote>` right

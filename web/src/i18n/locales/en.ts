@@ -405,6 +405,8 @@ export const en: Messages = {
     "Pick a file in the commit detail or in the changes panel. It shows up here as diff, rendered (when markdown) and raw.",
   "viewer.error.patch": "Could not read the patch",
   "viewer.error.file": "Could not read the file",
+  "viewer.prevFile": "Previous file",
+  "viewer.nextFile": "Next file",
   "viewer.summary.lines_one": "{count} line · {size}",
   "viewer.summary.lines_other": "{count} lines · {size}",
 
@@ -416,6 +418,8 @@ export const en: Messages = {
   "diff.emptyPatch.body":
     "No hunk changed — git recorded the change without touching content (mode, rename).",
   "diff.renamedFrom": "renamed from {path}",
+  "diff.hunk.collapse": "Collapse hunk",
+  "diff.hunk.expand": "Expand hunk",
 
   "raw.binary.title": "Binary file",
   "raw.binary.body": "{size} — nothing to render as text.",

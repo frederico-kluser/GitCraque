@@ -416,6 +416,8 @@ export const pt = {
     "Escolha um arquivo no detalhe do commit ou no painel de alterações. Ele aparece aqui em diff, formatado (quando for markdown) e cru.",
   "viewer.error.patch": "Não foi possível ler o patch",
   "viewer.error.file": "Não foi possível ler o arquivo",
+  "viewer.prevFile": "Arquivo anterior",
+  "viewer.nextFile": "Próximo arquivo",
   "viewer.summary.lines_one": "{count} linha · {size}",
   "viewer.summary.lines_other": "{count} linhas · {size}",
 
@@ -427,6 +429,8 @@ export const pt = {
   "diff.emptyPatch.body":
     "Nenhum trecho alterado — o git registrou a mudança sem alterar conteúdo (modo, renomeação).",
   "diff.renamedFrom": "renomeado de {path}",
+  "diff.hunk.collapse": "Recolher bloco de alterações",
+  "diff.hunk.expand": "Expandir bloco de alterações",
 
   "raw.binary.title": "Arquivo binário",
   "raw.binary.body": "{size} — nada a renderizar como texto.",

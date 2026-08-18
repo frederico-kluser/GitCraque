@@ -292,6 +292,12 @@ export interface DiffLine {
   content: string;
   oldNumber: number | null;
   newNumber: number | null;
+  /**
+   * Segmentos de palavra do highlight intra-linha, na ordem da linha.
+   * So existe quando o endpoint foi pedido com `wordDiff: true` e a linha
+   * tem alguma adicao/remocao — contexto puro nao viaja.
+   */
+  words?: Array<{ kind: "add" | "del" | "context"; text: string }>;
 }
 
 export interface DiffPayload {

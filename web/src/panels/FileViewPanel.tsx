@@ -21,11 +21,11 @@
  * botao sobre o `FOCUS_RING` dos `parts` do proprio shell; a troca de tela em si
  * (crossfade) fica no `SidePanel`, que e quem conhece as duas.
  */
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react";
 import { FileViewer } from "@/viewer";
-import { closeFile, useAppState } from "@/state/store";
+import { closeFile, openFile, useAppState } from "@/state/store";
 import type { OpenFile } from "@/state/store";
-import { openChanges, openContextMenu } from "@/hooks";
+import { openChanges, openContextMenu, useCommitDetail } from "@/hooks";
 import { viewerMenu } from "@/app/menus";
 import { t } from "@/i18n";
 import { cn } from "@/lib/utils";
@@ -53,12 +53,48 @@ export function FileViewPanel({ className, file }: FileViewPanelProps) {
 
   const backLabel = file.fromWorkingTree ? t("view.back.changes") : t("view.back.detail");
 
+  // Navegacao entre os arquivos do commit: o detalhe tem cache por hash, entao
+  // quem veio da lista nao paga requisicao nova. Arquivo da arvore de trabalho
+  // nao tem lista de onde navegar — os botoes nao existem para ele.
+  const detail = useCommitDetail(file.hash);
+  const files = file.hash ? (detail.data?.files ?? []) : [];
+  const index = file.hash ? files.findIndex((f) => f.path === file.path) : -1;
+  const prev = index > 0 ? (files[index - 1] ?? null) : null;
+  const next = index >= 0 && index < files.length - 1 ? (files[index + 1] ?? null) : null;
+
+  const navButton = (
+    direction: "prev" | "next",
+    target: { path: string } | null,
+  ) => {
+    const label = direction === "prev" ? t("viewer.prevFile") : t("viewer.nextFile");
+    const Icon = direction === "prev" ? ChevronLeft : ChevronRight;
+    return (
+      <button
+        type="button"
+        disabled={!target}
+        aria-label={label}
+        title={target ? target.path : label}
+        onClick={() => target && openFile(target.path, file.hash, false)}
+        className={cn(
+          "flex size-6 shrink-0 items-center justify-center rounded-md",
+          "text-muted-foreground transition-colors hover:bg-accent hover:text-foreground",
+          "duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+          "disabled:pointer-events-none disabled:opacity-35",
+          "touch:size-tap",
+          FOCUS_RING,
+        )}
+      >
+        <Icon className="size-3.5" />
+      </button>
+    );
+  };
+
   return (
     <section className={cn("flex flex-col", className)} aria-label={t("view.label")}>
       {/* So a navegacao. Caminho, origem, copiar e fechar sao do `FileViewer`
           logo abaixo — repetir os quatro aqui gastava duas linhas da coluna
           dizendo o que a linha seguinte ja dizia. */}
-      <header className="flex shrink-0 items-center border-b border-border bg-surface-rail px-2 py-1">
+      <header className="flex shrink-0 items-center gap-1 border-b border-border bg-surface-rail px-2 py-1">
         <button
           type="button"
           onClick={back}
@@ -74,6 +110,13 @@ export function FileViewPanel({ className, file }: FileViewPanelProps) {
           <ArrowLeft className="size-3.5" />
           {backLabel}
         </button>
+
+        {file.hash ? (
+          <div className="flex items-center gap-0.5">
+            {navButton("prev", prev)}
+            {navButton("next", next)}
+          </div>
+        ) : null}
       </header>
 
       <FileViewer

@@ -10,7 +10,7 @@
  * Movimento: `useMotionUITransition("ui")` na troca de modo, so `opacity` e
  * `transform`, com a distancia saindo de `theme.travel` — nenhum numero na mao.
  */
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { CopyButton } from "@/components/motion-ui/copy-button";
 import { SegmentedToggle, SegmentedToggleOption } from "@/components/motion-ui/segmented-toggle";
@@ -173,7 +173,22 @@ export function FileViewer({ file, onClose, onMenu, className }: FileViewerProps
   }, [modes, mode]);
   const activeMode: ViewerMode = modes.includes(mode) ? mode : "diff";
 
-  const diff = useDiffResource(file, activeMode === "diff");
+  // Huns recolhidos. Mora AQUI (nao no DiffView) porque este componente
+  // sobrevive a troca de modo e de carga, que remontam o DiffView. Reset ao
+  // trocar de arquivo.
+  const [collapsedHunks, setCollapsedHunks] = useState<ReadonlySet<string>>(() => new Set());
+  useEffect(() => setCollapsedHunks(new Set()), [file]);
+  const toggleHunk = useCallback((key: string) => {
+    setCollapsedHunks((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
+
+  // Word-diff ligado: o viewer pede o patch com highlight intra-linha.
+  const diff = useDiffResource(file, activeMode === "diff", true);
   const content = useFileContentResource(file, activeMode !== "diff");
 
   const patch = useMemo(
@@ -255,7 +270,12 @@ export function FileViewer({ file, onClose, onMenu, className }: FileViewerProps
                 </Notice>
               </div>
             ) : activeMode === "diff" ? (
-              <DiffView patch={patch} path={file.path} />
+              <DiffView
+                patch={patch}
+                path={file.path}
+                collapsed={collapsedHunks}
+                onToggleHunk={toggleHunk}
+              />
             ) : activeMode === "markdown" ? (
               <MarkdownView
                 source={content.data?.content ?? ""}
