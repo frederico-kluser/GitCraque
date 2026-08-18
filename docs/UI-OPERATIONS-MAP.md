@@ -1,8 +1,10 @@
 # UI-OPERATIONS-MAP — mapa de fluxos de UI das operacoes de git
 
-**Contrato de testes da onda 2** — fonte unica de seletores e gestos para os
-specs Playwright (mouse e touch) das operacoes **pull, push, merge, rebase,
-squash/rebase interativo e cherry-pick**, em **MOUSE** e **TOUCH**.
+**Contrato de testes das ondas 2-3** — fonte unica de seletores e gestos para
+os specs Playwright (mouse e touch) das operacoes **pull, push, merge, rebase,
+squash/rebase interativo e cherry-pick**, em **MOUSE** e **TOUCH**, mais o
+**visualizador de arquivo** (navegacao prev/next, colapso de hunk, word-diff —
+onda 2, secao 2.8).
 
 Leitura obrigatoria junto com: `docs/UI.md` (regras de UI), `docs/ARCHITECTURE.md`
 (arquitetura). Todos os caminhos sao relativos a raiz do repo. **Nao ha
@@ -181,6 +183,66 @@ toast de sucesso tem titulo = `successMessage`; toast de erro traz o argv
 copiavel (`toast.copyCommand`, 45-61); botao de fechar com `aria-label`
 `common.dismiss` (63-71). **Push bem-sucedido dispara confete**: o efeito
 procura toast `tone === "success" && argv[0] === "push"` (84-89).
+
+### 2.8 Visualizador de arquivo (diff do commit)
+
+Elementos novos da onda 2 (squash `3a203d19`), cobertos pelo spec
+`web/e2e/specs/mouse/viewer.spec.ts` (4 checks, projeto mouse).
+
+**Abrir um arquivo de commit**: clique na linha do commit no grafo (seleciona)
+→ a lista de arquivos do detalhe (`CommitFiles`, `DetailPanel.tsx:405-489`)
+tem um `<button>` por arquivo, com o caminho como texto visivel
+(`DetailPanel.tsx:427-482`); clicar chama `openFile(path, hash)`
+(`DetailPanel.tsx:432`) e o `SidePanel` troca a coluna pela `FileViewPanel`
+(`SidePanel.tsx:73-76`). Linha de arquivo da arvore de trabalho:
+`WorkingFileRow` com `openFile(path, null, true)` (`DetailPanel.tsx:191`).
+
+**Barra de navegacao prev/next** (`web/src/panels/FileViewPanel.tsx:65-90,
+114-119`): dois `<button>` com `aria-label` = `viewer.prevFile` ("Arquivo
+anterior", `pt.ts:419`) e `viewer.nextFile` ("Próximo arquivo", `pt.ts:420`),
+renderizados SO quando `file.hash` existe (arquivo de commit — arquivo da
+arvore de trabalho nao tem lista de onde navegar, 114-119). `disabled={!target}`
+nas pontas (62-63, 82). Clique abre o vizinho `openFile(target.path,
+file.hash, false)` (77).
+
+**Titulo da tela**: o section do visualizador carrega
+`aria-label={t("viewer.label")}` = "Visualizador de {path}" (`FileViewer.tsx:224`;
+`pt.ts:404`); o cabecalho mostra o caminho como texto visivel
+(`FileViewer.tsx:75-78`). O voltar da barra do painel usa `view.back.detail`
+("Detalhe") / `view.back.changes` ("Alterações") (`FileViewPanel.tsx:54`;
+`pt.ts:283-284`). Navegacao prev/next NAO troca a tela (a chave do crossfade
+do `SidePanel` continua "view", `SidePanel.tsx:63-74`) — so o conteudo muda.
+
+**Colapso de hunk** (`web/src/viewer/DiffView.tsx`): o header `@@ -a,b +c,d @@`
+e um `<button>` com `aria-expanded={!collapsed}` e `aria-label` =
+`diff.hunk.collapse` ("Recolher bloco de alterações", `pt.ts:432`) quando
+aberto, `diff.hunk.expand` ("Expandir bloco de alterações", `pt.ts:433`)
+quando recolhido (130-145). Colapsado, as linhas viram UMA linha de
+reticencias `…` (div com `aria-hidden`, 146-157). O estado mora no `FileViewer`
+(Set de chaves `oldStart:newStart`, `DiffView.tsx:100`), resetado na troca de
+arquivo (`FileViewer.tsx:179-188`).
+
+**Word-diff intra-linha**: o viewer SEMPRE pede o patch com `wordDiff: true`
+(o call-site e `FileViewer.tsx:191`; a assinatura com o parametro e
+`useFileResource.ts:107-119`); o backend so ativa o highlight quando ha
+`path` (`server/src/git/status.mjs:655-656`) — comando separado
+`--word-diff=porcelain` casado com o classico (`status.mjs:685-691`). Linha com
+`line.words` renderiza UM `<span>` por segmento com `WORD_TONE`: palavra
+adicionada `bg-diff-add-fg text-diff-add-bg`, removida
+`bg-diff-del-fg text-diff-del-bg` (`DiffView.tsx:67-71,104-115`) — fundo forte
+sobre o fundo fraco da linha (`LINE_TONE`, 58-63).
+
+Seletores Playwright:
+
+```
+getByRole("button", { name: "Arquivo anterior" })          // prev (FileViewPanel)
+getByRole("button", { name: "Próximo arquivo" })           // next
+getByRole("button", { name: "Recolher bloco de alterações" })  // header de hunk aberto
+getByRole("button", { name: "Expandir bloco de alterações" })  // header de hunk recolhido
+getByText("…", { exact: true })                            // reticencias do colapso
+[aria-label="Visualizador de {path}"]                      // section do visualizador
+getByRole("button", { name: "<caminho do arquivo>" })      // linha da lista do commit
+```
 
 ---
 
@@ -524,7 +586,7 @@ Duas portas, ambas confirmam antes de executar:
 
 - **Sem `data-testid`**: `grep -rn "data-testid" web/src` → zero ocorrencias.
 - **Todas as chaves i18n citadas existem em `web/src/i18n/locales/pt.ts`**:
-  grep individual de ~110 chaves (secao 6 e corpo do doc) — todas com a linha
+  grep individual de ~115 chaves (secao 6 e corpo do doc) — todas com a linha
   exata citada; as mais criticas re-verificadas por grep antes da publicacao
   (ex.: `action.pull` :489, `action.push.title` :496, `action.merge.confirm`
   :1271, `action.rebase.confirm` :1282, `action.cherryPick.confirm` :1298,
@@ -534,17 +596,32 @@ Duas portas, ambas confirmam antes de executar:
   `intent.cherryPick.label` :1138, `dialog.intent.holdRebase` :716,
   `common.holdTo` :40, `exec.*.done` :1067-1069, `conflict.*` :805-853,
   `toolbar.pending.*` :170-176, `dnd.drop.missed.title` :1104,
-  `graph.hint.horizontalScroll` :1419, `selection.touch.*` :1466-1469).
+  `graph.hint.horizontalScroll` :1419, `selection.touch.*` :1466-1469,
+  e o bloco do visualizador: `viewer.label` :404, `viewer.prevFile` :419,
+  `viewer.nextFile` :420, `diff.hunk.collapse` :432, `diff.hunk.expand` :433,
+  `view.back.detail`/`view.back.changes` :283-284).
 - **Todos os arquivo:linha citados existem** (arquivos lidos integralmente na
   producao deste mapa): `web/src/panels/Toolbar.tsx` (936 linhas),
   `web/src/app/{actions.ts,menus.ts,ConfirmHost.tsx,ContextMenuHost.tsx,Toasts.tsx,commands.ts,App.tsx}`,
-  `web/src/panels/{parts.tsx,RailPanels.tsx}`, `web/src/dnd/{intents.ts,sensors.ts,ids.ts,bindings.ts,GitDndProvider.tsx}`,
+  `web/src/panels/{parts.tsx,RailPanels.tsx,FileViewPanel.tsx,DetailPanel.tsx,SidePanel.tsx}`,
+  `web/src/dnd/{intents.ts,sensors.ts,ids.ts,bindings.ts,GitDndProvider.tsx}`,
   `web/src/dialogs/{IntentDialog.tsx,DialogHost.tsx,executors.ts,parts.tsx,PushDialog.tsx,ConflictDialog.tsx,requests.ts,SquashDialog.tsx,InteractiveRebaseDialog.tsx}`,
   `web/src/hooks/{useLongPress.ts,useShellStore.ts,useViewport.ts,useLayoutMode.ts}`,
   `web/src/graph/{CommitRow.tsx,RefChip.tsx,GraphView.tsx,shell.ts}`,
-  `web/src/state/store.ts`, `web/src/i18n/locales/pt.ts`,
+  `web/src/viewer/{DiffView.tsx,FileViewer.tsx,useFileResource.ts}`,
+  `server/src/git/{status.mjs,log.mjs}`, `web/src/state/store.ts`,
+  `web/src/i18n/locales/pt.ts`,
   `web/src/components/motion-ui/hold-to-confirm/index.tsx`, `web/src/app/PaneSwipe.tsx`,
   `web/src/app/MobileNav.tsx`, `web/src/lib/api.ts`.
+- **Spec novo da campanha mouse (onda 3)**: `web/e2e/specs/mouse/viewer.spec.ts`
+  — 4 checks verdes no projeto mouse da campanha `test:e2e:ui`: (1) prev/next
+  trocam o arquivo aberto do commit, (2) pontas desabilitadas, (3) colapso de
+  hunk com aria-expanded + reticencias, (4) segmentos word-diff com as classes
+  de destaque. Commit do spec criado via git CLI (convencao da campanha) porque
+  nenhum commit do baseline tem 2+ arquivos (o merge sai vazio de
+  `getCommitFiles`, que usa `git show --name-status` sem `-m`,
+  `server/src/git/log.mjs:361-364`). `npm run test:e2e` 39/39, `typecheck`
+  verde, rule checker 9/9.
 - **Portas nao alcancaveis comprovadas por grep**: `openDialog({kind:"push"})`,
   `openDialog({kind:"squash"})` e `openDialog({kind:"interactive-rebase"})` —
   nenhum call-site no codigo (os unicos `openDialog` sao `repo-picker`,
