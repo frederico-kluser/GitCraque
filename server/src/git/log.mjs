@@ -153,6 +153,34 @@ function isEmptyRepoError(stderr) {
 }
 
 /**
+ * Refs especiais que nao entram na selecao do grafo ("se nao tem branch, nao
+ * deve aparecer"). O `--all` do LOG_ARGS considera TODAS as refs sob `refs/`:
+ * alem de branches, remotes e tags, vazam refs de ferramenta —
+ *
+ *   - refs/do-archive/*: branches arquivadas pelo deep-orchestrator;
+ *   - refs/stash: o cache de trabalho — commits "WIP on ..." / "index on ..."
+ *     alcancaveis so por ele, soltos e abandonados no grafo;
+ *   - refs/original/*: backup dos originais deixado por filter-branch;
+ *   - refs/rewritten/*: labels transitorios do rebase interativo (morrem no
+ *     fim do rebase; a exclusao e da selecao do log, nao do git em si — o
+ *     rebase nao depende dessas refs no log).
+ *
+ * Regra de ouro da doc do git: o `--exclude` so afeta o seletor de refs que
+ * vem DEPOIS dele ("the next --all, --branches, ..."). Antes do subcomando o
+ * git rejeita ("unknown option"); depois do --all nao exclui nada — o grafo
+ * mostrava commits "wip" fantasmas e o total (countCommits) divergia das
+ * linhas. Por isso a ordem montada e sempre: subcomando, excludes, --all (o
+ * --all esta dentro do LOG_ARGS congelado; os excludes sao acrescimo fora
+ * dele). Cada namespace especial precisa do seu proprio padrao.
+ */
+const EXCLUDED_REF_PATTERNS = [
+  "refs/do-archive/*",
+  "refs/stash",
+  "refs/original/*",
+  "refs/rewritten/*",
+];
+
+/**
  * GET /api/log
  *
  * Filtros de busca (aditivos — LOG_ARGS nunca muda):
@@ -167,19 +195,9 @@ function isEmptyRepoError(stderr) {
  */
 export async function getLog(opts = {}) {
   const cwd = opts.cwd || process.cwd();
-  // Refs especiais nao entram no grafo: refs/do-archive/* (branches arquivadas
-  // pelo deep-orchestrator) e refs/stash (o cache de trabalho — os commits
-  // "WIP on ..." / "index on ..." apareciam soltos e abandonados, alcancaveis
-  // so por ele). O --exclude precisa ficar logo apos o subcomando e ANTES do
-  // --all que esta dentro do LOG_ARGS (congelado): o git so aplica --exclude
-  // aos seletores de ref que vem DEPOIS dele ("the next --all, --branches,
-  // ..."). Antes do subcomando ele nao e aceito ("unknown option"), e depois de
-  // --all ele nao exclui nada — o grafo mostrava commits "wip" fantasmas e o
-  // total (countCommits) divergia das linhas.
   const args = [
     ...LOG_ARGS.slice(0, 1),
-    "--exclude=refs/do-archive/*",
-    "--exclude=refs/stash",
+    ...EXCLUDED_REF_PATTERNS.map((p) => `--exclude=${p}`),
     ...LOG_ARGS.slice(1),
   ];
 
@@ -235,10 +253,11 @@ export async function getLog(opts = {}) {
 
 /** `git rev-list --all --count` — o total para a virtualizacao paginar. */
 export async function countCommits(cwd = process.cwd()) {
-  // --exclude deve vir ANTES de --all: refs/do-archive/* (arquivadas do
-  // deep-orchestrator) e refs/stash (cache de trabalho) nao entram no total.
+  // Mesma selecao do getLog (EXCLUDED_REF_PATTERNS, subcomando -> excludes ->
+  // --all): total e linhas tem de pagar do mesmo conjunto de refs — a simetria
+  // que o teste log-exclude-archive.test.mjs garante.
   const line = await readGitLine(
-    ["rev-list", "--exclude=refs/do-archive/*", "--exclude=refs/stash", "--all", "--count"],
+    ["rev-list", ...EXCLUDED_REF_PATTERNS.map((p) => `--exclude=${p}`), "--all", "--count"],
     { cwd },
   );
   const n = Number.parseInt(line ?? "", 10);

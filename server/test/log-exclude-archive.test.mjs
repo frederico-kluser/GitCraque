@@ -1,8 +1,10 @@
 /**
  * Regressao: commits alcancaveis APENAS por refs especiais nao podem aparecer
- * no log nem no total. Dois casos: refs/do-archive/* (branches arquivadas pelo
- * deep-orchestrator) e refs/stash (o cache de trabalho — "WIP on ..." /
- * "index on ...", commits soltos e abandonados no grafo).
+ * no log nem no total. Quatro casos, todos no mesmo formato:
+ * refs/do-archive/* (branches arquivadas pelo deep-orchestrator), refs/stash
+ * (o cache de trabalho — "WIP on ..." / "index on ...", commits soltos e
+ * abandonados no grafo), refs/original/* (sobras de filter-branch) e
+ * refs/rewritten/* (labels transitorios do rebase interativo).
  *
  * O bug: getLog montava `[...LOG_ARGS, "--exclude=refs/do-archive/*"]`, com o
  * --exclude DEPOIS do --all do LOG_ARGS. O git so aplica --exclude aos
@@ -131,6 +133,117 @@ test("refs/stash (commit orfao do cache de trabalho) some do log e do total", as
     );
     const semExcluir = Number(git(fixture.root, "rev-list", "--all", "--count"));
     assert.equal(semExcluir, comExcluido + 1, "sem o exclude o stash seria alcancavel");
+
+    // 4. Refs legitimas continuam decorando: branch local HEAD e tags.
+    const merge = payload.commits.find((c) => c.hash === fixture.hashes.merge);
+    assert.ok(
+      merge.refs.some((r) => r.kind === "localBranch" && r.name === "main" && r.isHead),
+      "branch local HEAD continua decorada",
+    );
+
+    const pipe = payload.commits.find((c) => c.hash === fixture.hashes.pipe);
+    const nomesPipe = pipe.refs.map((r) => r.name);
+    assert.ok(nomesPipe.includes("v1.0"), "tag anotada continua decorada");
+    assert.ok(nomesPipe.includes("leve"), "tag leve continua decorada");
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("refs/original/* (sobras de filter-branch) somem do log e do total", async () => {
+  const fixture = makeFixtureRepo();
+  try {
+    // Commit alcancavel APENAS por refs/original: cria numa branch temporaria,
+    // anota o hash, apaga a branch, move a ref — o formato real do
+    // filter-branch (refs/original/refs/heads/<nome> guarda o original antes
+    // da reescrita; a propria doc manda apaga-lo ao fim).
+    git(fixture.root, "checkout", "-q", "-b", "temporaria-original");
+    const originalFile = path.join(fixture.root, "original.txt");
+    fs.writeFileSync(originalFile, "antes do filter-branch\n");
+    git(fixture.root, "add", "-A");
+    git(fixture.root, "commit", "-q", "-m", "commit original pre-rewrite");
+    const originalHash = git(fixture.root, "rev-parse", "HEAD");
+    git(fixture.root, "checkout", "-q", "main");
+    git(fixture.root, "branch", "-q", "-D", "temporaria-original");
+    git(fixture.root, "update-ref", "refs/original/refs/heads/main", originalHash);
+
+    const payload = await getLog({ cwd: fixture.root });
+
+    // 1. O commit original nao pode aparecer no grafo.
+    assert.ok(
+      payload.commits.every((c) => c.hash !== originalHash),
+      "commit alcancavel so por refs/original/* nao pode aparecer no log",
+    );
+
+    // 2. O total paga da mesma selecao que as linhas: log e countCommits.
+    assert.equal(
+      payload.total,
+      payload.commits.length,
+      "total do log tem de bater com as linhas (paginacao consistente)",
+    );
+    assert.equal(await countCommits(fixture.root), payload.commits.length);
+
+    // 3. O teste exercita o exclude de verdade: sem ele, o original entraria.
+    const comExcluido = Number(
+      git(fixture.root, "rev-list", "--exclude=refs/original/*", "--all", "--count"),
+    );
+    const semExcluir = Number(git(fixture.root, "rev-list", "--all", "--count"));
+    assert.equal(semExcluir, comExcluido + 1, "sem o exclude o original seria alcancavel");
+
+    // 4. Refs legitimas continuam decorando: branch local HEAD e tags.
+    const merge = payload.commits.find((c) => c.hash === fixture.hashes.merge);
+    assert.ok(
+      merge.refs.some((r) => r.kind === "localBranch" && r.name === "main" && r.isHead),
+      "branch local HEAD continua decorada",
+    );
+
+    const pipe = payload.commits.find((c) => c.hash === fixture.hashes.pipe);
+    const nomesPipe = pipe.refs.map((r) => r.name);
+    assert.ok(nomesPipe.includes("v1.0"), "tag anotada continua decorada");
+    assert.ok(nomesPipe.includes("leve"), "tag leve continua decorada");
+  } finally {
+    fixture.cleanup();
+  }
+});
+
+test("refs/rewritten/* (labels transitorios do rebase) somem do log e do total", async () => {
+  const fixture = makeFixtureRepo();
+  try {
+    // Commit alcancavel APENAS por refs/rewritten: cria numa branch temporaria,
+    // anota o hash, apaga a branch, move a ref — o formato dos labels do
+    // sequencer (refs/rewritten/<label>, "deleted when the rebase finishes").
+    git(fixture.root, "checkout", "-q", "-b", "temporaria-rewritten");
+    const rewrittenFile = path.join(fixture.root, "rewritten.txt");
+    fs.writeFileSync(rewrittenFile, "mid-rebase\n");
+    git(fixture.root, "add", "-A");
+    git(fixture.root, "commit", "-q", "-m", "commit mid-rebase");
+    const rewrittenHash = git(fixture.root, "rev-parse", "HEAD");
+    git(fixture.root, "checkout", "-q", "main");
+    git(fixture.root, "branch", "-q", "-D", "temporaria-rewritten");
+    git(fixture.root, "update-ref", "refs/rewritten/feat-rewrite", rewrittenHash);
+
+    const payload = await getLog({ cwd: fixture.root });
+
+    // 1. O commit do label transitorio nao pode aparecer no grafo.
+    assert.ok(
+      payload.commits.every((c) => c.hash !== rewrittenHash),
+      "commit alcancavel so por refs/rewritten/* nao pode aparecer no log",
+    );
+
+    // 2. O total paga da mesma selecao que as linhas: log e countCommits.
+    assert.equal(
+      payload.total,
+      payload.commits.length,
+      "total do log tem de bater com as linhas (paginacao consistente)",
+    );
+    assert.equal(await countCommits(fixture.root), payload.commits.length);
+
+    // 3. O teste exercita o exclude de verdade: sem ele, o rewritten entraria.
+    const comExcluido = Number(
+      git(fixture.root, "rev-list", "--exclude=refs/rewritten/*", "--all", "--count"),
+    );
+    const semExcluir = Number(git(fixture.root, "rev-list", "--all", "--count"));
+    assert.equal(semExcluir, comExcluido + 1, "sem o exclude o rewritten seria alcancavel");
 
     // 4. Refs legitimas continuam decorando: branch local HEAD e tags.
     const merge = payload.commits.find((c) => c.hash === fixture.hashes.merge);

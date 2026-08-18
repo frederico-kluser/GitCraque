@@ -22,8 +22,11 @@ repo do projeto fixa nos testes).
   `--branches`, ...") e foi confirmada empiricamente nesta máquina (ordem
   errada não exclui nada).
 - **Falha encontrada no código atual:** `getLog` (log.mjs:177) e `countCommits`
-  (log.mjs:233) excluem apenas `refs/do-archive/*`; falta `--exclude=refs/stash`
-  nos dois pontos (o log exibe os 2 commits do stash; o total diverge).
+  (log.mjs:233) excluíam apenas `refs/do-archive/*`; faltava
+  `--exclude=refs/stash` nos dois pontos (o log exibia os 2 commits do stash; o
+  total divergia). **Corrigida na onda 1 (squash 69527ab9):** os dois pontos
+  excluem stash e do-archive; a onda 2 consolidou os padrões em
+  `EXCLUDED_REF_PATTERNS` e adicionou `refs/original/*` e `refs/rewritten/*`.
 - **`*` cruza `/` no glob de exclusão** no git 2.43.0 (verificado: um glob
   `refs/do-archive/*` excluiu refs aninhadas `refs/do-archive/teste/xxx`) — o
   padrão atual está correto; não precisa virar `**`.
@@ -151,13 +154,18 @@ perigosa — "it can actually filter out the entire branch from the log" (o
 alerta é sobre filtrar o output depois da seleção, em geral; o `--exclude`
 filtra a seleção de refs na origem, que é o caminho seguro recomendado aqui).
 
-**Falha a corrigir na implementação atual:** hoje só existe
+**Falha encontrada e já corrigida:** a pesquisa encontrou que só existia
 `--exclude=refs/do-archive/*` em `getLog` (server/src/git/log.mjs:177) e em
-`countCommits` (server/src/git/log.mjs:233). Falta `--exclude=refs/stash` nos
-**dois** lugares (o teste log-exclude-archive.test.mjs não cria stash, por isso
-não pegou). O splice atual (`[...LOG_ARGS.slice(0,1), "--exclude=...",
-...LOG_ARGS.slice(1)]`) já coloca os excludes na posição correta — basta
-adicionar o segundo padrão na mesma lista. O `LOG_ARGS` congelado
+`countCommits` (server/src/git/log.mjs:233), sem `--exclude=refs/stash` nos
+**dois** lugares (o teste log-exclude-archive.test.mjs não criava stash, por
+isso não pegou). **Implementado na onda 1 (squash 69527ab9):**
+`--exclude=refs/stash` entrou nos dois pontos; o splice
+(`[...LOG_ARGS.slice(0,1), "--exclude=...", ...LOG_ARGS.slice(1)]`) já
+colocava os excludes na posição correta — bastou adicionar o segundo padrão na
+mesma lista, e o teste ganhou um case de stash no fixture. **Na onda 2** os
+padrões foram consolidados na constante `EXCLUDED_REF_PATTERNS`
+(server/src/git/log.mjs), consumida por `getLog` e `countCommits`, com
+`refs/original/*` e `refs/rewritten/*` acrescentados. O `LOG_ARGS` congelado
 (`server/src/contract.mjs:20`) não muda; a exclusão é um acréscimo fora dele,
 exatamente como a regra de produto permite.
 
@@ -252,21 +260,24 @@ fazer também com `stash`.
 
 ## 6. Recomendações acionáveis para o código do GitCraque
 
-1. **Adicionar `--exclude=refs/stash` nos dois pontos**, mantendo a posição
-   atual (entre o subcomando e o `--all` do `LOG_ARGS`):
-   - `server/src/git/log.mjs:177` (`getLog`): a lista de excludes vira
-     `["--exclude=refs/do-archive/*", "--exclude=refs/stash"]`.
-   - `server/src/git/log.mjs:233` (`countCommits`): o mesmo segundo exclude —
+1. **Adicionar `--exclude=refs/stash` nos dois pontos** — **implementado na
+   onda 1 (squash 69527ab9)**, mantendo a posição (entre o subcomando e o
+   `--all` do `LOG_ARGS`):
+   - `server/src/git/log.mjs` (`getLog`): a lista de excludes virou
+     `["--exclude=refs/do-archive/*", "--exclude=refs/stash"]` (e depois os
+     dois padrões novos da onda 2, abaixo).
+   - `server/src/git/log.mjs` (`countCommits`): o mesmo segundo exclude —
      senão o total volta a divergir das linhas (o teste
-     `log-exclude-archive.test.mjs` já garante `total === commits.length`; ele
-     precisa de um stash no fixture para cobrir o caso novo).
+     `log-exclude-archive.test.mjs` garante `total === commits.length` e ganhou
+     um case de stash no fixture para cobrir o caso).
    - `LOG_ARGS` (contract.mjs:20) permanece byte-congelado; a exclusão é um
      acréscimo fora dele, como já é hoje.
-2. **Centralizar os padrões de exclusão** num único array (ex.:
-   `EXCLUDED_REF_PATTERNS = ["refs/do-archive/*", "refs/stash"]`) consumido por
-   `getLog` e `countCommits` — a simetria log/total é o invariante que o teste
-   já paga. Deixar comentário em português explicando o porquê da ordem (regra
-   de ouro da doc: "the next --all...").
+2. **Centralizar os padrões de exclusão** num único array
+   (`EXCLUDED_REF_PATTERNS` no server/src/git/log.mjs) consumido por `getLog`
+   e `countCommits` — **implementado na onda 2**, já com os 4 padrões
+   (do-archive, stash, original, rewritten); a simetria log/total é o
+   invariante que o teste paga, e o comentário em português junto à constante
+   explica a regra de ouro da ordem ("the next --all...").
 3. **Não mexer no padrão `refs/do-archive/*`**: o `*` cruza `/` no git 2.43.0
    (verificado) e o teste de regressão fixa o caso aninhado. Se um dia o app
    suportar uma faixa mais ampla de versões de git, um teste do glob aninhado
@@ -284,10 +295,13 @@ fazer também com `stash`.
    "mostrar commits arquivados/stash" no estilo do GitKraken ("Stashes can be
    hidden from the graph without being deleted") e do GitLens (filtro do commit
    graph para stashes), nunca um delete.
-6. **Extensão futura (defensiva):** incluir na lista de exclusão
-   `refs/original/*` e `refs/rewritten/*` — barato, documentado e cobre
-   repos que passaram por filter-branch/rebase interrompido. `refs/notes/*`
-   e `refs/bisect/*` só se o app passar a exibir esses dados.
+6. **Extensão (implementado na onda 2):** `refs/original/*` e
+   `refs/rewritten/*` entraram na lista de exclusão, centralizada na constante
+   `EXCLUDED_REF_PATTERNS` (server/src/git/log.mjs) consumida por `getLog` e
+   `countCommits` — cobre repos que passaram por filter-branch/rebase
+   interrompido sem quebrar rebase ativo (a exclusão é da seleção do log, não
+   do git; os labels morrem no fim do rebase). `refs/notes/*` e
+   `refs/bisect/*` só se o app passar a exibir esses dados.
 7. **Não trocar `--all` por `--branches --remotes --tags` no comando canônico**
    (regra de produto, LOG_ARGS byte-frozen): a equivalência com a seleção
    excluída foi verificada (5 → 2 = `--branches --remotes --tags` no lab; e
