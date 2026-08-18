@@ -5,9 +5,10 @@
  * `MIN_COMPACT_CONTENT_WIDTH` (480) e uma `const` privada de proposito — o
  * contrato publico e `compactContentWidth`, e e por ele que o piso se testa:
  * a funcao nunca devolve menos que 480, e acima do piso devolve a soma exata
- * das colunas. Um grafo de UMA lane compacta mede 56px de coluna; sem o piso,
- * a linha inteira teria 264px e caberia espremida em qualquer celular, e o
- * scroll horizontal (e o aviso de rolagem) nunca apareceria.
+ * das colunas. Um grafo de UMA lane compacta mede 80px de coluna (paddingLeft
+ * 40 dos dois lados — acima do piso de 56 do MIN_GRAPH_WIDTH); sem o piso de
+ * conteudo, a linha inteira teria 288px e caberia espremida em qualquer
+ * celular, e o scroll horizontal (e o aviso de rolagem) nunca apareceria.
  */
 import assert from "node:assert/strict";
 import test from "node:test";
@@ -40,11 +41,12 @@ test("acima do piso, a largura e a soma exata das colunas", () => {
   assert.equal(compactContentWidth(273), 481);
 });
 
-test("um grafo de UMA lane compacto (56px) nao foge do piso", () => {
-  /* a coluna de uma lane mede 56px (o piso de MIN_GRAPH_WIDTH); a linha
-     inteira mesmo assim tem 480px — o scroll lateral e obrigatorio. */
+test("um grafo de UMA lane compacto (80px) nao foge do piso", () => {
+  /* a coluna de uma lane mede 80px (paddingLeft * 2 = 40 + 40, acima do piso
+     de 56px de MIN_GRAPH_WIDTH); a linha inteira mesmo assim tem 480px — o
+     scroll lateral e obrigatorio. */
   const width = graphColumnWidth(1, METRICS_COMPACT);
-  assert.equal(width, 56);
+  assert.equal(width, 80);
   assert.equal(compactContentWidth(width), 480);
   /* e o piso e mais largo que um celular de 375px: rolar e inevitavel. */
   assert.ok(480 > 375, "o piso sobe acima da tela mais estreita de todas");
@@ -59,14 +61,16 @@ test("um repositorio sintetico realista nao escapa do piso", () => {
   assert.equal(compactContentWidth(width), 480);
 });
 
-test("graphColumnWidth com as metricas da Onda 1", () => {
-  /* confortavel: paddingLeft 48 dos dois lados, lanes de 26px. */
-  assert.equal(graphColumnWidth(1, METRICS), 96);
-  assert.equal(graphColumnWidth(2, METRICS), 122);
-  assert.equal(graphColumnWidth(16, METRICS), 486);
-  /* compacta: paddingLeft 24, lanes de 28px, e o piso de 56px na lane 1. */
-  assert.equal(graphColumnWidth(1, METRICS_COMPACT), 56);
-  assert.equal(graphColumnWidth(16, METRICS_COMPACT), 468);
+test("graphColumnWidth com as metricas atuais", () => {
+  /* confortavel: paddingLeft 64 dos dois lados, lanes de 26px (era 48, subiu
+     na onda de respiro a esquerda). */
+  assert.equal(graphColumnWidth(1, METRICS), 128);
+  assert.equal(graphColumnWidth(2, METRICS), 154);
+  assert.equal(graphColumnWidth(16, METRICS), 518);
+  /* compacta: paddingLeft 40 dos dois lados, lanes de 28px (era 24) — a lane 1
+     (80px) ja passa do piso de 56px de MIN_GRAPH_WIDTH. */
+  assert.equal(graphColumnWidth(1, METRICS_COMPACT), 80);
+  assert.equal(graphColumnWidth(16, METRICS_COMPACT), 500);
 });
 
 test("a coluna sempre cobre a bola da ultima lane", () => {

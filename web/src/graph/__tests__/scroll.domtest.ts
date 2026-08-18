@@ -59,7 +59,8 @@ test("compacto de uma lane: o rolador existe e o piso de 480px esta no DOM", () 
   assert.ok(html.includes("overflow-x-auto"), "o rolador lateral existe");
   assert.ok(html.includes("overscroll-x-contain"), "o gesto devolve a pagina");
   assert.ok(html.includes("min-width:480px"), "o piso de 480px chega ao CSS");
-  assert.ok(html.includes("--graph-col:56px"), "coluna de uma lane compacta");
+  /* 80px = paddingLeft 40 dos dois lados (era 56 com padding 24) */
+  assert.ok(html.includes("--graph-col:80px"), "coluna de uma lane compacta = 80px");
 
   /* a ordem montada: rolador > conteudo (min-width) > cabecalho — o cabecalho
      rola junto com as linhas, senao as colunas desalinhariam. */
@@ -85,7 +86,8 @@ test("grafo de 16 lanes: a largura de conteudo passa do piso e vai ao DOM", () =
   );
   assert.ok(expected > 480, `esperava passar do piso, veio ${expected}`);
   assert.ok(html.includes(`min-width:${expected}px`), "o DOM carrega a largura exata");
-  assert.ok(html.includes("--graph-col:468px"), "16 lanes compactas = 468px de coluna");
+  /* 500px = 80 + 15 lanes * 28 (era 468 com padding 24) */
+  assert.ok(html.includes("--graph-col:500px"), "16 lanes compactas = 500px de coluna");
 });
 
 test("confortavel nao monta rolador horizontal nenhum", () => {
@@ -93,7 +95,8 @@ test("confortavel nao monta rolador horizontal nenhum", () => {
 
   assert.ok(!html.includes("overflow-x-auto"), "sem rolador no confortavel");
   assert.ok(!html.includes("min-width"), "sem piso de conteudo no confortavel");
-  assert.ok(html.includes("--graph-col:96px"), "coluna confortavel de uma lane = 96px");
+  /* 128px = paddingLeft 64 dos dois lados (era 96 com padding 48) */
+  assert.ok(html.includes("--graph-col:128px"), "coluna confortavel de uma lane = 128px");
 });
 
 test("o reveal num grafo largo compacto renderiza sem quebrar", () => {

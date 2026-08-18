@@ -26,7 +26,8 @@ test("confortavel: os cinco numeros do desenho desktop", () => {
     rowHeight: 52,
     laneWidth: 26,
     nodeRadius: 14,
-    paddingLeft: 48,
+    /* paddingLeft subiu de 48 para 64 de proposito (onda de respiro a esquerda) */
+    paddingLeft: 64,
     strokeWidth: 2.5,
   });
 });
@@ -36,7 +37,8 @@ test("compacta: os cinco numeros do desenho de celular", () => {
     rowHeight: 52,
     laneWidth: 28,
     nodeRadius: 14,
-    paddingLeft: 24,
+    /* paddingLeft subiu de 24 para 40 de proposito (onda de respiro a esquerda) */
+    paddingLeft: 40,
     strokeWidth: 3,
   });
 });

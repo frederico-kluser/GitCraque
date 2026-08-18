@@ -13,6 +13,7 @@
  *
  *   linha mais alta / mais baixa .............. METRICS.rowHeight
  *   lanes mais afastadas ...................... METRICS.laneWidth
+ *   margem a esquerda antes da lane 0 ......... METRICS.paddingLeft
  *   bola maior / menor ........................ METRICS.nodeRadius
  *   traco mais grosso ......................... METRICS.strokeWidth
  *   curva mais aberta / mais seca ............. CONTROL_RATIO
@@ -70,8 +71,13 @@ export const METRICS: GraphMetrics = {
   laneWidth: 26,
   /** raio da bola do commit, antes de qualquer anel */
   nodeRadius: 14,
-  /** margem a esquerda antes da lane 0 — mais ar (pedido do usuario: o grafo nao pode ficar encostado na borda) */
-  paddingLeft: 48,
+  /**
+   * margem a esquerda antes da lane 0 — mais respiro (pedido do usuario: o
+   * grafo nao pode ficar encostado na borda). 64px e a medida de hoje, apos a
+   * sequencia 36 -> 48 -> 64: a coluna so desloca a origem X do desenho, nao
+   * toca em colisao nem em geometria (nada consome a folga).
+   */
+  paddingLeft: 64,
   /** espessura do traco das arestas e do contorno da bola */
   strokeWidth: 2.5,
 };
@@ -106,8 +112,13 @@ export const METRICS_COMPACT: GraphMetrics = {
   laneWidth: 28,
   /** raio da bola do commit */
   nodeRadius: 14,
-  /** margem a esquerda antes da lane 0 — mais ar que os 16px, onde a bola quase tocava a borda */
-  paddingLeft: 24,
+  /**
+   * margem a esquerda antes da lane 0 — mais respiro que os 24px anteriores
+   * (sequencia 16 -> 24 -> 40; em 16 a bola quase tocava a borda). Mesma
+   * natureza da confortavel: so desloca a origem X, nao muda colisao nem
+   * geometria.
+   */
+  paddingLeft: 40,
   /** espessura do traco das arestas e do contorno da bola — mais grossa que a confortavel */
   strokeWidth: 3,
 };
