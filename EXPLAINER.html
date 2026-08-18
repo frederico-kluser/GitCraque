@@ -144,7 +144,7 @@
 <nav class="navbar navbar-expand-lg sticky-top bg-body-tertiary">
   <div class="container">
     <span class="navbar-brand fw-semibold"><i class="bi bi-diagram-3 brand-accent me-2"></i>deep-orchestrator <span class="text-body-secondary fw-normal">· EXPLAINER</span></span>
-    <span class="navbar-text small text-body-secondary d-none d-md-inline">v0.3.1-graph-fixes · 2026-08-15</span>
+    <span class="navbar-text small text-body-secondary d-none d-md-inline">v0.4.0 · 2026-08-18</span>
   </div>
 </nav>
 
@@ -153,10 +153,10 @@
   <header class="explainer-hero rounded-4 p-4 p-md-5 mb-4">
     <span class="badge badge-accent mb-3"><i class="bi bi-clipboard-data me-1"></i>Relatório de execução</span>
     <h1 class="display-6 fw-semibold text-white mb-2">O que aconteceu nesta execução</h1>
-    <p class="lead text-white-50 mb-3">Grafo: mais espaco a esquerda (padding 48/24), linhas menores (52/52 — piso geometrico medido) e fim das fake branches wip (exclude do-archive na ordem correta) — comparado ao GitKraken, com pesquisa citada e tudo validado (18/18 specs)</p>
+    <p class="lead text-white-50 mb-3">GitCraque 0.4.0 — limpeza de UI, leitura de diff (word-diff/colapso/navegacao) e ghost commits resolvidos (exclude de refs especiais no log)</p>
     <div class="d-flex flex-wrap gap-2">
-      <span class="badge badge-accent">v0.3.1-graph-fixes</span>
-      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-15</span>
+      <span class="badge badge-accent">v0.4.0</span>
+      <span class="badge badge-soft"><i class="bi bi-calendar3 me-1"></i>2026-08-18</span>
       <span class="badge badge-soft"><i class="bi bi-git-branch me-1"></i>main</span>
     </div>
   </header>
@@ -213,7 +213,7 @@
     <div class="tab-pane fade show active" id="pane-visao" role="tabpanel"
          aria-labelledby="tab-visao" tabindex="0" data-print-title="Visão geral">
       <h2 class="h4 pane-title">Resumo da execução</h2>
-      <p class="text-body-secondary">Grafo: mais espaco a esquerda (padding 48/24), linhas menores (52/52 — piso geometrico medido) e fim das fake branches wip (exclude do-archive na ordem correta) — comparado ao GitKraken, com pesquisa citada e tudo validado (18/18 specs)</p>
+      <p class="text-body-secondary">GitCraque 0.4.0 — limpeza de UI, leitura de diff (word-diff/colapso/navegacao) e ghost commits resolvidos (exclude de refs especiais no log)</p>
 
       <div class="alert alert-primary d-flex gap-2" role="alert">
         <i class="bi bi-info-circle-fill flex-shrink-0"></i>
@@ -225,7 +225,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-layers fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">1</div>
+              <div class="display-6 fw-bold stat-value">4</div>
               <div class="text-body-secondary small">Ondas executadas</div>
             </div>
           </div>
@@ -234,7 +234,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-robot fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">6</div>
+              <div class="display-6 fw-bold stat-value">30</div>
               <div class="text-body-secondary small">Sub-agentes</div>
             </div>
           </div>
@@ -243,7 +243,7 @@
           <div class="card h-100 text-center">
             <div class="card-body py-4">
               <i class="bi bi-git-commit fs-3 stat-value"></i>
-              <div class="display-6 fw-bold stat-value">3</div>
+              <div class="display-6 fw-bold stat-value">15</div>
               <div class="text-body-secondary small">Commits (squash)</div>
             </div>
           </div>
@@ -254,7 +254,7 @@
       <p>O orquestrador, na fase COMMIT-FINAL, gera o explainer a partir deste template:</p>
 <pre><code class="language-bash"># Gera o explainer a partir do template
 ./scripts/generate-explainer.sh &gt; EXPLAINER.html
-# Ou preenche manualmente os placeholders 0.3.1-graph-fixes, 2026-08-15, main, ...</code></pre>
+# Ou preenche manualmente os placeholders 0.4.0, 2026-08-18, main, ...</code></pre>
       <p class="text-body-secondary small">O template é <code>templates/html-explainer.html</code> — arquivo único, sem build: abre por file:// e imprime em PDF com todas as abas.</p>
 
       <details class="mt-4">
@@ -292,20 +292,45 @@
       <h2 class="h4 pane-title">Ondas executadas</h2>
       <p>Uma linha por sub-agente. Cada sub-agente trabalha numa worktree Git nomeada; a integração é squash-merge um a um, com gate (build + testes) entre merges. Worktrees e branches <code>wt/*</code> são removidos ao fim de cada onda.</p>
 
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead><tr><th scope="col">Onda</th><th scope="col">Worktrees</th><th scope="col">Tarefas</th><th scope="col" class="text-end">Commits</th><th scope="col">Status</th></tr></thead>
-    <tbody>
-      <tr>
-        <td><span class="badge badge-accent">Onda 1</span></td>
-        <td>onda1-refs-archive · onda1-geometria-kraken · onda1-fix-rebase-spec</td>
-        <td>Fix das refs do-archive (wip fantasma) · espaço à esquerda + linhas menores (pesquisa GitKraken) · fix do clique do chip no spec</td>
-        <td class="text-end">3</td>
-        <td><span class="badge text-bg-success">Integrada</span></td>
-      </tr>
-    </tbody>
-  </table>
-</div>
+      <!-- WAVES_TABLE begin (não preenchido — conteúdo demo do template) -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Onda</th>
+              <th scope="col">Worktree</th>
+              <th scope="col">Tarefas</th>
+              <th scope="col" class="text-end">Commits</th>
+              <th scope="col">Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><span class="badge badge-accent">Onda 1</span></td>
+              <td><code>onda1-scripts-prompts</code></td>
+              <td>brave-search.sh · check-brave-credits.sh · ecc-prompts.md · ecc-skills.md · search-prompts.md</td>
+              <td class="text-end">5</td>
+              <td><span class="badge badge-ok">Concluída</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-accent">Onda 2</span></td>
+              <td><code>onda2-html-explainer</code></td>
+              <td>templates/html-explainer.html</td>
+              <td class="text-end">3</td>
+              <td><span class="badge badge-ok">Concluída</span></td>
+            </tr>
+            <tr>
+              <td><span class="badge badge-accent">Onda 2</span></td>
+              <td><code>onda2-skill-update</code></td>
+              <td>SKILL.md — ondas ilimitadas, novos recursos</td>
+              <td class="text-end">2</td>
+              <td><span class="badge badge-ok">Concluída</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos dados reais da execução.</p>
+      <!-- WAVES_TABLE end (não preenchido — conteúdo demo do template) -->
 
       <h3 class="h6 mt-4 text-body-secondary">Legenda de status</h3>
       <div class="d-flex flex-wrap gap-2">
@@ -321,34 +346,83 @@
       <h2 class="h4 pane-title">Arquivos modificados</h2>
       <p>Diff stats da execução: <span class="diff-plus">+</span> linhas adicionadas, <span class="diff-minus">−</span> removidas.</p>
 
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead><tr><th scope="col">Arquivo</th><th scope="col">Mudança</th></tr></thead>
-    <tbody>
-      <tr><td>server/src/git/log.mjs</td><td><strong>Bug:</strong> --exclude=refs/do-archive/* agora ANTES de --all (ordem que o git respeita) — os commits "wip" fantasma sumiram do grafo</td></tr>
-      <tr><td>server/test/log-exclude-archive.test.mjs</td><td>Teste de regressão com guard de mutação (falha no código bugado)</td></tr>
-      <tr><td>web/src/graph/paint.ts</td><td>paddingLeft 36→48 (confortável) / 16→24 (compacta); rowHeight 64→52 / 56→52 (piso geométrico medido)</td></tr>
-      <tr><td>web/src/graph/__tests__/*</td><td>Tripwires, literais de path e larguras recalibrados para as métricas novas</td></tr>
-      <tr><td>docs/graph-sample.svg</td><td>Golden regenerado pelo runner (sinal real, não ruído)</td></tr>
-      <tr><td>web/e2e/specs/mouse/rebase.spec.ts</td><td>Clique no BADGE do chip (span ficou sob o gridcell do autor com a geometria nova)</td></tr>
-      <tr><td>.agents/skills/* (2 skills)</td><td>Docs sincronizadas (56px→52px, selection trap do git log)</td></tr>
-    </tbody>
-  </table>
-</div>
+      <!-- FILES_TABLE begin (não preenchido — conteúdo demo do template) -->
+      <div class="table-responsive">
+        <table class="table table-hover align-middle">
+          <thead>
+            <tr>
+              <th scope="col">Arquivo</th>
+              <th scope="col">Tipo</th>
+              <th scope="col" class="text-end">Diff</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>scripts/brave-search.sh</code></td>
+              <td><span class="badge badge-ok">novo</span></td>
+              <td class="text-end diff-plus">+310</td>
+            </tr>
+            <tr>
+              <td><code>scripts/check-brave-credits.sh</code></td>
+              <td><span class="badge badge-ok">novo</span></td>
+              <td class="text-end diff-plus">+98</td>
+            </tr>
+            <tr>
+              <td><code>prompts/ecc-prompts.md</code></td>
+              <td><span class="badge badge-ok">novo</span></td>
+              <td class="text-end diff-plus">+340</td>
+            </tr>
+            <tr>
+              <td><code>prompts/ecc-skills.md</code></td>
+              <td><span class="badge badge-ok">novo</span></td>
+              <td class="text-end diff-plus">+315</td>
+            </tr>
+            <tr>
+              <td><code>prompts/search-prompts.md</code></td>
+              <td><span class="badge badge-ok">novo</span></td>
+              <td class="text-end diff-plus">+420</td>
+            </tr>
+            <tr>
+              <td><code>templates/html-explainer.html</code></td>
+              <td><span class="badge badge-ok">novo</span></td>
+              <td class="text-end diff-plus">+520</td>
+            </tr>
+            <tr>
+              <td><code>SKILL.md</code></td>
+              <td><span class="badge badge-accent">modificado</span></td>
+              <td class="text-end"><span class="diff-plus">+140</span> <span class="diff-minus">−45</span></td>
+            </tr>
+            <tr>
+              <td><code>README.md</code></td>
+              <td><span class="badge badge-accent">modificado</span></td>
+              <td class="text-end"><span class="diff-plus">+85</span> <span class="diff-minus">−15</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — valores aproximados, substituídos na geração.</p>
+      <!-- FILES_TABLE end (não preenchido — conteúdo demo do template) -->
 
       <h2 class="h4 pane-title mt-4">Commits (squash)</h2>
       <p>Histórico final do branch principal: um commit squash por sub-agente. Nenhuma worktree ou branch <code>wt/*</code> sobra ao final.</p>
 
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead><tr><th scope="col">Hash</th><th scope="col">Commit</th></tr></thead>
-    <tbody>
-      <tr><td><code>4816869d</code></td><td>onda1-refs-archive: --exclude ANTES de --all no getLog — commits wip fantasma somem (bug provado) + teste</td></tr>
-      <tr><td><code>8e6e0ba7</code></td><td>onda1-geometria-kraken: espaço à esquerda (48/24) + linhas menores (52/52, piso medido) + docs</td></tr>
-      <tr><td><code>27ef40b7</code></td><td>onda1-fix-rebase-spec: clique no badge do chip — campanha mouse 8/8</td></tr>
-    </tbody>
-  </table>
-</div>
+      <!-- COMMITS_LIST begin (não preenchido — conteúdo demo do template) -->
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <span class="badge badge-soft font-monospace">a1b2c3d</span>
+          <div><strong>Onda 1:</strong> scripts de busca Brave e verificação de créditos + prompts ECC e de busca</div>
+        </li>
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <span class="badge badge-soft font-monospace">e4f5g6h</span>
+          <div><strong>Onda 2:</strong> templates/html-explainer.html + SKILL.md atualizado</div>
+        </li>
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <span class="badge badge-soft font-monospace">i7j8k9l</span>
+          <div><strong>Onda 3:</strong> README.md — documentação final</div>
+        </li>
+      </ul>
+      <p class="text-body-secondary small mt-2">Exemplo demonstrativo — hashes fictícios, substituídos na geração.</p>
+      <!-- COMMITS_LIST end (não preenchido — conteúdo demo do template) -->
     </div>
 
     <!-- ══════════════ ABA 4 · DE-PARA (BEFORE/AFTER) ══════════════ -->
@@ -357,53 +431,73 @@
       <h2 class="h4 pane-title">De-Para: o que mudou</h2>
       <p>Comparação lado a lado entre o estado inicial do repositório e o estado final após a execução.</p>
 
-<div class="row g-3">
-  <div class="col-md-6">
-    <div class="card h-100"><div class="card-header fw-bold text-bg-danger">Antes</div><div class="card-body small">
-      <ul class="mb-0">
-        <li>Grafo encostado na borda esquerda da coluna (padding 36/16px).</li>
-        <li>Linhas de 64px (confortável) / 56px (compacta) — "muito grandes".</li>
-        <li>16 commits "wip" de execuções antigas do deep-orchestrator apareciam como linhas fantasma no grafo (o --exclude do getLog vinha depois de --all e o git o ignorava) — o GitKraken não mostra.</li>
-        <li>Total do grafo (181) divergia do contador (164) — paginação inconsistente.</li>
-      </ul>
-    </div></div>
-  </div>
-  <div class="col-md-6">
-    <div class="card h-100"><div class="card-header fw-bold text-bg-success">Depois</div><div class="card-body small">
-      <ul class="mb-0">
-        <li>Mais ar à esquerda: padding 48/24px — a coluna do grafo respira (largura 154→178px).</li>
-        <li>Linhas de 52px nas duas densidades (−19% na confortável) — o piso geométrico MEDIDO (51px falha a invariante de colisão por 0,05px; a régua de toque de 44px vence a densidade desktop do GitKraken).</li>
-        <li>Zero commits "wip" fantasma: total == linhas == countCommits (167/167).</li>
-        <li>Teste de regressão impede a volta do bug (guard de mutação).</li>
-      </ul>
-    </div></div>
-  </div>
-</div>
+GitCraque 0.4.0 — limpeza, leitura de diff e ghost commits resolvidos
+
+O que o usuario pediu e o que foi entregue:
+1. Projeto mais clean e menos botoes: shell -119 linhas (botoes mortos do StashDiffView viram divs, 3 portas redundantes de criar branch removidas, rodape 5->2 itens, banner WS e selo de marca duplicados eliminados, aviso de 72 chars unificado, 9 chaves i18n orfas purgadas dos 4 idiomas).
+2. Leitura do diff turbinada: word-diff intra-linha (highlight de palavras adicionadas/removidas, aditivo no contrato: DiffLine.words? + api.diff wordDiff, hibrido de 2 comandos com alinhamento por estrutura corrigido apos revisao adversarial), colapso de hunks (aria-expanded), tipografia 13px com tokens invertidos, navegacao prev/next entre arquivos do commit.
+3. Operacoes principais preservadas e acessiveis: merge, cherry-pick, deletar, criar branch, criar/deletar worktrees (todas ja existiam; portas consolidadas sem perder nenhuma).
+4. Grafo: mais padding left (paddingLeft 48->64 confortavel, 24->40 compacto) — a "coluna delete" interpretada como a coluna do grafo.
+5. GHOST COMMITS RESOLVIDOS (pesquisa profunda com 15 queries + 14 fontes primarias): commits "soltos" apareciam porque --all do git inclui TODAS as refs sob refs/ — incluindo refs/stash (o "cache" do usuario) e refs/do-archive/* (arquivos de execucoes passadas). Correcao: --exclude=refs/do-archive/* e --exclude=refs/stash (onda 1) + EXCLUDED_REF_PATTERNS unificada com refs/original/* e refs/rewritten/* (onda 2), nos dois pontos do log (getLog + countCommits). Prova: 190 -> 166 commits (= --branches --remotes --tags). "Se nao tem branch nao aparece."
+6. Alvos de toque: auditoria 17 -> 0 violacoes.
+7. Bug de hit-testing corrigido: o chip de ref transbordava para baixo do gridcell do autor — clique direito no chip abria o menu do commit. Fix: relative z-10 no gridcell de descricao. Campanha mouse 12/12.
+8. Validacao: 852 testes + 85 checks de campanha (4 campanhas: touch-audit 25, e2e 39, mouse 12, touch 9) + 12 e2e-browser, zero falhas.
+9. Contratos aditivos (frozen): wordDiff?:boolean em web/src/lib/api.ts (api.diff), DiffLine.words? em web/src/types/git.ts. Nada removido/renomeado.
+10. Release minor: 0.3.0 -> 0.4.0 (npm publish + tag v0.4.0 + retro-tags v0.3.0 e v0.2.1 + GH release).
 
       <h2 class="h4 pane-title">Impacto</h2>
       <p>O que cada mudança significa para quem usa o deep-orchestrator:</p>
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead><tr><th scope="col">Métrica</th><th scope="col" class="text-end">Valor</th><th scope="col">Nota</th></tr></thead>
-    <tbody>
-      <tr><td>Commits "wip" fantasma</td><td class="text-end"><span class="badge text-bg-danger">16 → 0</span></td><td>--exclude na ordem correta + guard de mutação</td></tr>
-      <tr><td>rowHeight</td><td class="text-end"><span class="badge badge-accent">64/56 → 52/52</span></td><td>piso geométrico medido; ≥44px (régua de toque)</td></tr>
-      <tr><td>paddingLeft</td><td class="text-end"><span class="badge badge-accent">36/16 → 48/24</span></td><td>mais espaço à esquerda</td></tr>
-      <tr><td>Campanha e2e:ui</td><td class="text-end"><span class="badge badge-accent">18/18</span></td><td>geometria nova não quebrou specs (1 fix de clique no spec)</td></tr>
-      <tr><td>Gates</td><td class="text-end"><span class="badge text-bg-success">3/3</span></td><td>npm test verde de primeira nos 3 (perf flake tratado como ruído no final)</td></tr>
-      <tr><td>Revisões adversariais</td><td class="text-end"><span class="badge badge-accent">2</span></td><td>APPROVE + WARNING-fechado (3 fixes de docs)</td></tr>
-    </tbody>
-  </table>
-</div>
+      <!-- IMPACT begin (não preenchido — conteúdo demo do template) -->
+      <div class="list-group list-group-flush mb-4">
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 1</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 2</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+        <div class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-stars fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Impacto 3</strong> — descrição genérica, substituída na geração.</div>
+        </div>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelos impactos reais.</p>
+      <!-- IMPACT end (não preenchido — conteúdo demo do template) -->
 
       <h2 class="h4 pane-title">Novas capacidades</h2>
-<ul class="mb-0">
-  <li>Grafo com mais ar à esquerda e linhas 19% menores na densidade confortável — sem violar a invariante de colisão nem a régua de toque.</li>
-  <li>Interface limpa: commits de refs de arquivo (do-archive/*) nunca mais aparecem — com teste de regressão que prende a ordem do exclude.</li>
-  <li>Total do grafo consistente com a paginação (total === linhas === countCommits).</li>
-  <li>Campanha e2e:ui (18 specs) validando o estado final de ponta a ponta.</li>
-  <li>Docs sincronizadas: skills com os valores reais (52px) e a armadilha de seleção do git log documentada.</li>
-</ul>
+      <!-- CAPABILITIES begin (não preenchido — conteúdo demo do template) -->
+      <div class="row g-3">
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-stars fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Capacidade 1</h3>
+              <p class="small text-body-secondary mb-0">Descrição genérica, substituída na geração.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-stars fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Capacidade 2</h3>
+              <p class="small text-body-secondary mb-0">Descrição genérica, substituída na geração.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6 col-lg-4">
+          <div class="card h-100">
+            <div class="card-body">
+              <i class="bi bi-stars fs-3 stat-value"></i>
+              <h3 class="h6 mt-2 mb-1">Capacidade 3</h3>
+              <p class="small text-body-secondary mb-0">Descrição genérica, substituída na geração.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="text-body-secondary small">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelas capacidades reais.</p>
+      <!-- CAPABILITIES end (não preenchido — conteúdo demo do template) -->
     </div>
 
     <!-- ══════════════ ABA 5 · DECISÕES AUTÔNOMAS ══════════════ -->
@@ -412,13 +506,31 @@
       <h2 class="h4 pane-title">Premissas inferidas sem perguntar</h2>
       <p>O orquestrador opera em autonomia total — nenhuma pergunta é feita ao usuário. Toda premissa assumida fica registrada aqui — para revisão e reprodutibilidade.</p>
 
-<ul class="mb-0">
-  <li><strong>Piso de 52px</strong> (não 48/44 propostos): medido empiricamente — 51px falha a invariante de colisão por 0,05/0,21px; 48 por ~1px. Fidelidade à invariante &gt; valor proposto.</li>
-  <li><strong>Régua de toque de 44px vence a pesquisa GitKraken</strong> (~22-30px desktop mouse-only): o GitCraque é touch-first — a linha inteira é o alvo de toque auditado.</li>
-  <li><strong>laneWidth mantido</strong> (28px): medido que alargar tem efeito marginal (28→32 melhora 16,79→16,98 e ainda falha; zeraria ~36px) — o knob que compra linha é o rowHeight.</li>
-  <li><strong>Refs do-archive antigas NÃO foram apagadas</strong> (são do .git do usuário, de outra execução): o grafo não as mostra mais; limpeza opcional é decisão do usuário.</li>
-  <li><strong>LOG_ARGS byte-frozen intacto</strong>: o fix reordena só o args do getLog (subcomando → exclude → all).</li>
-</ul>
+      <!-- DECISIONS begin (não preenchido — conteúdo demo do template) -->
+      <ul class="list-group list-group-flush">
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Onda 1 unificada:</strong> scripts e prompts criados na mesma onda, por não haver dependência entre eles.</div>
+        </li>
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Onda 2 em paralelo:</strong> templates/ (explainer) e SKILL.md (update) não se tocam — duas worktrees na mesma onda.</div>
+        </li>
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Shell em vez de Python:</strong> scripts sem dependência de runtime no host.</div>
+        </li>
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>HTML de arquivo único:</strong> CDN + zero build — o EXPLAINER.html abre por file://, sem servidor.</div>
+        </li>
+        <li class="list-group-item d-flex gap-3 align-items-start">
+          <i class="bi bi-lightbulb fs-5 stat-value flex-shrink-0 mt-1"></i>
+          <div><strong>Placeholders (...) em vez de template engine:</strong> substituição simples de string na geração.</div>
+        </li>
+      </ul>
+      <p class="text-body-secondary small mt-2">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pelas decisões reais da execução.</p>
+      <!-- DECISIONS end (não preenchido — conteúdo demo do template) -->
     </div>
 
     <!-- ══════════════ ABA 6 · TIMELINE ══════════════ -->
@@ -427,23 +539,45 @@
       <h2 class="h4 pane-title">Linha do tempo da execução</h2>
       <p>As quatro fases do orquestrador e o que aconteceu em cada uma.</p>
 
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead><tr><th scope="col">Momento</th><th scope="col">Evento</th></tr></thead>
-    <tbody>
-      <tr><td>08:53</td><td>FASE 0 + análise: 3 itens mapeados; bug das refs do-archive provado empiricamente</td></tr>
-      <tr><td>09:0x–09:3x</td><td>Onda 1: fix do getLog (guard de mutação) + geometria (piso 52 medido, pesquisa citada) — revisores APPROVE/WARNING-fechado</td></tr>
-      <tr><td>09:4x</td><td>Gates 3/3 verdes; REPLAN convergência</td></tr>
-      <tr><td>09:5x</td><td>COMMIT-FINAL: campanha 17/18 → fix do clique no badge → 18/18 verdes</td></tr>
-    </tbody>
-  </table>
-</div>
+      <!-- TIMELINE begin (não preenchido — conteúdo demo do template) -->
+      <ol class="timeline list-unstyled mb-0">
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 1</span>
+            <strong>ANALYZE</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Leitura do prompt, mapeamento do repositório, classificação greenfield/brownfield.</p>
+        </li>
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 2</span>
+            <strong>PLAN</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Decomposição em sub-tarefas atômicas, ondas topológicas, mapa de propriedade de arquivos, TASK_PLAN.md publicado.</p>
+        </li>
+        <li class="timeline-item mb-4">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-accent">Fase 3</span>
+            <strong>EXECUTE-ONDA</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">Onda 1 — scripts + prompts · Onda 2 — templates/ + SKILL.md. Worktrees nomeadas, barreira, revisão adversarial, squash-merge com gate, limpeza.</p>
+        </li>
+        <li class="timeline-item">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-ok">Fase 4</span>
+            <strong>COMMIT-FINAL</strong>
+          </div>
+          <p class="mb-0 text-body-secondary small">TASK_PLAN.md removido, gate completo, commit final, varredura de limpeza, EXPLAINER.html gerado (este documento).</p>
+        </li>
+      </ol>
+      <p class="text-body-secondary small mt-3">Exemplo demonstrativo — a geração substitui o bloco entre os marcadores pela timeline real da execução.</p>
+      <!-- TIMELINE end (não preenchido — conteúdo demo do template) -->
     </div>
 
   </div>
 
   <footer class="text-body-secondary small border-top mt-5 pt-3">
-    Gerado por <strong>deep-orchestrator</strong> v0.3.1-graph-fixes · 2026-08-15 · branch main.
+    Gerado por <strong>deep-orchestrator</strong> v0.4.0 · 2026-08-18 · branch main.
     Documento de arquivo único — salve, abra com duplo clique ou imprima em PDF (todas as abas entram no papel).
   </footer>
 
