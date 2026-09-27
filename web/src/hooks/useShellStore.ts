@@ -135,6 +135,12 @@ export interface ShellState {
    * nao estado do projeto: vale para qualquer repo que ela abrir.
    */
   autoFetchMs: number;
+  /**
+   * Remoto de sincronizacao ativo (fetch/pull/push). `null` = o predefinido —
+   * `origin` quando existe, senao o primeiro de `git remote -v`. Persistido:
+   * e escolha da pessoa, nao estado do repositorio.
+   */
+  activeRemote: string | null;
   /** modal de configuracoes aberto. Efemero, como a gaveta de alteracoes. */
   settingsOpen: boolean;
   /**
@@ -246,6 +252,7 @@ const DEFAULTS: ShellState = {
   // ele nasce bem mais largo do que quando so tinha os metadados do commit.
   detailWidth: 560,
   autoFetchMs: 60_000,
+  activeRemote: null,
   settingsOpen: false,
   changesOpen: false,
   paletteOpen: false,
@@ -261,7 +268,7 @@ const DEFAULTS: ShellState = {
 /** So o que faz sentido sobreviver ao reload. */
 type Persisted = Pick<
   ShellState,
-  "theme" | "railWidth" | "detailWidth" | "autoFetchMs" | "layoutMode" | "forceTouchTargets"
+  "theme" | "railWidth" | "detailWidth" | "autoFetchMs" | "activeRemote" | "layoutMode" | "forceTouchTargets"
 >;
 
 function readPersisted(): Partial<Persisted> {
@@ -281,6 +288,7 @@ function writePersisted(s: ShellState) {
     railWidth: s.railWidth,
     detailWidth: s.detailWidth,
     autoFetchMs: s.autoFetchMs,
+    activeRemote: s.activeRemote,
     layoutMode: s.layoutMode,
     forceTouchTargets: s.forceTouchTargets,
   };
@@ -335,6 +343,10 @@ const INITIAL: ShellState = {
   autoFetchMs: initialAutoFetch(stored),
   layoutMode: initialLayoutMode(stored),
   forceTouchTargets: initialForceTouch(stored),
+  // localStorage editado a mao pode guardar qualquer coisa: so uma string nao
+  // vazia passa. Um remoto apagado depois tambem cai fora no `resolveActiveRemote`.
+  activeRemote:
+    typeof stored.activeRemote === "string" && stored.activeRemote ? stored.activeRemote : null,
   // nunca restaura estado efemero
   settingsOpen: false,
   changesOpen: false,
@@ -407,6 +419,9 @@ export const setAutoFetchMs = (autoFetchMs: number) => set({ autoFetchMs });
 
 /** Preferencia bruta. Quem quer o layout que VALE agora usa `useLayoutMode()`. */
 export const setLayoutMode = (layoutMode: LayoutMode) => set({ layoutMode });
+
+/** Remoto de sincronizacao ativo. `null` volta ao predefinido. */
+export const setActiveRemote = (activeRemote: string | null) => set({ activeRemote });
 
 /**
  * Escreve a classe `touch-ui` no <html> — irma exata do `applyTheme`.
@@ -596,5 +611,6 @@ export const selectSettingsOpen = (s: ShellState) => s.settingsOpen;
 export const selectPaletteOpen = (s: ShellState) => s.paletteOpen;
 export const selectMobilePane = (s: ShellState) => s.mobilePane;
 export const selectLayoutMode = (s: ShellState) => s.layoutMode;
+export const selectActiveRemote = (s: ShellState) => s.activeRemote;
 export const selectForceTouchTargets = (s: ShellState) => s.forceTouchTargets;
 export const selectTouchSelectionMode = (s: ShellState) => s.touchSelectionMode;

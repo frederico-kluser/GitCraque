@@ -140,6 +140,17 @@ export interface Tag {
   message?: string;
 }
 
+/**
+ * Estado do branch atual em relacao a um remoto (`<remoto>/<branch>...HEAD`).
+ * `exists: false` quando o remoto ainda nao tem esse branch.
+ */
+export interface RemoteTracking {
+  branch: string;
+  exists: boolean;
+  ahead: number;
+  behind: number;
+}
+
 export interface Remote {
   name: string;
   fetchUrl: string;
@@ -148,6 +159,8 @@ export interface Remote {
   host?: string;
   /** true quando a url e https (usa o trampolim de askpass) */
   https: boolean;
+  /** tracking do branch atual neste remoto (preenchido em GET /refs) */
+  tracking?: RemoteTracking;
 }
 
 export interface HeadState {

@@ -226,11 +226,6 @@ export function branchMenu(branch: Branch): MenuItemSpec[] {
       onSelect: () => void doCheckout(branch.name),
     },
     {
-      label: t("menu.reveal"),
-      icon: Crosshair,
-      onSelect: () => selectRef(branch.fullName),
-    },
-    {
       label: t("menu.branch.mergeInto", { branch: atual ?? "…" }),
       icon: GitMerge,
       separatorBefore: true,
@@ -258,12 +253,6 @@ export function branchMenu(branch: Branch): MenuItemSpec[] {
       onSelect: () => openCreateBranch(branch.name),
     },
     { label: t("rail.branches.tagHere"), icon: TagIcon, onSelect: () => openCreateTag(branch.name) },
-    {
-      label: t("menu.copyName"),
-      icon: ClipboardCopy,
-      separatorBefore: true,
-      onSelect: () => void doCopy(branch.name, t("copy.name")),
-    },
     {
       label: t("rail.branches.deleteLocal"),
       icon: Trash2,

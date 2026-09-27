@@ -34,6 +34,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { BorderBeam } from "@/components/motion-ui/border-beam";
 import { MultiStateButton } from "@/components/motion-ui/multi-state-button";
+import { RemoteSelector } from "./RemoteSelector";
 import { ProgressBar } from "@/components/motion-ui/progress-bar";
 import { Skeleton } from "@/components/motion-ui/skeleton";
 import { Sparkline } from "@/components/motion-ui/sparkline";
@@ -769,6 +770,7 @@ export function Toolbar({ className }: PanelProps) {
 
             <UndoRedo />
 
+            <RemoteSelector />
             <NetButton
               label={t("action.fetch")}
               icon={<ArrowDownToLine className="size-3.5" />}
@@ -837,8 +839,9 @@ export function Toolbar({ className }: PanelProps) {
         {/* Some junto com os botoes: separador solto no md- seria um risco no ar. */}
         <div className="hidden h-7 w-px bg-border md:block" />
 
-        {/* --- rede --- */}
+        {/* --- rede: o remoto ativo e o estado, e so entao as operacoes --- */}
         <div className="flex items-center gap-1.5">
+          <RemoteSelector />
           <NetButton
             label={t("action.fetch")}
             icon={<ArrowDownToLine className="size-3.5" />}

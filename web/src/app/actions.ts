@@ -28,6 +28,10 @@ import {
 } from "@/state/store";
 import { openDialog } from "@/dialogs";
 import { askConfirm } from "@/hooks";
+// Caminho RELATIVO de proposito: os domtests empacotam este modulo com
+// `--alias:@/hooks=<stub>`, e o esbuild aplica o alias tambem a subcaminhos —
+// "@/hooks/useShellStore" cairia dentro do stub (nao e diretorio).
+import { getShellState } from "../hooks/useShellStore";
 import type { ConfirmField } from "@/hooks";
 import { t } from "@/i18n";
 import type { CommitRef, PendingOperationKind, Remote, Worktree } from "@/types/git";
@@ -50,6 +54,16 @@ function remoteOptions(): Array<{ value: string; label: string }> {
 const defaultRemote = () => {
   const names = remoteOptions().map((o) => o.value);
   return names.find((n) => n === "origin") ?? names[0] ?? "origin";
+};
+
+/**
+ * O remoto ATIVO da interface (seletor da toolbar). Um nome que ja nao existe
+ * em `git remote -v` cai no predefinido: o localStorage sobrevive a remotos
+ * apagados e nenhuma operacao pode perseguir um fantasma.
+ */
+export const resolveActiveRemote = (): string => {
+  const active = getShellState().activeRemote;
+  return active && remoteOptions().some((o) => o.value === active) ? active : defaultRemote();
 };
 
 const currentBranch = () => getState().repo?.head.branch ?? getState().status?.branch ?? null;
@@ -107,10 +121,20 @@ async function writeClipboard(text: string): Promise<boolean> {
 /* Rede — fetch / pull / push                                          */
 /* ------------------------------------------------------------------ */
 
-export const doFetch = () =>
-  runOperation(t("action.fetch"), () => api.fetch({ all: true, prune: true }), {
+/** Fetch do remoto ATIVO da toolbar (o `all: true` ficou para `doFetchAll`). */
+export const doFetch = () => {
+  const remote = resolveActiveRemote();
+  return runOperation(t("action.fetch"), () => api.fetch({ remote, prune: true }), {
     refresh: "refs",
     successMessage: t("action.fetch.done"),
+  });
+};
+
+/** Fetch de TODOS os remotos — a ultima linha do seletor de remoto. */
+export const doFetchAll = () =>
+  runOperation(t("action.fetchAll"), () => api.fetch({ all: true, prune: true }), {
+    refresh: "refs",
+    successMessage: t("action.fetchAll.done"),
   });
 
 /** Fetch de UM remoto — o menu do remoto no rail. */
@@ -120,10 +144,16 @@ export const doFetchRemote = (remote: string) =>
     successMessage: t("action.fetchRemote.done", { remote }),
   });
 
-export const doPull = (rebase = false) =>
-  runOperation(rebase ? t("action.pullRebase") : t("action.pull"), () => api.pull({ rebase }), {
-    successMessage: rebase ? t("action.pullRebase.done") : t("action.pull.done"),
-  });
+export const doPull = (rebase = false) => {
+  const remote = resolveActiveRemote();
+  return runOperation(
+    rebase ? t("action.pullRebase") : t("action.pull"),
+    () => api.pull({ remote, rebase }),
+    {
+      successMessage: rebase ? t("action.pullRebase.done") : t("action.pull.done"),
+    },
+  );
+};
 
 /**
  * Dialogo de push: escolhe o destino a partir de `git remote -v`, com
@@ -143,14 +173,14 @@ export function openPushDialog(preset: { remote?: string; branch?: string } = {}
   askConfirm({
     title: t("action.push.title"),
     description: t("action.push.description", { branch: branch || t("action.push.currentBranch") }),
-    preview: ["git", "push", preset.remote ?? defaultRemote(), branch].filter(Boolean),
+    preview: ["git", "push", preset.remote ?? resolveActiveRemote(), branch].filter(Boolean),
     confirmLabel: t("action.push.confirm"),
     fields: [
       {
         kind: "select",
         name: "remote",
         label: t("action.push.field.remote"),
-        value: preset.remote ?? defaultRemote(),
+        value: preset.remote ?? resolveActiveRemote(),
         options: remotes,
       },
       {

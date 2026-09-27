@@ -470,6 +470,13 @@ export const zh: Messages = {
   "action.pull.done": "Pull 完成",
   "action.pullRebase": "Pull --rebase",
   "action.pullRebase.done": "Pull --rebase 完成",
+  "action.fetchAll": "获取所有远程",
+  "action.fetchAll.done": "所有远程 Fetch 完成",
+  "toolbar.remote.trigger": "同步远程",
+  "toolbar.remote.status": "比 {ref} 领先 {ahead}，落后 {behind}",
+  "toolbar.remote.upToDate": "与 {ref} 同步",
+  "toolbar.remote.noBranch": "{ref} 还没有此分支",
+  "ai.open": "AI 助手",
 
   "action.push.noRemote.title": "未配置任何远程",
   "action.push.noRemote.body": "推送前请先添加一个 origin。",

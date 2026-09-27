@@ -481,6 +481,13 @@ export const es: Messages = {
   "action.pull.done": "Pull completado",
   "action.pullRebase": "Pull --rebase",
   "action.pullRebase.done": "Pull --rebase completado",
+  "action.fetchAll": "Buscar en todos los remotos",
+  "action.fetchAll.done": "Fetch de todos los remotos completado",
+  "toolbar.remote.trigger": "Remoto de sincronización",
+  "toolbar.remote.status": "{ahead} por delante, {behind} por detrás de {ref}",
+  "toolbar.remote.upToDate": "al día con {ref}",
+  "toolbar.remote.noBranch": "{ref} aún no tiene esta branch",
+  "ai.open": "Asistente de IA",
 
   "action.push.noRemote.title": "Ningún remoto configurado",
   "action.push.noRemote.body": "Añade un origin antes de hacer push.",

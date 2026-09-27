@@ -491,6 +491,13 @@ export const pt = {
   "action.pull.done": "Pull concluído",
   "action.pullRebase": "Pull --rebase",
   "action.pullRebase.done": "Pull --rebase concluído",
+  "action.fetchAll": "Buscar em todos os remotos",
+  "action.fetchAll.done": "Fetch de todos os remotos concluído",
+  "toolbar.remote.trigger": "Remoto de sincronização",
+  "toolbar.remote.status": "{ahead} à frente, {behind} atrás de {ref}",
+  "toolbar.remote.upToDate": "em dia com {ref}",
+  "toolbar.remote.noBranch": "{ref} ainda não tem esta branch",
+  "ai.open": "Assistente de IA",
 
   "action.push.noRemote.title": "Nenhum remoto configurado",
   "action.push.noRemote.body": "Adicione um origin antes de dar push.",

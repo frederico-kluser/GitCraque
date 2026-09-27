@@ -228,6 +228,11 @@ export function AiBar() {
   // A bolha de resposta abre quando ha o que mostrar. `idle` e o repouso: so a
   // faixa, sem nada acima dela.
   const open = agent.phase !== "idle";
+  // Em repouso a faixa COLAPSA num gatilho: o rodape e o espaco mais disputado
+  // do app (a armadilha do `elementFromPoint` esta descrita no GraphView) e uma
+  // caixa de texto permanente e sujeira fixa para quem nao esta a escrever.
+  const [expanded, setExpanded] = useState(false);
+  const collapsed = !open && !busy && !expanded;
 
   /* ---- Escape: aborta o que estiver em voo, senao fecha a bolha ---- */
   useEffect(() => {
@@ -240,6 +245,17 @@ export function AiBar() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [agent.phase, open]);
+
+  /* Escape no repouso devolve a faixa ao gatilho — a mesma tecla que fecha a
+     bolha nao pode deixar a caixa de texto aberta para sempre. */
+  useEffect(() => {
+    if (open || collapsed) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setExpanded(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [collapsed, open]);
 
   // Antes da primeira resposta de `/ai/status` nao ha o que mostrar: nem a
   // faixa liberada (pode nao haver chave) nem o convite (pode haver).
@@ -320,7 +336,27 @@ export function AiBar() {
         )}
       </AnimatePresence>
 
-      {ai.hasKey ? <Composer busy={busy} /> : <LockedArea />}
+      {collapsed ? (
+        <button
+          type="button"
+          onClick={() => setExpanded(true)}
+          title={t("ai.open")}
+          aria-label={t("ai.open")}
+          className={cn(
+            "pointer-events-auto flex items-center gap-2 rounded-full border border-border bg-card px-3 py-2 text-xs text-muted-foreground shadow-lg touch:min-h-tap",
+            "transition-colors duration-[var(--motion-ui-transition-snap-duration)] ease-[var(--motion-ui-transition-snap)]",
+            "hover:bg-accent hover:text-foreground",
+            FOCUS_RING,
+          )}
+        >
+          {ai.hasKey ? <Sparkles className="size-3.5 text-primary" /> : <Lock className="size-3.5" />}
+          {t("ai.open")}
+        </button>
+      ) : ai.hasKey ? (
+        <Composer busy={busy} />
+      ) : (
+        <LockedArea />
+      )}
     </div>
   );
 }

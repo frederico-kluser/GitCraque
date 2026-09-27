@@ -256,6 +256,42 @@ export function parseStashList(stdout) {
  * ------------------------------------------------------------------ */
 
 /**
+ * Estado do branch atual em relacao a CADA remoto: commits a mais (`ahead`) e
+ * a menos (`behind`) de `<remoto>/<branch>`. Um remoto sem o branch fica
+ * `exists: false`. Comando separado (rev-list) — `LOG_ARGS` nao se mexe.
+ *
+ * @param {string} [cwd]
+ * @param {string | null} branch
+ * @param {import("../types.mjs").Remote[]} remotes
+ */
+export async function attachRemoteTracking(cwd = process.cwd(), branch, remotes) {
+  if (!branch) return;
+  // Nomes vem do repo, mas um "-" a frente ainda seria uma flag e um ".."
+  // mudaria o intervalo do rev-list: o mesmo guardanapo do resto do projeto.
+  const safe = (name) => Boolean(name) && !name.startsWith("-") && !name.includes("..");
+  if (!safe(branch)) return;
+  await Promise.all(
+    remotes.map(async (remote) => {
+      if (!safe(remote.name)) return;
+      const spec = `${remote.name}/${branch}...HEAD`;
+      const result = await readGit(["rev-list", "--left-right", "--count", spec], { cwd });
+      if (!result.ok) {
+        remote.tracking = { branch, exists: false, ahead: 0, behind: 0 };
+        return;
+      }
+      // "--left-right --count A...B" = "so-em-A<TAB>so-em-B": atras, a frente.
+      const [behind = "0", ahead = "0"] = result.stdout.trim().split(/\s+/);
+      remote.tracking = {
+        branch,
+        exists: true,
+        ahead: Number.parseInt(ahead, 10) || 0,
+        behind: Number.parseInt(behind, 10) || 0,
+      };
+    }),
+  );
+}
+
+/**
  * @param {string} [cwd]
  * @returns {Promise<import("../types.mjs").RefsPayload>}
  */
@@ -295,6 +331,7 @@ export async function getRefsPayload(cwd = process.cwd()) {
     if (wt && samePath(wt.path, cwd)) branch.isHead = true;
   }
 
+  await attachRemoteTracking(cwd, head.branch, remotes);
   return { head, branches, remoteBranches, tags, remotes, stashes };
 }
 
