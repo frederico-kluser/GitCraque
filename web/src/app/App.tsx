@@ -17,6 +17,7 @@ import { GraphView } from "@/graph";
 import { GitDndProvider } from "@/dnd";
 import { DialogHost, RepoPicker } from "@/dialogs";
 import { ChangesSheet, RailPanels, SidePanel, Toolbar } from "@/panels";
+import { ProjectTabs } from "@/panels/ProjectTabs";
 import { StaggerReveal, StaggerRevealHeadline, StaggerRevealItem } from "@/components/motion-ui/stagger-reveal";
 import { Rich, t } from "@/i18n";
 import {
@@ -301,7 +302,13 @@ export function App() {
         )}
         style={{ gridTemplateRows: "auto minmax(0,1fr) auto" }}
       >
-        <Toolbar className="border-b border-border bg-surface-rail" />
+        <div className="flex flex-col">
+          <Toolbar className="border-b border-border bg-surface-rail" />
+          {/* As tabs de projetos vivem na MESMA faixa cromatica da toolbar:
+              uma cabeca so, em duas linhas — a de cima e da operacao, a de
+              baixo e da troca de contexto. */}
+          <ProjectTabs />
+        </div>
 
         {compact ? (
           /* --- coluna unica: um painel por vez, escolhido na barra inferior

@@ -486,6 +486,10 @@ export const en: Messages = {
   "toolbar.remote.upToDate": "up to date with {ref}",
   "toolbar.remote.noBranch": "{ref} does not have this branch yet",
   "ai.open": "AI assistant",
+  "tabs.label": "Open projects",
+  "tabs.close": "Close {name}",
+  "tabs.closeLast.hint": "Cannot close the only open tab",
+  "tabs.add": "Open project",
 
   "action.push.noRemote.title": "No remote configured",
   "action.push.noRemote.body": "Add an origin before pushing.",
@@ -602,6 +606,10 @@ export const en: Messages = {
   "action.worktree.field.newBranch": "Create branch (-b)",
   "action.worktree.field.ref": "Starting from",
   "action.worktree.add.op": "Add worktree",
+  "menu.commit.createWorktree": "Create worktree from this commit…",
+  "rail.branches.createWorktree": "Create worktree with this branch…",
+  "action.worktree.add.fromCommit.title": "Create worktree from {ref}",
+  "action.worktree.add.fromBranch.title": "Create worktree with branch {branch}",
   "action.worktree.remove.title": "Remove worktree {label}",
   "action.worktree.remove.description":
     "Unregisters {path}. The directory leaves the disk if git manages to remove it.",

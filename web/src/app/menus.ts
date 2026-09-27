@@ -169,6 +169,11 @@ export function commitMenu(hash: string): MenuItemSpec[] {
     },
     { label: t("menu.commit.createTag"), icon: TagIcon, onSelect: () => openCreateTag(hash) },
     {
+      label: t("menu.commit.createWorktree"),
+      icon: FolderPlus,
+      onSelect: () => openAddWorktree({ ref: hash }),
+    },
+    {
       label: t("menu.commit.cherryPick"),
       icon: Layers,
       separatorBefore: true,
@@ -251,6 +256,17 @@ export function branchMenu(branch: Branch): MenuItemSpec[] {
       label: t("menu.branch.createFrom"),
       icon: GitBranchPlus,
       onSelect: () => openCreateBranch(branch.name),
+    },
+    {
+      label: t("rail.branches.createWorktree"),
+      icon: FolderPlus,
+      // Uma branch ja usada por OUTRA worktree (ou pela atual) nao pode entrar
+      // em segunda — o git recusa. Presa e presa em qualquer lugar.
+      disabled: Boolean(branch.checkedOutIn),
+      hint: branch.checkedOutIn
+        ? t("commands.branch.checkout.pinned", { worktree: branch.checkedOutIn })
+        : undefined,
+      onSelect: () => openAddWorktree({ branch: branch.name }),
     },
     { label: t("rail.branches.tagHere"), icon: TagIcon, onSelect: () => openCreateTag(branch.name) },
     {

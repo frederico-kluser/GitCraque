@@ -498,6 +498,10 @@ export const pt = {
   "toolbar.remote.upToDate": "em dia com {ref}",
   "toolbar.remote.noBranch": "{ref} ainda não tem esta branch",
   "ai.open": "Assistente de IA",
+  "tabs.label": "Projetos abertos",
+  "tabs.close": "Fechar {name}",
+  "tabs.closeLast.hint": "Não fecha a única tab aberta",
+  "tabs.add": "Abrir projeto",
 
   "action.push.noRemote.title": "Nenhum remoto configurado",
   "action.push.noRemote.body": "Adicione um origin antes de dar push.",
@@ -616,6 +620,10 @@ export const pt = {
   "action.worktree.field.newBranch": "Criar branch (-b)",
   "action.worktree.field.ref": "A partir de",
   "action.worktree.add.op": "Adicionar worktree",
+  "menu.commit.createWorktree": "Criar worktree a partir deste commit…",
+  "rail.branches.createWorktree": "Criar worktree com esta branch…",
+  "action.worktree.add.fromCommit.title": "Criar worktree a partir de {ref}",
+  "action.worktree.add.fromBranch.title": "Criar worktree com a branch {branch}",
   "action.worktree.remove.title": "Remover worktree {label}",
   "action.worktree.remove.description":
     "Desregistra {path}. O diretório sai do disco se o git conseguir removê-lo.",

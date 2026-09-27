@@ -123,6 +123,12 @@ export interface CommitDraft {
   signoff: boolean;
 }
 
+/** Um projeto aberto numa tab. `path` e a identidade; `name` e o rotulo. */
+export interface OpenProjectTab {
+  path: string;
+  name: string;
+}
+
 export interface ShellState {
   theme: ThemeMode;
   /** larguras em px das colunas laterais do grid principal */
@@ -141,6 +147,12 @@ export interface ShellState {
    * e escolha da pessoa, nao estado do repositorio.
    */
   activeRemote: string | null;
+  /**
+   * Projetos abertos como tabs, pela ordem das tabs. Persistido: e o
+   * workspace da pessoa. A tab ATIVA deriva de `repo.cwd` (o servidor e a
+   * fonte) — nunca o contrario.
+   */
+  openProjects: OpenProjectTab[];
   /** modal de configuracoes aberto. Efemero, como a gaveta de alteracoes. */
   settingsOpen: boolean;
   /**
@@ -253,6 +265,7 @@ const DEFAULTS: ShellState = {
   detailWidth: 560,
   autoFetchMs: 60_000,
   activeRemote: null,
+  openProjects: [],
   settingsOpen: false,
   changesOpen: false,
   paletteOpen: false,
@@ -268,7 +281,7 @@ const DEFAULTS: ShellState = {
 /** So o que faz sentido sobreviver ao reload. */
 type Persisted = Pick<
   ShellState,
-  "theme" | "railWidth" | "detailWidth" | "autoFetchMs" | "activeRemote" | "layoutMode" | "forceTouchTargets"
+  "theme" | "railWidth" | "detailWidth" | "autoFetchMs" | "activeRemote" | "openProjects" | "layoutMode" | "forceTouchTargets"
 >;
 
 function readPersisted(): Partial<Persisted> {
@@ -289,6 +302,7 @@ function writePersisted(s: ShellState) {
     detailWidth: s.detailWidth,
     autoFetchMs: s.autoFetchMs,
     activeRemote: s.activeRemote,
+    openProjects: s.openProjects,
     layoutMode: s.layoutMode,
     forceTouchTargets: s.forceTouchTargets,
   };
@@ -335,6 +349,19 @@ function initialForceTouch(stored: Partial<Persisted>): boolean {
     : DEFAULTS.forceTouchTargets;
 }
 
+/**
+ * `localStorage` editado a mao pode guardar qualquer coisa numa lista: so
+ * entradas `{path, name}` de strings nao vazias passam.
+ */
+function initialOpenProjects(stored: Partial<Persisted>): OpenProjectTab[] {
+  const value = stored.openProjects;
+  if (!Array.isArray(value)) return DEFAULTS.openProjects;
+  return value.filter(
+    (tab): tab is OpenProjectTab =>
+      Boolean(tab) && typeof tab.path === "string" && tab.path !== "" && typeof tab.name === "string",
+  );
+}
+
 const stored = readPersisted();
 const INITIAL: ShellState = {
   ...DEFAULTS,
@@ -343,6 +370,7 @@ const INITIAL: ShellState = {
   autoFetchMs: initialAutoFetch(stored),
   layoutMode: initialLayoutMode(stored),
   forceTouchTargets: initialForceTouch(stored),
+  openProjects: initialOpenProjects(stored),
   // localStorage editado a mao pode guardar qualquer coisa: so uma string nao
   // vazia passa. Um remoto apagado depois tambem cai fora no `resolveActiveRemote`.
   activeRemote:
@@ -422,6 +450,21 @@ export const setLayoutMode = (layoutMode: LayoutMode) => set({ layoutMode });
 
 /** Remoto de sincronizacao ativo. `null` volta ao predefinido. */
 export const setActiveRemote = (activeRemote: string | null) => set({ activeRemote });
+
+/** Regista um projeto aberto (tab). Se ja existe, so atualiza o rotulo. */
+export function openProjectTab(tab: OpenProjectTab) {
+  const exists = state.openProjects.some((entry) => entry.path === tab.path);
+  set({
+    openProjects: exists
+      ? state.openProjects.map((entry) => (entry.path === tab.path ? { ...entry, name: tab.name } : entry))
+      : [...state.openProjects, tab],
+  });
+}
+
+/** Fecha a tab de um projeto. Quem chama decide para onde olhar a seguir. */
+export function closeProjectTab(path: string) {
+  set({ openProjects: state.openProjects.filter((entry) => entry.path !== path) });
+}
 
 /**
  * Escreve a classe `touch-ui` no <html> — irma exata do `applyTheme`.
@@ -612,5 +655,6 @@ export const selectPaletteOpen = (s: ShellState) => s.paletteOpen;
 export const selectMobilePane = (s: ShellState) => s.mobilePane;
 export const selectLayoutMode = (s: ShellState) => s.layoutMode;
 export const selectActiveRemote = (s: ShellState) => s.activeRemote;
+export const selectOpenProjects = (s: ShellState) => s.openProjects;
 export const selectForceTouchTargets = (s: ShellState) => s.forceTouchTargets;
 export const selectTouchSelectionMode = (s: ShellState) => s.touchSelectionMode;

@@ -832,37 +832,67 @@ export function openRemoveRemote(name: string) {
  */
 export const doSwitchWorktree = (wt: Worktree | string) => switchWorktree(wt);
 
-export function openAddWorktree() {
+/**
+ * Criar worktree. `preset.ref` = um commit (menu de commit); `preset.branch` =
+ * uma branch existente que vai ficar no worktree (menu de branch) — nesse caso
+ * a branch ja esta decidida e o dialogo so pede o caminho. Sem preset, e o
+ * dialogo generico de sempre (path + branch nova opcional + ref).
+ */
+export function openAddWorktree(preset: { ref?: string; branch?: string } = {}) {
+  const fromBranch = Boolean(preset.branch);
+  const pathField: ConfirmField = {
+    kind: "text",
+    name: "path",
+    label: t("action.worktree.field.path"),
+    placeholder: t("action.worktree.field.path.placeholder"),
+    required: true,
+  };
   askConfirm({
-    title: t("action.worktree.add.title"),
+    title: fromBranch
+      ? t("action.worktree.add.fromBranch.title", { branch: preset.branch ?? "" })
+      : preset.ref
+        ? t("action.worktree.add.fromCommit.title", { ref: short(preset.ref) })
+        : t("action.worktree.add.title"),
     description: t("action.worktree.add.description"),
-    preview: ["git", "worktree", "add", t("argv.path")],
+    preview: [
+      "git",
+      "worktree",
+      "add",
+      t("argv.path"),
+      fromBranch ? (preset.branch ?? "") : (preset.ref ?? ""),
+    ].filter(Boolean),
     confirmLabel: t("action.worktree.add.confirm"),
-    fields: [
-      {
-        kind: "text",
-        name: "path",
-        label: t("action.worktree.field.path"),
-        placeholder: t("action.worktree.field.path.placeholder"),
-        required: true,
-      },
-      {
-        kind: "text",
-        name: "newBranch",
-        label: t("action.worktree.field.newBranch"),
-        placeholder: t("common.optional"),
-      },
-      { kind: "text", name: "ref", label: t("action.worktree.field.ref"), placeholder: "HEAD" },
-    ],
+    fields: fromBranch
+      ? [pathField]
+      : [
+          pathField,
+          {
+            kind: "text",
+            name: "newBranch",
+            label: t("action.worktree.field.newBranch"),
+            placeholder: t("common.optional"),
+          },
+          {
+            kind: "text",
+            name: "ref",
+            label: t("action.worktree.field.ref"),
+            placeholder: "HEAD",
+            value: preset.ref ?? "",
+          },
+        ],
     run: (values) =>
       runOperation(
         t("action.worktree.add.op"),
         () =>
-          api.addWorktree({
-            path: text(values, "path"),
-            newBranch: text(values, "newBranch") || undefined,
-            ref: text(values, "ref") || undefined,
-          }),
+          api.addWorktree(
+            fromBranch
+              ? { path: text(values, "path"), branch: preset.branch }
+              : {
+                  path: text(values, "path"),
+                  newBranch: text(values, "newBranch") || undefined,
+                  ref: text(values, "ref") || undefined,
+                },
+          ),
         { refresh: "all" },
       ),
   });

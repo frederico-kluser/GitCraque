@@ -12,6 +12,7 @@
 import { Fragment } from "react";
 import { formatBytes, t } from "@/i18n";
 import type { FileContentPayload } from "@/types/git";
+import { codeLines, detectLang } from "./CodeText.tsx";
 import { Notice } from "./parts.tsx";
 
 /* `formatBytes` mudou de casa: o separador decimal e do IDIOMA (41,2 kB em
@@ -43,6 +44,8 @@ export function RawView({ payload }: RawViewProps) {
   }
 
   const lines = toLines(payload.content);
+  /* Pintado com estado entre linhas: comentarios de bloco atravessam linhas. */
+  const painted = codeLines(lines, detectLang(payload.path));
 
   return (
     <div>
@@ -68,7 +71,9 @@ export function RawView({ payload }: RawViewProps) {
               <span className="select-none py-0.5 text-right tabular-nums text-muted-foreground/70 max-md:px-1.5 px-2">
                 {index + 1}
               </span>
-              <span className="py-0.5 pr-3 whitespace-pre-wrap break-words max-md:text-[13px]">{line || " "}</span>
+              <span className="py-0.5 pr-3 whitespace-pre-wrap break-words max-md:text-[13px]">
+                {painted[index]?.length ? painted[index] : line || " "}
+              </span>
             </Fragment>
           ))}
         </div>

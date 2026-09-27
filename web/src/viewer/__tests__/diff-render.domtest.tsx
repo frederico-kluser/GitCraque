@@ -164,8 +164,13 @@ test("o tipo do segmento vem do SEGMENTO, nao da linha: add dentro de del usa to
     has(html, `<span class="py-1 pr-3 whitespace-pre-wrap break-words bg-diff-del-bg text-diff-del-fg">`),
     "a linha del nao carregou o tom del",
   );
+  // "new" e palavra-chave: o realce de sintaxe entra como span FILHO, dentro do
+  // segmento — o tom do segmento nao muda.
   assert.ok(
-    has(html, `<span class="rounded-[2px] bg-diff-add-fg text-diff-add-bg">new</span>`),
+    has(
+      html,
+      `<span class="rounded-[2px] bg-diff-add-fg text-diff-add-bg"><span class="text-code-keyword">new</span></span>`,
+    ),
     "o segmento add dentro de linha del nao inverteu os tokens",
   );
 });
@@ -181,7 +186,7 @@ test("os textos dos segmentos somam o conteudo inteiro, na ordem", () => {
   }
 });
 
-test("sem words: linha inteira com a cor do tipo, sem spans internos", () => {
+test("sem words: linha com o tom do tipo; spans so dentro do codigo pintado", () => {
   const html = render(makePatch());
   assert.ok(
     has(html, `<span class="py-1 pr-3 whitespace-pre-wrap break-words bg-diff-add-bg text-diff-add-fg">plain add line</span>`),
@@ -189,10 +194,15 @@ test("sem words: linha inteira com a cor do tipo, sem spans internos", () => {
   );
   const linhaCrua = count(html, `>plain add line<`);
   assert.equal(linhaCrua, 1);
-  // A linha de contexto pura nao carrega tom nenhum.
+  // A linha de contexto nao carrega tom nenhum; o realce de sintaxe entra como
+  // spans FILHOS (keyword/string), nunca na casca da linha — e o texto comum
+  // continua puro, sem casca.
   assert.ok(
-    has(html, `<span class="py-1 pr-3 whitespace-pre-wrap break-words">import x from &quot;y&quot;;</span>`),
-    "contexto puro ganhou cor",
+    has(
+      html,
+      `<span class="py-1 pr-3 whitespace-pre-wrap break-words"><span class="text-code-keyword">import</span> x <span class="text-code-keyword">from</span> <span class="text-code-string">&quot;y&quot;</span>;</span>`,
+    ),
+    "o contexto nao pintou import/from/string como spans filhos",
   );
 });
 

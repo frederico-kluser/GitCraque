@@ -488,6 +488,10 @@ export const es: Messages = {
   "toolbar.remote.upToDate": "al día con {ref}",
   "toolbar.remote.noBranch": "{ref} aún no tiene esta branch",
   "ai.open": "Asistente de IA",
+  "tabs.label": "Proyectos abiertos",
+  "tabs.close": "Cerrar {name}",
+  "tabs.closeLast.hint": "No se puede cerrar la única tab abierta",
+  "tabs.add": "Abrir proyecto",
 
   "action.push.noRemote.title": "Ningún remoto configurado",
   "action.push.noRemote.body": "Añade un origin antes de hacer push.",
@@ -606,6 +610,10 @@ export const es: Messages = {
   "action.worktree.field.newBranch": "Crear rama (-b)",
   "action.worktree.field.ref": "A partir de",
   "action.worktree.add.op": "Añadir worktree",
+  "menu.commit.createWorktree": "Crear worktree desde este commit…",
+  "rail.branches.createWorktree": "Crear worktree con esta branch…",
+  "action.worktree.add.fromCommit.title": "Crear worktree desde {ref}",
+  "action.worktree.add.fromBranch.title": "Crear worktree con la branch {branch}",
   "action.worktree.remove.title": "Quitar el worktree {label}",
   "action.worktree.remove.description":
     "Da de baja {path}. El directorio sale del disco si git consigue borrarlo.",

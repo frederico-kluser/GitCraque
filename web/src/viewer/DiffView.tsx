@@ -29,11 +29,12 @@
  * `oldStart:newStart`), nao aqui — assim o colapso sobrevive a troca de modo
  * e de aba de carga, que remonta este componente.
  */
-import { Fragment } from "react";
+import { Fragment, type ReactNode } from "react";
 import type { DiffHunk, DiffLine, DiffPayload } from "@/types/git";
 import { selectIsMobile, useViewportValue } from "@/hooks";
 import { Rich, t } from "@/i18n";
 import { cn } from "@/lib/utils";
+import { codeLines, codeText, detectLang, type Lang } from "./CodeText.tsx";
 import { Notice } from "./parts.tsx";
 
 /* ------------------------------------------------------------------ */
@@ -101,13 +102,13 @@ const hunkKey = (hunk: DiffHunk) => `${hunk.oldStart}:${hunk.newStart}`;
 
 /* ------------------------------------------------------------------ */
 
-function LineContent({ line }: { line: DiffLine }) {
-  if (!line.words) return <>{line.content || " "}</>;
+function LineContent({ line, lang, painted }: { line: DiffLine; lang: Lang; painted: ReactNode }) {
+  if (!line.words) return <>{painted}</>;
   return (
     <>
       {line.words.map((word, index) => (
         <span key={index} className={WORD_TONE[word.kind]}>
-          {word.text}
+          {codeText(word.text, lang)}
         </span>
       ))}
     </>
@@ -116,14 +117,18 @@ function LineContent({ line }: { line: DiffLine }) {
 
 interface HunkLinesProps {
   hunk: DiffHunk;
+  lang: Lang;
   compact: boolean;
   collapsed: boolean;
   onToggle: () => void;
 }
 
-function HunkLines({ hunk, compact, collapsed, onToggle }: HunkLinesProps) {
+function HunkLines({ hunk, lang, compact, collapsed, onToggle }: HunkLinesProps) {
   const span = compact ? "col-span-3" : "col-span-4";
   const collapseLabel = collapsed ? t("diff.hunk.expand") : t("diff.hunk.collapse");
+  /* Pintado por hunk inteiro: o estado do realce (comentarios de bloco,
+     templates) atravessa linhas, entao nao da para pintar linha a linha. */
+  const painted = codeLines(hunk.lines.map((l) => l.content || " "), lang);
 
   return (
     <>
@@ -167,7 +172,7 @@ function HunkLines({ hunk, compact, collapsed, onToggle }: HunkLinesProps) {
                 {LINE_MARK[line.kind]}
               </span>
               <span className={cn(CONTENT, tone)}>
-                <LineContent line={line} />
+                <LineContent line={line} lang={lang} painted={painted[index]} />
               </span>
             </Fragment>
           ) : (
@@ -178,7 +183,7 @@ function HunkLines({ hunk, compact, collapsed, onToggle }: HunkLinesProps) {
                 {LINE_MARK[line.kind]}
               </span>
               <span className={cn(CONTENT, tone)}>
-                <LineContent line={line} />
+                <LineContent line={line} lang={lang} painted={painted[index]} />
               </span>
             </Fragment>
           );
@@ -202,6 +207,7 @@ export function DiffView({ patch, path, collapsed, onToggleHunk }: DiffViewProps
      de 768px, coalescido por rAF no proprio hook — nada de re-render a cada
      pixel de resize. */
   const compact = useViewportValue(selectIsMobile);
+  const lang = detectLang(patch?.path ?? path);
 
   if (!patch) {
     return (
@@ -258,6 +264,7 @@ export function DiffView({ patch, path, collapsed, onToggleHunk }: DiffViewProps
           <HunkLines
             key={`${key}-${index}`}
             hunk={hunk}
+            lang={lang}
             compact={compact}
             collapsed={collapsed?.has(key) ?? false}
             onToggle={() => onToggleHunk?.(key)}

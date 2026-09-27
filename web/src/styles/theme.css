@@ -110,6 +110,13 @@
   --diff-add-fg: oklch(0.42 0.12 150);
   --diff-del-bg: oklch(0.94 0.05 20);
   --diff-del-fg: oklch(0.47 0.16 22);
+
+  /* codigo — realce de sintaxe leve (viewer/highlight.ts) */
+  --code-comment: oklch(0.53 0.02 250);
+  --code-string: oklch(0.46 0.11 155);
+  --code-number: oklch(0.52 0.11 300);
+  --code-keyword: oklch(0.45 0.15 285);
+  --code-function: oklch(0.45 0.12 255);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -167,6 +174,13 @@
   --diff-add-fg: oklch(0.82 0.13 150);
   --diff-del-bg: oklch(0.30 0.07 20);
   --diff-del-fg: oklch(0.82 0.13 22);
+
+  /* codigo — realce de sintaxe leve (viewer/highlight.ts) */
+  --code-comment: oklch(0.62 0.02 250);
+  --code-string: oklch(0.78 0.12 155);
+  --code-number: oklch(0.76 0.11 300);
+  --code-keyword: oklch(0.75 0.16 285);
+  --code-function: oklch(0.76 0.13 255);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
@@ -224,6 +238,12 @@
   --color-diff-add-fg: var(--diff-add-fg);
   --color-diff-del-bg: var(--diff-del-bg);
   --color-diff-del-fg: var(--diff-del-fg);
+
+  --color-code-comment: var(--code-comment);
+  --color-code-string: var(--code-string);
+  --color-code-number: var(--code-number);
+  --color-code-keyword: var(--code-keyword);
+  --color-code-function: var(--code-function);
 
   /*
    * Espacamentos nomeados. O namespace `--spacing-*` do Tailwind v4 rende
