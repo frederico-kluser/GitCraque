@@ -1,6 +1,6 @@
 ---
 name: project-router
-description: "Routes EVERY implementation task in the GitCraque codebase to the right skills before any step is taken: asks clarifying questions in Brazilian Portuguese, writes TASK_PLAN.md, checks the frozen contracts, assembles the skill chain and runs the evolution step at the end. Use whenever the user asks for any change, fix, feature, refactor, investigation or analysis in this repository, even if they never mention skills, routing or planning."
+description: "Routes EVERY implementation task in the GitCraque codebase before any step is taken: asks clarifying questions in Brazilian Portuguese, writes TASK_PLAN.md, checks the frozen contracts, recovers the domain knowledge from the local CoALA memory (knowledge/* records), and records durable learning there at the end. Use whenever the user asks for any change, fix, feature, refactor, investigation or analysis in this repository, even if they never mention skills, routing or planning."
 metadata:
   type: router
   verification_signal: node .agents/skills/evals/run-evals.mjs
@@ -91,39 +91,43 @@ is a wiring task, not a new endpoint. This step routinely halves the work.
 
 ### 4. Classify and select
 
-Read `catalog.md`. **Pick the domain skill by directory** — the directory always
-wins over the description. `CommitRow.tsx` is a React component, but it lives in
-`web/src/graph/**`, so it belongs to `laying-out-commit-graph`, not to the shell
-skill that claims "any new React component". Add `translating-interface-text` if
-any user-facing text is involved, and always finish with `verifying-changes`.
+Read `catalog.md`. **Pick the domain by directory** — the directory always wins
+over the wording. `CommitRow.tsx` is a React component, but it lives in
+`web/src/graph/**`, so it is graph layout (`knowledge/laying-out-commit-graph`),
+not shell. Any user-facing text also needs `knowledge/translating-interface-text`,
+and every task ends with `verifying-changes`.
 
 ### 5. Assemble the chain
 
-The four domain skills are independent and may run in parallel subagents.
-Their edits to `web/src/i18n/locales/pt.ts` may **not** — all four fronts write
-that one file. Verification runs last, alone, one command at a time.
+The four fronts (backend, graph, dnd, shell) are independent and may run in
+parallel subagents. Their edits to `web/src/i18n/locales/pt.ts` may **not** —
+all four fronts write that one file. Verification runs last, alone, one command
+at a time.
 
-### 6. Load the knowledge, then execute
+### 6. Recover the knowledge, then execute
 
-Read the selected skills **before** writing code, then follow `TASK_PLAN.md`.
+Recover the domain knowledge from the local CoALA memory **before** writing
+code — `coala.py recall "<tarefa>" --budget 1500` at the start, then
+`coala.py search "<termos>" --tags knowledge,<skill>` for every domain in
+scope — and follow `TASK_PLAN.md`.
 
 ### 7. On completion
 
 1. Run `verifying-changes`: the relevant suites one at a time, `npm run
    typecheck`, and `node .agents/skills/scripts/check-project-rules.mjs`.
-2. Run the `<evolution>` step of every task skill that was involved, following
-   `meta-skill-evolution`. Most tasks correctly record nothing.
+2. Record what is durable in the local CoALA memory (`coala.py add`). Most
+   tasks correctly record nothing.
 3. **Delete `TASK_PLAN.md`.** It is disposable and must not stay in the repo.
 
 ## Rules
 
-- **Never skip the evolution step, and never leave `TASK_PLAN.md` behind.**
+- **Never skip the learning step, and never leave `TASK_PLAN.md` behind.**
 - **Never delete the bootstrap artifacts**: `.agents/project-analysis.md`,
   `.agents/skill-map.md`, `.agents/validation-report.md`,
   `.agents/skills/catalog.md`, `.agents/skills/.bootstrap-state.json`. Only
   `TASK_PLAN.md` is disposable.
 - **No skill covers the task?** Do not invent a durable rule on the spot. Invoke
-  `meta-skill-evolution`, which proposes a new skill as a **draft for human
+  a memória CoALA local (`coala.py add`), which proposes a new skill as a **draft for human
   review**, never a direct publish.
 - **Broad side effects need confirmation.** Anything that rewrites history,
   pushes, deletes a remote branch, or restructures directories is not

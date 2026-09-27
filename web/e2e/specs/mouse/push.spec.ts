@@ -12,7 +12,8 @@
  *      (CLI, runtime data), `ensureRemoteAuth` (token do gh no cofre do
  *      app), "Push desta branch" pelo "⋯" da linha da branch no RAIL →
  *      ConfirmHost nao-destrutivo (openPushDialog nunca liga destructive —
- *      defeito conhecido documentado na skill composing-shell-interface) →
+ *      defeito conhecido documentado na memoria CoALA local
+ *      (chave knowledge/composing-shell-interface)) →
  *      botao "Push" — DENTRO do dialog, porque ha dois textos "Push" (titulo
  *      e botao) → toast "Push concluído" (+ confete do app);
  *   2. verificacao: `git ls-remote origin refs/heads/main` == main local.

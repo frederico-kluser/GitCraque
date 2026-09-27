@@ -11,37 +11,44 @@ below, and deletes the plan file when the work is done.
 
 | Skill | Select it when the task touches | Verification signal |
 |---|---|---|
-| [`orchestrating-git-backend`](orchestrating-git-backend/SKILL.md) | `server/**` — REST routes, WebSocket events, running or parsing git, `contract.mjs`, worktrees, credentials, the askpass/sequence-editor trampolines. **Also owns the front-end half of a new route**: the typed client in `web/src/lib/api.ts` and the payload type in `web/src/types/git.ts` | `npm run test:server` |
-| [`laying-out-commit-graph`](laying-out-commit-graph/SKILL.md) | `web/src/graph/**` — lanes, edges, Bezier paths, commit rows, react-window virtualization, reveal/scroll-to-commit, the graph's custom test runner | `npm run test:graph` |
-| [`painting-graph-column`](painting-graph-column/SKILL.md) | how the graph **looks**: `web/src/graph/paint.ts` — dot size and shape, curve roundness, hover growth, row height, subject font, chip and highlight shapes. *Where* things go is the skill above; *what they look like* is this one | `npm run test:graph` |
-| [`resolving-drag-intents`](resolving-drag-intents/SKILL.md) | `web/src/dnd/**`, `web/src/dialogs/**` — the intent matrix, drag ids, drop targets, executors, and the **drag-initiated** confirmation dialogs | `npm run test:dnd` |
-| [`composing-shell-interface`](composing-shell-interface/SKILL.md) | `web/src/app/**`, `web/src/panels/**`, `web/src/hooks/**` — toolbar, rail, panels, dock, footer, context menus, hotkeys, theming, any new React component **outside `graph/` and `dnd/`** (directory always wins), and the **`askConfirm`/`ConfirmHost`** gate that makes a toolbar or menu action hold-to-confirm | `npm run typecheck` + `check-project-rules.mjs` |
-| [`translating-interface-text`](translating-interface-text/SKILL.md) | any user-facing string, front-end or backend: labels, toasts, dialog copy, menu entries, plurals, error messages | `npm run typecheck` |
 | [`verifying-changes`](verifying-changes/SKILL.md) | closing **every** task; a failing or flaky suite; adding a test; changing imports in graph, dnd, viewer or i18n | `npm test` |
 
-## Meta skills
+## Domain knowledge — the local CoALA memory
 
-| Skill | Purpose |
-|---|---|
-| [`meta-skill-evolution`](meta-skill-evolution/SKILL.md) | Runs the memory pipeline at task completion: decides whether a learning is important **and** externally verified, and updates the owning SKILL.md directly — or discards it. |
-| [`meta-skill-consolidate`](meta-skill-consolidate/SKILL.md) | Periodic garbage collection: deduplication, conflict resolution, staleness by provenance, token budget. Deletions need a second opinion. |
+The six knowledge skills were consolidated into the local CoALA memory on
+2026-09-27 and deleted — the knowledge lives **only** there now, as `knowledge/*`
+records. Recover it before writing code:
+
+```
+python3 .agents/gitcraque-coala-memory-agent-skill/scripts/coala.py recall "<tarefa>" --budget 1500
+python3 .agents/gitcraque-coala-memory-agent-skill/scripts/coala.py search "<termos>" --tags knowledge,<skill> --limit 5
+```
+
+| Domain | Directories | Memory keys | Verification signal |
+|---|---|---|---|
+| backend | `server/**` | `knowledge/orchestrating-git-backend` | `npm run test:server` |
+| graph layout | `web/src/graph/**` — lanes, edges, rows, virtualization | `knowledge/laying-out-commit-graph` | `npm run test:graph` |
+| graph painting | `web/src/graph/paint.ts` — how the graph looks | `knowledge/painting-graph-column` | `npm run test:graph` |
+| dnd | `web/src/dnd/**`, `web/src/dialogs/**` | `knowledge/resolving-drag-intents` | `npm run test:dnd` |
+| shell | `web/src/app/**`, `web/src/panels/**`, `web/src/hooks/**` | `knowledge/composing-shell-interface` | `npm run typecheck` + `check-project-rules.mjs` |
+| i18n | any user-facing string, front-end or backend | `knowledge/translating-interface-text` | `npm run typecheck` |
 
 ## Routing rules
 
-- **Domain first.** On ambiguity prefer the most specific skill; a task in
+- **Domain first.** On ambiguity prefer the most specific domain; a task in
   `server/**` is a backend task even when it is "about the graph".
 - **Inside the graph, split by question.** "Which lane / which edge / does it
-  scroll" → `laying-out-commit-graph`. "How big / how round / what colour / does
-  it react to the pointer" → `painting-graph-column`. A task that moves a number
-  in `paint.ts` needs only the second; a task that changes both loads both.
-- **`translating-interface-text` is a dependency, not an alternative.** Any task
-  adding user-facing text loads it *in addition to* its domain skill.
+  scroll" → graph layout. "How big / how round / what colour / does it react to
+  the pointer" → graph painting. A task that moves a number in `paint.ts` needs
+  only the painting records; a task that changes both loads both.
+- **i18n is a dependency, not an alternative.** Any task adding user-facing text
+  also recovers `knowledge/translating-interface-text`, in addition to its domain.
 - **`verifying-changes` always runs last**, and its commands run one at a time.
 - **Parallel is safe across domains, never across the catalogue.** The four
   fronts may run in separate subagents; their edits to
   `web/src/i18n/locales/pt.ts` may not.
-- **No skill covers the task?** Do not improvise a permanent rule. Invoke
-  `meta-skill-evolution`, which proposes a new skill as a draft for human review.
+- **No domain covers the task?** Do not improvise a permanent rule. Record it in
+  the local CoALA memory (`coala.py add`) as a draft for human review.
 
 ## Always-on context
 
@@ -51,7 +58,7 @@ imports it so both agents read one source.
 
 ## Non-negotiable, regardless of skill
 
-These come from `CLAUDE.md:24-38` and are enforced by
+These come from the `AGENTS.md` Rules section and are enforced by
 `node .agents/skills/scripts/check-project-rules.mjs`:
 
 1. No gitgraph library — the layout algorithm is the product.

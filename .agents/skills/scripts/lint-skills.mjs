@@ -33,10 +33,9 @@ const MAX_REFERENCE_LINES_WITHOUT_TOC = 100;
 
 const VALID_TYPES = new Set(["knowledge", "task", "router", "meta"]);
 
-/* These three names are fixed by the system design (the router is addressed by
-   name from AGENTS.md; the meta skills are addressed by name from the router),
-   so they are exempt from the gerund rule rather than renamed. */
-const NAME_EXEMPT = new Set(["project-router", "meta-skill-evolution", "meta-skill-consolidate"]);
+/* This name is fixed by the system design (the router is addressed by name from
+   AGENTS.md), so it is exempt from the gerund rule rather than renamed. */
+const NAME_EXEMPT = new Set(["project-router"]);
 
 /* ---------- minimal frontmatter parser (no dependencies on purpose) -------- */
 
@@ -90,6 +89,11 @@ function lintSkill(name, dir) {
   const errors = [];
   const warnings = [];
   const file = join(dir, "SKILL.md");
+
+  /* The local CoALA memory skill is generated and owned by coala-agent-skill
+     (its contract is coala.json + coala.py doctor), so it is not linted against
+     the hand-written skill contract. */
+  if (name.endsWith("-coala-memory-agent-skill")) return { name, errors, warnings, tokens: 0 };
 
   if (!existsSync(file)) return { name, errors: [`missing SKILL.md`], warnings, tokens: 0 };
 
@@ -164,9 +168,11 @@ function lintSkill(name, dir) {
   /* -- structure -- */
   if (!/^##\s+When to use/m.test(body)) errors.push("body needs a '## When to use' section");
 
-  /* -- evolution contract: a task skill that cannot learn is a dead end -- */
-  if (meta?.type === "task" && !/<evolution>/.test(body)) {
-    errors.push("task skills must end with an <evolution> section");
+  /* -- learning contract: a task skill that cannot learn is a dead end.
+     Since 2026-09-27 the learning step is the local CoALA memory
+     (coala.py add), not a per-skill <evolution> section. -- */
+  if (meta?.type === "task" && !/coala\.py add/.test(body)) {
+    errors.push("task skills must point at the learning step (coala.py add)");
   }
 
   /* -- provenance: every knowledge claim must be checkable against the repo -- */

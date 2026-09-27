@@ -119,9 +119,9 @@ filter, so `npm run test:graph` is all-or-nothing.
 
 `.agents/project-analysis.md` §4 for the full guaranteed-vs-prose table.
 
-## <evolution>
+## registo de aprendizado (memória CoALA local)
 
-On completion, run the memory pipeline in `meta-skill-evolution`. This skill's
+On completion, run the memory pipeline of the local CoALA memory (`coala.py add`). This skill's
 signal is `npm test` itself, so an update here is validated by the suite it
 describes — record with
 `node .agents/skills/scripts/record-validation.mjs verifying-changes`. Flakes and

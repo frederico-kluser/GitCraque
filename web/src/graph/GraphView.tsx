@@ -592,7 +592,7 @@ export function GraphView({
           POR QUE NO TOPO, e nao sob a lista, onde uma barra horizontal
           normalmente mora: a area de IA e `fixed inset-x-0 bottom-6` e flutua
           sobre o rodape de TODOS os paineis (`app/AiBar.tsx`; a armadilha esta
-          descrita em `composing-shell-interface`). Medido a 1440x900 com a
+          descrita na memoria CoALA `knowledge/composing-shell-interface`). Medido a 1440x900 com a
           barra no rodape: a faixa ficava em y 866..876 e o
           `document.elementFromPoint` na ponta direita dela devolvia a secao da
           IA — ou seja, metade do controle era inclicavel. Encostada no

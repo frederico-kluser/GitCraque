@@ -16,7 +16,7 @@ Regras de ouro do app que os specs devem respeitar:
 
 - **O app nao tem teste automatico de UI** — `web/src/app`, `panels` e `hooks`
   nao tem suite nenhuma; o sinal e `tsc` + rule checker
-  (`docs/ARCHITECTURE.md`, skill composing-shell-interface).
+  (`docs/ARCHITECTURE.md`, registo CoALA `knowledge/composing-shell-interface`).
 - **Toda mutacao passa por `runOperation`** do store, que liga a barra de
   progresso da toolbar, emite o toast (sucesso ou erro com argv) e faz o refresh
   (`web/src/state/store.ts:641-679`).
@@ -25,7 +25,7 @@ Regras de ouro do app que os specs devem respeitar:
   apoia nisso.
 - **Destrutivo = hold-to-confirm**, nunca clique. A chave dessa troca e a flag
   `destructive` (`web/src/app/ConfirmHost.tsx:264-277`, `web/src/dnd/intents.ts`,
-  skill resolving-drag-intents).
+  registo CoALA `knowledge/resolving-drag-intents`).
 - **Pull nao tem menu de contexto nem drag**: so toolbar/overflow/⌘K.
 
 ---
@@ -303,8 +303,9 @@ getByRole("button", { name: "<caminho do arquivo>" })      // linha da lista do 
     toggles `--set-upstream`, `--tags`, `--force-with-lease` (`pt.ts:504-506`);
   - **botao de confirmar: `MultiStateButton` com `confirmLabel` = "Push"
     (`action.push.confirm`, `pt.ts:499`) — CLIQUE, SEM HOLD, mesmo com
-    `--force-with-lease` armado** (defeito conhecido e documentado na skill
-    composing-shell-interface: `openPushDialog` nunca seta `destructive: true`);
+    `--force-with-lease` armado** (defeito conhecido e documentado no registo
+    CoALA `knowledge/composing-shell-interface`: `openPushDialog` nunca seta
+    `destructive: true`);
   - sucesso: toast `action.push.done` = **"Push concluído"** (`pt.ts:500`) +
     **confete** (`Toasts.tsx:84-89`, que procura `argv[0] === "push"`).
 - **Gesto**: MOUSE = clique no botao "Push" do dialogo. TOUCH = tap (mesmo

@@ -1,5 +1,12 @@
 # Skill map — GitCraque
 
+> **HISTORICAL (bootstrap 2026-08-22).** This map describes the original
+> library: the two meta skills were deleted on 2026-09-27 (memory moved to the
+> local CoALA memory) and the six knowledge skills were consolidated into that
+> same memory (`knowledge/*` records) and deleted on 2026-09-27. The live state
+> is `catalog.md` plus the CoALA memory; this file stays as the record of the
+> original decision.
+
 Phase 2 artifact. Designed before any skill file was written. Nine skills: one
 router, six task skills covering the real work surface, two meta skills.
 

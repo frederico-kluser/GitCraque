@@ -1,9 +1,13 @@
 # `.agents/` — the knowledge-skill system
 
-Project knowledge, packaged as skills an agent loads on demand instead of
-re-reading the docs and re-scanning the tree every session. Every task enters
-through one router; skills update themselves only when something outside the
-model says they should.
+Project knowledge and the machinery that keeps it honest. Every task enters
+through one router; what is durable is recorded in the local CoALA memory
+(`gitcraque-coala-memory-agent-skill`) instead of being rewritten in place.
+
+Since 2026-09-27 the domain knowledge itself lives **only** in that memory: the
+six knowledge skills were migrated there (`knowledge/*` records) and deleted,
+and the two meta skills went with the memory consolidation. What stays here is
+routing, verification and the project rules.
 
 ## Layout
 
@@ -21,16 +25,15 @@ model says they should.
     catalog.md               the index the router reads
     .bootstrap-state.json    phase state -- the mission backbone
     project-router/          entry point for every task
-    <six task skills>/
-    meta-skill-evolution/    the memory pipeline
-    meta-skill-consolidate/  periodic garbage collection
+    verifying-changes/       closing step of every task
+    gitcraque-coala-memory-agent-skill/  the local CoALA memory (symlink)
     scripts/
-      lint-skills.mjs        form: frontmatter, budget, provenance, <evolution>
+      lint-skills.mjs        form: frontmatter, budget, provenance, learning step
       record-validation.mjs  runs a skill's declared signal, writes a receipt if green
       check-project-rules.mjs  9 GitCraque rules that had no guard before
     evals/
-      cases.json             routing + knowledge cases
-      run-evals.mjs          the regression gate for skill updates
+      cases.json             routing + knowledge cases (knowledge attributed to memory keys)
+      run-evals.mjs          the regression gate; flags a stale knowledge record
 ```
 
 `.claude/skills` is a symlink to `.agents/skills`, and `CLAUDE.md` imports

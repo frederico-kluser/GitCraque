@@ -273,8 +273,9 @@ Arquivos disjuntos; ordem de merge da esquerda para a direita.
   `test:server # 319`. O real já era 350/503 **antes** desta execução; agora é
   **605**. A tabela de `.agents/skills/verifying-changes` tem o mesmo erro.
 - **Documentar as duas suítes novas** (`test:hooks`, `test:i18n`) no `AGENTS.md`.
-- **Passo `<evolution>` do project-router não rodado** — o aprendizado durável é
-  o contrato `longPressMenu`/`withLongPress` em `composing-shell-interface`.
+- **Passo de aprendizado do project-router não rodado** — o aprendizado durável é
+  o contrato `longPressMenu`/`withLongPress` em `knowledge/composing-shell-interface`
+  (memória CoALA local).
 - `docs/UI.md:44` afirma que `swipe-actions` serve "linhas de arquivo no
   staging". **Está envelhecido**: o componente está instalado e **sem uso**. É a
   mecânica pronta para stage/descartar por arrasto, e a cascata do `docs/UI.md`
